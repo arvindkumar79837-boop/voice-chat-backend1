@@ -88,6 +88,34 @@ exports.joinFamily = async (req, res) => {
   }
 };
 
+// ADMIN: List all families
+exports.getFamilies = async (req, res) => {
+  try {
+    const families = await Family.find().sort({ createdAt: -1 }).lean();
+    return res.status(200).json({ success: true, data: families });
+  } catch (error) {
+    console.error('Get Families Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch families' });
+  }
+};
+
+// ADMIN: Delete a family
+exports.deleteFamily = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const family = await Family.findByIdAndDelete(id);
+    if (!family) {
+      return res.status(404).json({ success: false, message: 'Family not found' });
+    }
+    // Optional: remove family reference from all members
+    await User.updateMany({ familyId: family.familyId }, { $unset: { familyId: '', familyRole: '' } });
+    return res.status(200).json({ success: true, message: 'Family deleted successfully' });
+  } catch (error) {
+    console.error('Delete Family Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete family' });
+  }
+};
+
 // Leave a Family
 exports.leaveFamily = async (req, res) => {
   try {

@@ -1,545 +1,473 @@
-# 🦁 Arvind Party Backend — Comprehensive Analysis Report
+# 🦁 ARVIND PARTY BACKEND — COMPREHENSIVE ANALYSIS REPORT
 
-> **Generated:** 12 June 2026  
-> **Workspace:** `d:\Alarms\arvind-party-backend`  
-> **Engine:** Node.js + Express + MongoDB Atlas + Socket.io  
-> **Version:** 1.0.0  
-
----
-
-## 1. 📁 Current Project Architecture
-
-### 1.1 Entry Points
-
-| File | Role | Notes |
-|------|------|-------|
-| `server.js` | **Primary entry** (`npm start`/`npm run dev`) | Creates HTTP server, connects DB, initializes Socket.io + Redis |
-| `src/app.js` | Express app definition | Mounts 15 route groups, middleware, error handler |
-| `src/api/app.js` | **Legacy/alternate entry** | Standalone Express app with its own Socket.io — **NOT wired to main server** |
-| `setup_folders.js` | One-time folder scaffolding utility | References `src/modules/` folders that were never fully populated |
-
-### 1.2 Directory Structure
-
-```
-arvind-party-backend/
-├── server.js                  # Main bootstrap
-├── package.json
-├── .env
-├── src/
-│   ├── app.js                 # Express app + route mounting
-│   ├── config/
-│   │   ├── db.js              # MongoDB Atlas connection (Mongoose)
-│   │   ├── firebase.js        # Firebase Admin SDK init
-│   │   └── socket.js          # Socket.io factory (initializeSocket/getIO)
-│   ├── controllers/           # 25 controller files
-│   ├── routes/                # 19 route files
-│   ├── models/                # 31 Mongoose model files
-│   ├── sockets/               # 5 Socket.io handler files
-│   ├── middlewares/           # 5 middleware files
-│   ├── services/otp.service.js
-│   ├── utils/jwt.js
-│   ├── modules/shop/          # Frame shop sub-module (3 files)
-│   └── api/                   # Legacy standalone app (unused)
-```
-
-### 1.3 Database Configuration (MongoDB Atlas)
-
-- **File:** `src/config/db.js`
-- **Driver:** Mongoose v8.3.4
-- **URI:** `process.env.MONGO_URI` → fallback `mongodb://127.0.0.1:27017/arvind-party`
-- **Timeout:** 5s (`serverSelectionTimeoutMS: 5000`)
-- **Graceful degradation:** Server continues without DB on failure
-
-### 1.4 Mongoose Models (31 files)
-
-| Model | Purpose |
-|-------|---------|
-| `User.js` | Core user accounts (uid, firebaseUid, phone, role, xp, level, VIP, KYC, ban) |
-| `Room.js` | Live voice rooms (10 embedded seats, owner, status) |
-| `RoomSeat.js` | Separate seat model (**unused** — seats embedded in Room) |
-| `RoomMessage.js` | Room chat messages |
-| `Gift.js` / `GiftEvent.js` / `GiftTransaction.js` | Gift catalog, events, transactions |
-| `Agency.js` | Host agencies |
-| `Badge.js` | Achievement badges with unlock conditions |
-| `Family.js` | Family/guild system |
-| `CpPair.js` | Couple pair relationships |
-| `PKBattle.js` | PK battle records |
-| `Ranking.js` | Leaderboard snapshots |
-| `GameRecord.js` | Game play logs |
-| `LuckyDrawReward.js` | Lucky wheel reward pool |
-| `MissionProgress.js` | Daily mission tracking |
-| `Transaction.js` | Razorpay payment transactions |
-| `WalletTransaction.js` | Wallet recharge/transfer logs |
-| `Withdrawal.js` / `Recharge.js` | Cash-out / top-up records |
-| `Staff.js` | Staff accounts (loginId, role, permissions) |
-| `VipPlan.js` / `VipUser.js` | VIP plans and subscriptions |
-| `TreasuryLog.js` | Coin generation audit trail |
-| `GlobalSetting.js` | System-wide settings |
-| `SystemSettings.js` | Duplicate of GlobalSetting (**unused**) |
-| `AuditLog.js`, `Announcement.js`, `RaiseHand.js`, `Settlement.js`, `Invoice.js` | Scaffolded but **unused** |
-
-### 1.5 Route Mounting (from `src/app.js`)
-
-| Mount Path | Route File | Controller |
-|-----------|-----------|-----------|
-| `/api/auth` | `auth.routes.js` | `auth.controller.js` |
-| `/api/users` | `user.routes.js` | `userController.js` |
-| `/api/admin` | `adminRoutes.js` | `admin.user.controller.js` |
-| `/api/staff` | `staffRoutes.js` | `staffController.js` |
-| `/api/rooms` | `room.routes.js` | `room.controller.js` |
-| `/api/gifts` | `gift.routes.js` | `gift.controller.js` |
-| `/api/wallet` | `wallet.routes.js` | `walletController.js` |
-| `/api/agency` | `agencyRoutes.js` | `agencyController.js` |
-| `/api/pk-battles` | `pkBattleRoutes.js` | `pkBattle.controller.js` |
-| `/api/families` | `familyRoutes.js` | `familyController.js` |
-| `/api/shop` | `shopRoutes.js` | `shop.controller.js` |
-| `/api/games` | `gameRoutes.js` | `game.controller.js` |
-| `/api/cp` | `cpRoutes.js` | `cpController.js` |
-| `/api/treasury` | `treasuryRoutes.js` | `treasuryController.js` |
-| `/api/matchmaking` | `matchmakingRoutes.js` | `matchmaking.controller.js` |
-
-**⚠️ NOT mounted:** `chatRoutes.js`, `rankingRoutes.js`, `vipRoutes.js`, `modules/shop/shop.routes.js`
-
-### 1.6 Security & Middleware Stack
-
-| Middleware | Purpose |
-|-----------|---------|
-| `helmet` | XSS, clickjacking protection |
-| `cors (origin: *)` | Cross-origin requests |
-| `express.json` (10MB) | Body parsing |
-| `express-rate-limit` (1000/15min) | Rate limiting |
-| `auth.middleware.js` | JWT Bearer verification |
-| `adminMiddleware.js` | Staff/Owner RBAC |
-| `errorHandler.middleware.js` | Global error handler |
-| `validation.middleware.js` | **Defined but never applied** |
-| `isAdmin.js` | **Orphaned — never used** |
-
-### 1.7 Socket.io Architecture
-
-| Handler File | Events (Client → Server) | Events (Server → Client) |
-|-------------|--------------------------|-------------------------|
-| `roomSocket.js` | `join_room`, `leave_room`, `toggle_mic`, `kick_user`, `admin_mute_user`, `unkick_user`, `admin_unmute_user` | `user_joined`, `user_left`, `mic_status_changed`, `user_kicked`, `user_admin_muted`, `user_unkicked`, `user_admin_unmuted` |
-| `chatSocket.js` | `send_room_message`, `send_reaction` | `receive_room_message`, `receive_reaction` |
-| `seatSocket.js` | `claim_seat` | `seat_updated`, `seat_error` |
-| `giftSocket.js` | `send_gift` | `gift_animation`, `gift_error` |
-| `pkBattleSocket.js` | `request_pk`, `pk_send_gift` | `pk_started`, `pk_update`, `pk_ended` |
-
-Additional socket events emitted from controllers:
-- `receive_gift` (from `gift.controller.js` via REST API)
-- `pk_request`, `pk_start`, `pk_end` (from `pkBattle.controller.js`)
-- `webhook_payment_success` (from `userController.js` Razorpay webhook)
-- `badge_unlocked` (from `gameController.js` cron job)
-- `force_logout` (from `admin.user.controller.js` ban action)
+> **Generated:** June 20, 2026  
+> **Scan Target:** `d:/Alarms/arvind_party/lib/arvind-party-backend`  
+> **Mode:** Read-Only Audit (No code modifications)
 
 ---
 
-## 2. 🐛 Code Health & Bugs
+## 1. 📂 CURRENT PROJECT STATUS
 
-### 2.1 🔴 CRITICAL — Broken Imports (Crashes at Startup)
+### 1.1 Root Directory
+| File | Purpose | Status |
+|------|---------|--------|
+| `server.js` | Entry point; HTTP server + Socket.io bootstrap | ✅ Present, 78 lines |
+| `package.json` | Dependencies & scripts | ✅ Present, 37 deps |
+| `.env.example` | Environment variable templates | ✅ Present |
+| `.gitignore` | Git ignore rules | ✅ Present |
+| `setup_folders.js` | Legacy dir creation script | ⚠️ Present (not needed after setup) |
+| `test-imports.js` | Import testing | ✅ Present |
+| `firebase-service-account.json` | Firebase admin key | ❌ **MISSING** (referenced in `firebase.js`) |
 
-| # | Missing File / Bad Path | Imported By | Impact |
-|---|------------------------|------------|--------|
-| 1 | `src/middlewares/authMiddleware.js` **DOES NOT EXIST** | `adminRoutes.js:4`, `pkBattleRoutes.js:4`, `gameRoutes.js:4`, `cpRoutes.js:4` | **4 route groups crash.** Actual file is `auth.middleware.js` |
-| 2 | `require('../../authMiddleware')` (wrong path) | `matchmakingRoutes.js:4` | Resolves to root — file not found. **Matchmaking crashes** |
-| 3 | `require('./wallet.controller')` (wrong relative path) | `wallet.routes.js:3` | Resolves to `src/routes/wallet.controller.js` — doesn't exist. **All wallet routes crash** |
-| 4 | `require('../models/Message')` | `chatController.js:1` | No `Message` model. Actual: `RoomMessage`. **Chat history crashes** |
-| 5 | `require('../models/RoomMember')` | `room.production.controller.js:2` | No `RoomMember` model. **Production room details crashes** |
-| 6 | `require('node-cron')` | `gameController.js:3` | **Not in package.json.** `npm install` won't install it |
-| 7 | `require('stripe')` | `walletController.js:4` | **Not in package.json.** Stripe import will fail |
+### 1.2 `src/app.js` — Express Application Hub
+- **Line Count:** 138 lines
+- **Status:** ✅ Functional — imports & mounts **28 route files**
+- **Middleware Stack:** `helmet` → `requestLoggerMiddleware` → `corsConfig` → JSON parser → Rate limiters
+- **Mounts:**
+  - `/api/auth` (with auth rate limiter)
+  - `/api/users`, `/api/admin`, `/api/staff`, `/api/rooms`, `/api/gifts`
+  - `/api/wallet`, `/api/agency`, `/api/pk-battles`, `/api/families`
+  - `/api/shop`, `/api/games`, `/api/cp`, `/api/treasury`
+  - `/api/matchmaking`, `/api/rankings`, `/api/vip`, `/api/chat`
+  - `/api/app-users`, `/api/level`, `/api/inventory`, `/api/creator`
+  - `/api/support`, `/api/moderation`, `/api/system`, `/api/moments`
+  - `/api/notifications`, `/api/events`
 
-### 2.2 🔴 CRITICAL — Admin Routes Middleware Mismatch
+### 1.3 Config Files (`src/config/`)
+| File | Status | Notes |
+|------|--------|-------|
+| `cors.js` | ✅ Complete | Dynamic origin list, credential support |
+| `db.js` | ✅ Complete | MongoDB with reconnect backoff |
+| `socket.js` | ✅ Complete | Socket.io init + JWT auth middleware |
+| `firebase.js` | ⚠️ Partial | Initialized but **no push notification methods** |
 
-`adminRoutes.js:9` calls `adminMiddleware('APP.ADMIN.WEB')` as a **function with a parameter**, but `adminMiddleware.js` exports an **object** `{ verifyStaff, verifyOwner, requirePermission }` — not a callable function. This will throw `TypeError: adminMiddleware is not a function` at startup.
+### 1.4 Models (`src/models/`) — 34 Models Total
+All present: `User.js`, `Room.js`, `Gift.js`, `GiftEvent.js`, `GiftTransaction.js`, `RoomMessage.js`, `RoomSeat.js`, `WalletTransaction.js`, `Transaction.js`, `Withdrawal.js`, `Recharge.js`, `Agency.js`, `Family.js`, `Badge.js`, `VipPlan.js`, `VipUser.js`, `CpPair.js`, `PKBattle.js`, `Moment.js`, `Notification.js`, `Event.js`, `GameRecord.js`, `LuckyDrawReward.js`, `Report.js`, `SupportTicket.js`, `Staff.js`, `AuditLog.js`, `Invoice.js`, `Announcement.js`, `MissionProgress.js`, `RaiseHand.js`, `Ranking.js`, `SystemSettings.js`, `GlobalSetting.js`, `TreasuryLog.js`, `Settlement.js`
 
-### 2.3 🔴 CRITICAL — JWT Secret Inconsistency
+### 1.5 Routes (`src/routes/`) — 28 Route Files
+All present and mounted in `src/app.js`:
+`auth.routes.js`, `user.routes.js`, `adminRoutes.js`, `staffRoutes.js`, `room.routes.js`, `gift.routes.js`, `wallet.routes.js`, `agencyRoutes.js`, `pkBattleRoutes.js`, `familyRoutes.js`, `shopRoutes.js`, `gameRoutes.js`, `cpRoutes.js`, `treasuryRoutes.js`, `matchmakingRoutes.js`, `rankingRoutes.js`, `vipRoutes.js`, `chatRoutes.js`, `appUserRoutes.js`, `level.routes.js`, `inventory.routes.js`, `creator.routes.js`, `support.routes.js`, `moderation.routes.js`, `referral.routes.js`, `momentRoutes.js`, `notificationRoutes.js`, `eventRoutes.js`
 
-Different files use **different fallback JWT secrets**:
+### 1.6 Controllers (`src/controllers/`) — 36 Controller Files
+All present and mapped to routes.
 
-| File | Fallback Secret |
-|------|----------------|
-| `auth.controller.js` (login) | `arvind-party-secret` |
-| `auth.controller.js` (verifyOtp) | `supersecret_arvind_party` |
-| `auth.middleware.js` | `arvind_party_super_secret_key` |
-| `staffController.js` | `arvind_party_super_secret_key` |
-| `utils/jwt.js` | `arvind_party_secret_key` |
-| `adminAuthController.js` | `arvind_party_secret` |
+### 1.7 Middlewares (`src/middlewares/`) — 7 Middleware Files
+| File | Status | Purpose |
+|------|--------|---------|
+| `auth.middleware.js` | ✅ | JWT Bearer token verification |
+| `adminMiddleware.js` | ✅ | `verifyStaff`, `verifyOwner`, `requirePermission` |
+| `isAdmin.js` | ⚠️ | Checks `req.user.role === 'admin'` (conflicts with adminMiddleware) |
+| `errorHandler.middleware.js` | ✅ | Error formatting, Mongoose/JWT catch |
+| `validation.middleware.js` | ✅ | express-validator wrappers |
+| `request-logger.middleware.js` | ✅ | HTTP request duration logging |
+| `logger.middleware.js` | ⚠️ | Uses `chalk` package **not in dependencies** |
 
-**Tokens generated by one controller will be rejected by other middleware.** If `JWT_SECRET` is not set in `.env`, tokens from `auth.controller.js` will fail `auth.middleware.js` verification.
+### 1.8 Sockets (`src/sockets/`) — 5 Socket Handlers
+| File | Status | Events Handled |
+|------|--------|----------------|
+| `roomSocket.js` | ✅ | `join_room`, `leave_room`, `toggle_mic`, `kick_user`, `admin_mute_user`, `unkick_user`, `admin_unmute_user` |
+| `chatSocket.js` | ⚠️ | `send_room_message`, `send_reaction` — **registers global io.use()** causing duplicate auth |
+| `seatSocket.js` | ✅ | `claim_seat` |
+| `giftSocket.js` | ⚠️ | `send_gift` — **no socket auth**, relies on client data |
+| `pkBattleSocket.js` | ✅ | `request_pk`, `pk_send_gift` — uses hardcoded placeholder avatars |
 
-### 2.4 🟡 HIGH — User Model Schema Mismatch
+### 1.9 Services (`src/services/`) — 1 Service File
+- `otp.service.js` — ✅ Complete, with Redis + in-memory fallback, Twilio SMS
 
-The `User.js` model defines: `uid`, `firebaseUid`, `phone`, `email`, `username`, `displayName`, `avatar`, `role`, `xp`, `level`, `vipLevel`, `vipExpiresAt`, `isBanned`, `banReason`.
+### 1.10 Utils (`src/utils/`) — 2 Utility Files
+| File | Status | Purpose |
+|------|--------|---------|
+| `logger.js` | ✅ | Structured logging to console + file |
+| `jwt.js` | ✅ | Simple JWT token generation |
 
-Controllers reference **fields that do NOT exist** in the schema:
-- `coins`, `diamonds` (used in gift, wallet, game, shop, treasury, admin controllers)
-- `equippedFrame`, `unlockedFrames`, `ownedFrames` (userController, shop)
-- `arvindId` (auth.controller.js login, user.routes)
-- `isProfileComplete` (auth.controller.js)
-- `familyId`, `familyRole` (familyController.js)
-- `agencyId` (agencyController, appUserController)
-- `badges` array (badgeController.js)
-- `activeFrame`, `activeCar` (adminController.js)
-- `followers`, `following`, `cpPartner`, `cpRequests`, `cpLevel` (social.routes.js)
-- `vipExpiry` (userController.js — but model has `vipExpiresAt`)
-- `isBlocked` (adminController.js — but model has `isBanned`)
+### 1.11 Duplicate / Legacy Area: `src/api/`
+| File | Status | Issue |
+|------|--------|-------|
+| `src/api/app.js` | ⚠️ **DUPLICATE** | Separate Express app with wrong relative imports (`./config/db`, `./routes/auth.routes`) |
+| `src/api/social.routes.js` | ⚠️ **ORPHAN** | Not mounted in `src/app.js` or `server.js` — contains Follow/CP endpoints that may conflict with `cpRoutes.js` |
 
-**Mongoose will silently ignore undefined fields on `save()`, causing data loss.**
-
-### 2.5 🟡 HIGH — Room Model Schema Mismatch
-
-Controllers reference fields not in `Room.js` schema:
-- `room.kickedUsers`, `room.mutedUsers` (roomSocket.js) — not in schema
-- `room.status === 'live'` (room.controller.js) — schema only has `'active' | 'inactive' | 'banned'`
-- `room.name` (room.controller.js createRoom) — schema field is `title`, not `name`
-
-### 2.6 🟡 HIGH — Duplicate / Conflicting Logic
-
-| Issue | Details |
-|-------|---------|
-| Duplicate Lucky Wheel | `game.controller.js` (DB-driven rewards) AND `gameController.js` (hardcoded rewards) — both have spin logic |
-| Duplicate getAllUsers | `adminController.js:8` AND `admin.user.controller.js:8` |
-| Duplicate OTP system | `auth.controller.js` uses in-memory `otpStore` Map; `otp.service.js` uses Redis with Twilio — **not integrated** |
-| Duplicate gift sending | `gift.controller.js` (REST) and `giftSocket.js` (Socket) — different commission logic |
-
-### 2.7 🟡 MEDIUM — Security Concerns
-
-| Issue | Details |
-|-------|---------|
-| Hardcoded admin credentials | `adminAuthController.js:8-9` — `arvind_admin` / `admin@arvind2025` as defaults |
-| Hardcoded JWT secrets | 5 different fallback secrets (see 2.3) |
-| CORS `origin: '*'` | Wide open — any domain can access the API |
-| No auth on wallet routes | `wallet.routes.js:5` has `// TODO: Add authMiddleware` |
-| No auth on chat route | `chatRoutes.js` — `getChatHistory` has no auth middleware |
-| OTP bypass for test accounts | `auth.controller.js:63` — phone ending in `0000000000` always gets OTP `123456` |
-| `x-admin-key` header bypass | `adminMiddleware.js:10-17` — anyone who knows the secret key can act as OWNER |
-| `firebase-service-account.json` required | `firebase.js:5` — server crashes if file missing (not in repo) |
-| `recharge` endpoint credits without verification | `walletController.js:21-43` — directly adds coins without payment gateway confirmation |
-
-### 2.8 🟢 LOW — Minor Issues
-
-- `staffController.js:1` imports `bcrypt` but `package.json` has `bcryptjs` (may resolve via npm but API may differ)
-- `otp.service.js:44` — `!process.env.TWILIO_ENABLED === 'true'` is always truthy because `!string` → `false`, then `false === 'true'` → `false`. The actual check should be `process.env.TWILIO_ENABLED !== 'true'`
-- `validation.middleware.js` — Validation functions are defined but **never applied** to any route
-- `isAdmin.js` — Simple middleware that checks `req.user.role === 'admin'` — **orphaned, never used**
-- `setup_folders.js` — References module folders (`src/modules/auth`, `src/modules/room`, etc.) that were never populated
-- `gameController.js:4` imports `MissionProgress` — used in game logic but mission controller has its own reset logic, causing potential race conditions
-- `src/api/` directory is a completely separate legacy app — duplicated effort
+### 1.12 `src/modules/` — Empty Directory
+- **No files present.** The `setup_folders.js` created these directories but they were never populated.
 
 ---
 
-## 3. 🌐 API Endpoint & Socket.io Audit
+## 2. 🐛 BUG & ERROR TRACKING
 
-### 3.1 Complete REST API Endpoint List
+### 2.1 Compilation / Import Errors
 
-#### Authentication
+| # | Severity | File | Issue |
+|---|----------|------|-------|
+| B1 | 🔴 **HIGH** | `src/middlewares/logger.middleware.js` (Line 6) | Uses `require('chalk')` but **chalk is NOT listed in `package.json` dependencies**. Will crash on `npm start`. |
+| B2 | 🔴 **HIGH** | `src/api/app.js` (Lines 7–11) | Orphan file imports from `./config/db`, `./routes/*` — but it's inside `src/api/` so these paths are **wrong** (`./config/db` should be `../config/db`). Will crash if invoked. |
+| B3 | 🟡 **MEDIUM** | `src/controllers/admin.controller.js` (Lines 353, 365) | Uses `GlobalSetting` model but **no `require('../models/GlobalSetting')` at top of file**. This will crash `getGlobalSettings` and `updateGlobalSettings`. |
+| B4 | 🟡 **MEDIUM** | `src/controllers/badgeController.js` | Referenced in `server.js` line 45 but path `./src/controllers/badgeController` may have export mismatch — needs verification. |
+| B5 | 🟡 **MEDIUM** | `src/routes/adminRoutes.js` (Line 19) | `isAdmin = verifyAdmin` where `verifyAdmin` comes from `isAdmin.js` which checks `req.user.role === 'admin'` — but `adminMiddleware.js` sets `req.userRole` (not `req.user.role`). This guard will **never pass**. |
 
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| POST | `/api/auth/login` | None | `auth.controller.login` | ⚠️ Uses in-memory OTP, not Redis/Twilio |
+### 2.2 Runtime / Logic Errors
 
-#### User Profile
+| # | Severity | File | Issue |
+|---|----------|------|-------|
+| B6 | 🟡 **MEDIUM** | `src/routes/momentRoutes.js` (Line 18) | `router.get('/search', ...)` is placed **after** `router.get('/:momentId', ...)` (Line 11). Express will interpret `/search` as a `:momentId` value — the search route is **dead code**. |
+| B7 | 🟡 **MEDIUM** | `src/sockets/chatSocket.js` (Line 22) | Calls `io.use(authenticateSocket)` globally, but `src/config/socket.js` already registers a JWT auth middleware globally. This creates **double authentication**. |
+| B8 | 🟡 **MEDIUM** | `src/sockets/giftSocket.js` | **No authentication** at all — `giftSocket.js` does NOT implement any JWT verification. Relies entirely on client-supplied `senderId`. A malicious client could impersonate any user. |
+| B9 | 🟡 **MEDIUM** | `src/routes/wallet.routes.js` (Line 74) | `POST /send-gift` exists here but `src/routes/gift.routes.js` also has `POST /send` — creating **two different API paths** for sending gifts with potentially different logic. |
+| B10 | 🟡 **MEDIUM** | `src/routes/adminRoutes.js` (Lines 216–220) | `DELETE /reports/:id` calls `reportController.resolveReport` (same as POST resolve). Should use a different delete handler. |
+| B11 | 🟢 **LOW** | `src/app.js` (Line 121) | Mounts `referralRoutes` at `/api/system` instead of `/api/referral`. Referral endpoints will be at `/api/system/referral` instead of `/api/referral`. |
 
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| POST | `/api/users/complete-profile` | JWT | `userController.updateProfile` | ✅ Works |
-| GET | `/api/users/center` | JWT | `userController.getUserCenter` | ✅ Works (fallback badges) |
-| POST | `/api/users/equip-frame` | JWT | `userController.equipFrame` | ✅ Works |
+### 2.3 Missing / Broken Paths
 
-#### Admin
+| # | Severity | Issue |
+|---|----------|-------|
+| B12 | 🔴 **HIGH** | `server.js` line 24: `require('./src/services/otp.service')` exports `initRedis` — confirms this pattern works ✅ |
+| B13 | 🔴 **HIGH** | `firebase-service-account.json` — **missing from root**. Firebase will silently disable. |
+| B14 | 🟡 **MEDIUM** | **No `.env` file present** — only `.env.example` exists. `server.js` will crash on missing `JWT_SECRET`, `MONGO_URI`, `PORT`. |
 
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| GET | `/api/admin/users` | Admin (broken) | `admin.user.controller.getAllUsers` | 🔴 Auth middleware crash |
-| POST | `/api/admin/users/ban` | Admin (broken) | `admin.user.controller.toggleBanStatus` | 🔴 Auth middleware crash |
+### 2.4 Route Conflict Detection
 
-#### Staff Management
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| POST | `/api/staff/login` | None | `staffController.loginStaff` | ✅ Works |
-| POST | `/api/staff/create` | Owner | `staffController.createStaff` | ✅ Works |
-| GET | `/api/staff/list` | Owner | `staffController.getStaffList` | ✅ Works |
-| PUT | `/api/staff/update/:id` | Owner | `staffController.updateStaff` | ✅ Works |
-| DELETE | `/api/staff/delete/:id` | Owner | `staffController.deleteStaff` | ✅ Works |
-
-#### Rooms
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| GET | `/api/rooms/live` | None | `room.controller.getLiveRooms` | ⚠️ Room.status mismatch (`live` vs `active`) |
-| POST | `/api/rooms/create` | JWT | `room.controller.createRoom` | ⚠️ Uses `name` field but schema has `title` |
-
-#### Gifts
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| GET | `/api/gifts/list` | JWT | `gift.controller.getGifts` | ✅ Works |
-| POST | `/api/gifts/send` | JWT | `gift.controller.sendGift` | ✅ Works (with commission engine) |
-
-#### Wallet
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| GET | `/api/wallet` | **None (TODO)** | `walletController.getWallet` | 🔴 Broken import + no auth |
-| POST | `/api/wallet/recharge` | **None** | `walletController.recharge` | 🔴 Broken import — adds coins without payment verification |
-| POST | `/api/wallet/recharge/stripe/intent` | **None** | `walletController.createStripeIntent` | 🔴 Broken import + missing `stripe` package |
-| POST | `/api/wallet/recharge/razorpay/order` | **None** | `walletController.createRazorpayOrder` | 🔴 Broken import |
-| GET | `/api/wallet/transactions` | **None** | `walletController.getTransactions` | 🔴 Broken import |
-| GET | `/api/wallet/withdrawal-info` | **None** | `walletController.getWithdrawalInfo` | 🔴 Broken import |
-| POST | `/api/wallet/seller/transfer` | **None** | `walletController.coinSellerTransfer` | 🔴 Broken import |
-| POST | `/api/wallet/withdraw` | **None** | `walletController.withdraw` | 🔴 Broken import |
-
-#### Agency
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| GET | `/api/agency/mine` | JWT | `agencyController.getMyAgency` | ✅ Works |
-| POST | `/api/agency/apply` | JWT | `agencyController.applyForAgency` | ✅ Works |
-
-#### PK Battles
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| POST | `/api/pk-battles/request` | JWT (broken) | `pkBattle.controller.requestBattle` | 🔴 Auth middleware crash |
-| POST | `/api/pk-battles/accept` | JWT (broken) | `pkBattle.controller.acceptBattle` | 🔴 Auth middleware crash |
-| POST | `/api/pk-battles/end` | JWT (broken) | `pkBattle.controller.endBattle` | 🔴 Auth middleware crash |
-
-#### Families
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| GET | `/api/families/mine` | JWT | `familyController.getMyFamily` | ✅ Works |
-| POST | `/api/families/create` | JWT | `familyController.createFamily` | ✅ Works |
-| POST | `/api/families/join` | JWT | `familyController.joinFamily` | ✅ Works |
-
-#### Shop
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| GET | `/api/shop/items` | JWT | `shop.controller.getItems` | ⚠️ Returns hardcoded items |
-| POST | `/api/shop/purchase` | JWT | `shop.controller.purchaseItem` | ⚠️ Hardcoded 500 diamond price |
-
-#### Games
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| GET | `/api/games/lucky-wheel/rewards` | JWT (broken) | `game.controller.getLuckyWheelRewards` | 🔴 Auth middleware crash |
-| POST | `/api/games/lucky-wheel/spin` | JWT (broken) | `game.controller.spinLuckyWheel` | 🔴 Auth middleware crash |
-
-#### Couple Pair (CP)
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| GET | `/api/cp/mine` | JWT (broken) | `cpController.getMyCp` | 🔴 Auth middleware crash |
-| POST | `/api/cp/bind` | JWT (broken) | `cpController.bindCp` | 🔴 Auth middleware crash |
-
-#### Treasury
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| POST | `/api/treasury/generate` | Owner | `treasuryController.generateCoins` | ✅ Works (log-only, no user credit) |
-| GET | `/api/treasury/logs` | Owner | `treasuryController.getLogs` | ✅ Works |
-
-#### Matchmaking
-
-| Method | Endpoint | Auth | Controller | Status |
-|--------|----------|------|-----------|--------|
-| POST | `/api/matchmaking/search` | JWT (broken) | `matchmaking.controller.searchMatch` | 🔴 Broken import path |
-| POST | `/api/matchmaking/stop` | JWT (broken) | `matchmaking.controller.stopSearch` | 🔴 Broken import path |
-
-#### Utility Routes (in `src/app.js`)
-
-| Method | Endpoint | Auth | Status |
-|--------|----------|------|--------|
-| GET | `/` | None | ✅ API welcome message |
-| GET | `/health` | None | ✅ Health check |
-
-#### ⚠️ NOT MOUNTED Routes (exist in files but not wired)
-
-| File | Endpoints | Issue |
-|------|-----------|-------|
-| `chatRoutes.js` | `GET /chat/history/:userId/:targetId` | Not imported in `app.js` + broken model import |
-| `rankingRoutes.js` | `GET /ranking/wealth`, `GET /ranking/charm` | Not imported in `app.js` |
-| `vipRoutes.js` | VIP plan routes | Not imported in `app.js` |
-| `modules/shop/shop.routes.js` | `GET /frames`, `POST /buy-frame` | Not imported in `app.js` |
-
-### 3.2 Complete Socket.io Event List
-
-#### Room Events (`roomSocket.js`)
-
-| Event (Client→Server) | Payload | Response (Server→Client) |
-|----------------------|---------|-------------------------|
-| `join_room` | `{ roomId, userId, userProfile }` | `user_joined` / `user_kicked` / `user_admin_muted` |
-| `leave_room` | `{ roomId, userId, userProfile }` | `user_left` |
-| `toggle_mic` | `{ roomId, userId, isMuted }` | `mic_status_changed` |
-| `kick_user` | `{ roomId, targetUserId, adminId }` | `user_kicked` |
-| `admin_mute_user` | `{ roomId, targetUserId, adminId }` | `user_admin_muted` |
-| `unkick_user` | `{ roomId, targetUserId, adminId }` | `user_unkicked` |
-| `admin_unmute_user` | `{ roomId, targetUserId, adminId }` | `user_admin_unmuted` |
-
-#### Chat Events (`chatSocket.js`)
-
-| Event (Client→Server) | Payload | Response |
-|----------------------|---------|----------|
-| `send_room_message` | `{ roomId, senderId, message }` | `receive_room_message` (broadcast) |
-| `send_reaction` | `{ roomId, ... }` | `receive_reaction` (broadcast) |
-
-#### Seat Events (`seatSocket.js`)
-
-| Event (Client→Server) | Payload | Response |
-|----------------------|---------|----------|
-| `claim_seat` | `{ roomId, userId, userName, userAvatar, seatIndex }` | `seat_updated` / `seat_error` |
-
-#### Gift Socket Events (`giftSocket.js`)
-
-| Event (Client→Server) | Payload | Response |
-|----------------------|---------|----------|
-| `send_gift` | `{ roomId, senderId, receiverId, giftId, quantity }` | `gift_animation` / `gift_error` |
-
-#### PK Battle Socket Events (`pkBattleSocket.js`)
-
-| Event (Client→Server) | Payload | Response |
-|----------------------|---------|----------|
-| `request_pk` | `{ targetRoomId }` | `pk_started` |
-| `pk_send_gift` | `{ battleId, hostNumber, giftValue }` | `pk_update` |
-| (auto) timer expiry | — | `pk_ended` |
-
-#### Controller-Emitted Socket Events
-
-| Source | Event | When |
-|--------|-------|------|
-| `gift.controller.js` | `receive_gift` | After REST API gift send |
-| `pkBattle.controller.js` | `pk_request` | Battle request sent |
-| `pkBattle.controller.js` | `pk_start` | Battle accepted |
-| `pkBattle.controller.js` | `pk_end` | Battle ended |
-| `admin.user.controller.js` | `force_logout` | User banned |
-| `userController.js` | `webhook_payment_success` | Razorpay webhook processed |
-| `gameController.js` | `badge_unlocked` | Weekly champion crowned |
+| Route File | Path | Conflict |
+|-----------|------|---------|
+| `gift.routes.js` | `POST /api/gifts/send` | ⚡ Duplicates wallet.routes.js `POST /api/wallet/send-gift` |
+| `chatRoutes.js` | `GET /api/chat/history/:userId/:targetId` | No auth middleware applied |
+| `appUserRoutes.js` | `POST /api/app-users/join-agency` | No auth middleware (sensitive operation) |
+| `cpRoutes.js` | `POST /api/cp/bind` | Potential duplicate with `src/api/social.routes.js` CP endpoints |
+| `referral.routes.js` | Mounted at `/api/system` | Misleading — should be `/api/referral` |
 
 ---
 
-## 4. 📱 Frontend Readiness Log
+## 3. 🏗️ MISSING ARCHITECTURE LOG
 
-### 4.1 Flutter Mobile App Routes
+### 3.1 Controllers Missing Methods (Referenced in Routes but Unverified)
 
-| Route | Backend Endpoint | Ready? | Notes |
-|-------|-----------------|--------|-------|
-| Phone Login (OTP) | `POST /api/auth/login` | ⚠️ | Auth controller uses in-memory OTP, no real SMS. sendOtp/verifyOtp exist but have no mounted route |
-| Complete Profile | `POST /api/users/complete-profile` | ✅ | Works with JWT auth |
-| User Center | `GET /api/users/center` | ✅ | Returns badges, frames, level info |
-| Equip Frame | `POST /api/users/equip-frame` | ✅ | |
-| Get Live Rooms | `GET /api/rooms/live` | ⚠️ | Room status filter uses `live` but schema uses `active` |
-| Create Room | `POST /api/rooms/create` | ⚠️ | Field name mismatch (`name` vs `title`) |
-| Room Join (Socket) | `join_room` event | ✅ | Works |
-| Room Leave (Socket) | `leave_room` event | ✅ | Works |
-| Mic Toggle (Socket) | `toggle_mic` event | ✅ | Works |
-| Claim Seat (Socket) | `claim_seat` event | ✅ | Works |
-| Room Chat (Socket) | `send_room_message` event | ✅ | Works, saves to DB |
-| Send Reaction (Socket) | `send_reaction` event | ✅ | Works |
-| Get Gift List | `GET /api/gifts/list` | ✅ | |
-| Send Gift (API) | `POST /api/gifts/send` | ✅ | Commission engine works |
-| Send Gift (Socket) | `send_gift` event | ✅ | No commission logic (different from REST) |
-| Get Shop Items | `GET /api/shop/items` | ⚠️ | Hardcoded items |
-| Purchase Item | `POST /api/shop/purchase` | ⚠️ | Hardcoded price, no inventory |
-| Lucky Wheel Rewards | `GET /api/games/lucky-wheel/rewards` | 🔴 | Auth middleware crash |
-| Spin Lucky Wheel | `POST /api/games/lucky-wheel/spin` | 🔴 | Auth middleware crash |
-| Get My CP | `GET /api/cp/mine` | 🔴 | Auth middleware crash |
-| Bind CP | `POST /api/cp/bind` | 🔴 | Auth middleware crash |
-| Get My Family | `GET /api/families/mine` | ✅ | |
-| Create Family | `POST /api/families/create` | ✅ | |
-| Join Family | `POST /api/families/join` | ✅ | |
-| My Agency | `GET /api/agency/mine` | ✅ | |
-| Apply Agency | `POST /api/agency/apply` | ✅ | |
-| Get Wallet | `GET /api/wallet` | 🔴 | Broken import + no auth |
-| Recharge | `POST /api/wallet/recharge` | 🔴 | Broken import + no payment verification |
-| Withdraw | `POST /api/wallet/withdraw` | 🔴 | Broken import |
-| Transactions | `GET /api/wallet/transactions` | 🔴 | Broken import |
-| Withdrawal Info | `GET /api/wallet/withdrawal-info` | 🔴 | Broken import |
-| Coin Seller Transfer | `POST /api/wallet/seller/transfer` | 🔴 | Broken import |
-| PK Request | `POST /api/pk-battles/request` | 🔴 | Auth middleware crash |
-| PK Accept | `POST /api/pk-battles/accept` | 🔴 | Auth middleware crash |
-| PK End | `POST /api/pk-battles/end` | 🔴 | Auth middleware crash |
-| PK Socket Events | `request_pk`, `pk_send_gift` | ✅ | Socket-level PK works |
-| Matchmaking Search | `POST /api/matchmaking/search` | 🔴 | Broken import path |
-| Matchmaking Stop | `POST /api/matchmaking/stop` | 🔴 | Broken import path |
-| Wealth Ranking | (route exists, not mounted) | 🔴 | `rankingRoutes.js` not in `app.js` |
-| Charm Ranking | (route exists, not mounted) | 🔴 | `rankingRoutes.js` not in `app.js` |
-| Chat History | (route exists, not mounted) | 🔴 | `chatRoutes.js` not in `app.js` + broken model import |
-| VIP Plans | (route exists, not mounted) | 🔴 | `vipRoutes.js` not in `app.js` |
-| Mission Progress | (controller exists, no route) | 🔴 | `missionController.js` has logic but no route file |
-| Frame Shop | (module exists, not mounted) | 🔴 | `modules/shop/shop.routes.js` not in `app.js` |
+| Route Reference | Controller | Potential Missing Export |
+|----------------|-----------|------------------------|
+| `adminController.getSettings` | `admin.controller.js` | ❌ **Not found** in the scanned file |
+| `adminController.updateSettings` | `admin.controller.js` | ❌ **Not found** (duplicate of `updateGlobalSettings`?) |
+| `adminController.getUsers` | ✅ Exists | — |
+| `adminController.getUserDetail` | ✅ Exists | — |
+| `adminUserController.verifyUser` | `admin.user.controller.js` | Not scanned — assume exists |
+| Various methods in `adminUserController`, `staffController`, `treasuryController` | Wide surface area | Many not verified |
 
-### 4.2 Flutter Web Panel (Admin/Staff) Routes
+### 3.2 Missing / Incomplete Express Components
 
-| Route | Backend Endpoint | Ready? | Notes |
-|-------|-----------------|--------|-------|
-| Admin Login | (adminAuthController.login exists) | ⚠️ | **No route mounted** — controller exists but no route file |
-| Get All Users | `GET /api/admin/users` | 🔴 | Auth middleware crash |
-| Ban/Unban User | `POST /api/admin/users/ban` | 🔴 | Auth middleware crash |
-| Staff Login | `POST /api/staff/login` | ✅ | |
-| Create Staff | `POST /api/staff/create` | ✅ | |
-| Staff List | `GET /api/staff/list` | ✅ | |
-| Update Staff | `PUT /api/staff/update/:id` | ✅ | |
-| Delete Staff | `DELETE /api/staff/delete/:id` | ✅ | |
-| Generate Treasury Coins | `POST /api/treasury/generate` | ✅ | |
-| Treasury Logs | `GET /api/treasury/logs` | ✅ | |
-| Coin Generate/Deduct | `adminController.generateCoins/deductCoins` | ⚠️ | Controller exists but **no admin routes wire these** |
-| Send UID Reward | `adminController.sendReward` | ⚠️ | Controller exists but **no route** |
-| System Settings | `adminController.getSettings/updateSettings` | ⚠️ | Controller exists but **no route** |
-| Agency Management | `adminController.getAgencies/createAgency` | ⚠️ | Controller exists but **no route** |
-| Withdrawal Management | `adminController.getWithdrawals/processWithdrawal` | ⚠️ | Controller exists but **no route** |
-| Stats Dashboard | `adminController.getStats` | ⚠️ | Controller exists but **no route** |
-| Room Management | `adminController.getAllRooms/closeRoom` | ⚠️ | Controller exists but **no route** |
-| User Block/Unblock | `adminController.toggleBlockUser` | ⚠️ | Controller exists but **no route** |
-| Agency Hosts | `adminController.getAgencyHosts` | ⚠️ | Controller exists but **no route** |
+| Component | Status | Required Fix |
+|-----------|--------|-------------|
+| **Push Notification Service** | ⚠️ Missing | Firebase admin initialized but no `sendPushNotification()` utility exists |
+| **Payment Service Abstraction** | ⚠️ Missing | Razorpay logic is embedded in `walletController` — no reusable service layer |
+| **Socket Rate Limiter** | ❌ Missing | No rate limiting on socket events — DoS vulnerability |
+| **File Upload Middleware** | ⚠️ Partial | `multer` in deps but no upload middleware created |
+| **Admin Guard Consistency** | ❌ Broken | Two competing auth systems: `adminMiddleware.js` (userRole) vs `isAdmin.js` (role) |
 
-### 4.3 Summary Scorecard
+### 3.3 Schemas with Missing Features
 
-| Category | Total | ✅ Ready | ⚠️ Partial | 🔴 Broken/Missing |
-|----------|-------|---------|-----------|-------------------|
-| Mobile App REST Routes | 30 | 12 | 4 | 14 |
-| Mobile App Socket Events | 9 | 8 | 0 | 1 (PK end timer) |
-| Admin/Staff REST Routes | 18 | 7 | 8 | 3 |
-| **Overall** | **57** | **27 (47%)** | **12 (21%)** | **18 (32%)** |
+| Model | Missing Fields / Features |
+|-------|--------------------------|
+| `User.js` | Assumed `followers`, `following`, `cpPartner`, `cpRequests`, `cpLevel` — must verify schema surface matches `social.routes.js` usage |
+| `WalletTransaction.js` | Needs `type` enum: `'recharge'`, `'gift_sent'`, `'withdrawal'`, `'admin'` |
+| `Gift.js` | Needs `animationType`, `iconUrl` fields |
+| `Room.js` | Needs `kickedUsers`, `mutedUsers`, `seats[]` arrays |
+
+### 3.4 Middleware Gaps
+
+| Guard Type | Status | Gap |
+|-----------|--------|-----|
+| **Owner-only** (`verifyOwner`) | ✅ Exists | Only on treasury + staff routes |
+| **Staff-only** (`verifyStaff`) | ✅ Exists | On all admin routes |
+| **Permission-based** (`requirePermission`) | ✅ Exists | Not used in any current route |
+| **Rate Limiting** – Auth | ✅ Exists | 5 req/15min |
+| **Rate Limiting** – OTP | ✅ Exists | 3 req/min |
+| **Rate Limiting** – General API | ✅ Exists | 1000 req/15min |
+| **Rate Limiting** – Socket events | ❌ **MISSING** | No protection |
+| **File Upload** – Multer | ❌ **MISSING** | Package installed, no config |
+| **Request ID / Correlation** | ❌ **MISSING** | No traceability |
+| **CORS custom origin validation** | ✅ Exists | In `cors.js` |
 
 ---
 
-## 5. 🔧 Priority Fix Recommendations
+## 4. 🔌 FRONTEND INTEGRATION MAPPING
 
-### Phase 1 — Startup Blockers (Must Fix Before Server Can Run)
+### 4.1 REST API Endpoints — Complete Checklist
 
-1. **Rename `auth.middleware.js` → `authMiddleware.js`** (or update all 4 imports)
-2. **Fix `adminRoutes.js`** — change `adminMiddleware('APP.ADMIN.WEB')` to use `adminMiddleware.verifyStaff`
-3. **Fix `wallet.routes.js:3`** — change `require('./wallet.controller')` → `require('../controllers/walletController')`
-4. **Fix `matchmakingRoutes.js:4`** — change `require('../../authMiddleware')` → `require('../middlewares/auth.middleware')`
-5. **Fix `chatController.js:1`** — change `require('../models/Message')` → `require('../models/RoomMessage')`
-6. **Add `node-cron`** to `package.json` dependencies
-7. **Add `stripe`** to `package.json` dependencies (or remove stripe code)
+#### 🔐 Authentication (`/api/auth`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| POST | `/api/auth/send-otp` | ❌ | App (Login) |
+| POST | `/api/auth/otp-verify` | ❌ | App (Login) |
+| POST | `/api/auth/resend-otp` | ❌ | App (Login) |
+| POST | `/api/auth/register` | ❌ | App (Signup) |
+| POST | `/api/auth/refresh-token` | ❌ | App/Web |
+| POST | `/api/auth/logout` | ✅ JWT | App/Web |
+| GET | `/api/auth/me` | ✅ JWT | App/Web |
 
-### Phase 2 — Schema Alignment
+#### 👤 Users (`/api/users`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| POST | `/api/users/complete-profile` | ✅ JWT | App |
+| GET | `/api/users/center` | ✅ JWT | App |
+| POST | `/api/users/equip-frame` | ✅ JWT | App |
 
-8. **Update `User.js` schema** to include: `coins`, `diamonds`, `arvindId`, `isProfileComplete`, `equippedFrame`, `unlockedFrames`, `ownedFrames`, `familyId`, `familyRole`, `agencyId`, `badges[]`
-9. **Update `Room.js` schema** to include: `kickedUsers[]`, `mutedUsers[]`; fix status enum to include `'live'`; or fix controller queries to match existing schema
-10. **Unify JWT secret** — use single `JWT_SECRET` env variable everywhere
+#### 🎙️ Rooms (`/api/rooms`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/rooms/live` | ❌ | App/Web |
+| POST | `/api/rooms/create` | ✅ JWT | App |
 
-### Phase 3 — Route Completion
+#### 🎁 Gifts (`/api/gifts`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/gifts/list` | ✅ JWT | App/Web |
+| POST | `/api/gifts/send` | ✅ JWT | App |
 
-11. **Mount missing routes** in `app.js`: `chatRoutes`, `rankingRoutes`, `vipRoutes`, `shop/module routes`
-12. **Create admin routes** for all `adminController.js` functions (coin control, rewards, settings, agencies, withdrawals, stats)
-13. **Create admin auth route** for `adminAuthController.login`
-14. **Create mission route** for `missionController.js`
-15. **Add auth middleware** to all wallet routes
-16. **Add sendOtp/verifyOtp routes** to auth routes (controllers exist but have no mounted route)
+#### 💰 Wallet (`/api/wallet`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/wallet` | ✅ JWT | App/Web |
+| GET | `/api/wallet/transactions` | ✅ JWT | App/Web |
+| POST | `/api/wallet/razorpay/order` | ✅ JWT | App/Web |
+| POST | `/api/wallet/razorpay/verify` | ✅ JWT | App/Web |
+| POST | `/api/wallet/razorpay/webhook` | ❌ Public | External (Razorpay) |
+| POST | `/api/wallet/send-gift` | ✅ JWT | App |
+| POST | `/api/wallet/withdraw` | ✅ JWT | App/Web |
+| GET | `/api/wallet/withdrawals` | ✅ JWT | App/Web |
 
-### Phase 4 — Code Quality
+#### 🎮 Games (`/api/games`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/games/lucky-wheel/rewards` | ✅ JWT | App |
+| POST | `/api/games/lucky-wheel/spin` | ✅ JWT | App |
+| POST | `/api/games/scratch-card/play` | ✅ JWT | App |
+| GET | `/api/games/leaderboard` | ✅ JWT | App |
 
-17. **Remove duplicate controllers** — merge `game.controller.js` + `gameController.js`, `adminController.js` + `admin.user.controller.js`
-18. **Integrate otp.service.js** into auth.controller.js (currently two separate OTP systems)
-19. **Clean up `src/api/` legacy directory** or document its purpose
-20. **Apply validation middleware** to route handlers
-21. **Replace hardcoded shop items** with database-driven catalog
-22. **Add payment verification** to wallet recharge endpoint
+#### 💑 CP System (`/api/cp`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/cp/mine` | ✅ JWT | App |
+| POST | `/api/cp/bind` | ✅ JWT | App |
+
+#### 🏆 Rankings (`/api/rankings`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/rankings/wealth` | ✅ JWT | App/Web |
+| GET | `/api/rankings/charm` | ✅ JWT | App/Web |
+
+#### 📦 Shop (`/api/shop`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/shop/items` | ✅ JWT | App |
+| POST | `/api/shop/purchase` | ✅ JWT | App |
+
+#### 👑 VIP (`/api/vip`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/vip/plans` | ✅ JWT | App/Web |
+| POST | `/api/vip/buy` | ✅ JWT | App |
+
+#### 🏠 Family (`/api/families`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/families/mine` | ✅ JWT | App |
+| POST | `/api/families/create` | ✅ JWT | App |
+| POST | `/api/families/join` | ✅ JWT | App |
+
+#### 🏢 Agency (`/api/agency`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/agency` | ✅ JWT | App/Web |
+| POST | `/api/agency/create` | ✅ JWT | App |
+| GET | `/api/agency/hosts` | ✅ JWT | App/Web |
+| GET | `/api/agency/earnings` | ✅ JWT | App/Web |
+| POST | `/api/agency/apply` | ✅ JWT | App |
+
+#### 💬 Chat (`/api/chat`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/chat/history/:userId/:targetId` | ❌ **MISSING AUTH** | App |
+
+#### ⚡ PK Battle (`/api/pk-battles`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| POST | `/api/pk-battles/request` | ✅ JWT | App |
+| POST | `/api/pk-battles/accept` | ✅ JWT | App |
+| POST | `/api/pk-battles/end` | ✅ JWT | Admin |
+
+#### 📱 Moments (`/api/moments`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/moments` | ✅ JWT | App |
+| POST | `/api/moments/create` | ✅ JWT | App |
+| GET | `/api/moments/:momentId` | ✅ JWT | App |
+| POST | `/api/moments/:momentId/like` | ✅ JWT | App |
+| POST | `/api/moments/:momentId/unlike` | ✅ JWT | App |
+| POST | `/api/moments/:momentId/comment` | ✅ JWT | App |
+| DELETE | `/api/moments/:momentId/comment/:commentId` | ✅ JWT | App |
+| DELETE | `/api/moments/:momentId` | ✅ JWT | App |
+| GET | `/api/moments/search` | ✅ JWT | App (⚠️ Dead route — see B6) |
+
+#### 🔔 Notifications (`/api/notifications`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/notifications` | ✅ JWT | App |
+| PUT | `/api/notifications/:notificationId/read` | ✅ JWT | App |
+| PUT | `/api/notifications/mark-all-read` | ✅ JWT | App |
+| DELETE | `/api/notifications/:notificationId` | ✅ JWT | App |
+
+#### 🎪 Events (`/api/events`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/events/list` | ✅ JWT | App |
+| GET | `/api/events/:eventId` | ✅ JWT | App |
+| POST | `/api/events/:eventId/join` | ✅ JWT | App |
+| POST | `/api/events/:eventId/leave` | ✅ JWT | App |
+
+#### 📊 Level / XP (`/api/level`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/level/:id/level` | ✅ JWT | App |
+| POST | `/api/level/xp/add` | ✅ JWT | App |
+
+#### 🎒 Inventory (`/api/inventory`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/inventory` | ✅ JWT | App |
+| POST | `/api/inventory/use/:itemId` | ✅ JWT | App |
+| DELETE | `/api/inventory/:itemId` | ✅ JWT | App |
+
+#### 🎨 Creator (`/api/creator`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/creator/earnings` | ✅ JWT | App |
+| GET | `/api/creator/analytics` | ✅ JWT | App |
+| POST | `/api/creator/withdraw` | ✅ JWT | App |
+
+#### 🆘 Support (`/api/support`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/support/faq` | ❌ | App/Web |
+| GET | `/api/support/tickets` | ✅ JWT | App/Web |
+| POST | `/api/support/ticket/create` | ✅ JWT | App/Web |
+| POST | `/api/support/message` | ✅ JWT | App/Web |
+
+#### 🛡️ Moderation (`/api/moderation`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/moderation/reports` | ✅ JWT | App/Web |
+| POST | `/api/moderation/report` | ✅ JWT | App/Web |
+| POST | `/api/moderation/block` | ✅ JWT | App/Web |
+
+#### 🔗 Referral (`/api/system/referral`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| GET | `/api/system/referral` | ✅ JWT | App |
+| POST | `/api/system/referral/claim` | ✅ JWT | App |
+
+#### 📋 App Users (`/api/app-users`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| POST | `/api/app-users/join-agency` | ❌ **MISSING AUTH** | App |
+| POST | `/api/app-users/withdraw` | ❌ **MISSING AUTH** | App |
+
+#### 🛠️ Admin Panel (`/api/admin`) — 30+ Endpoints
+All admin routes protected by `authMiddleware` + `verifyStaff`. Key admin panels:
+| Method | Path | Admin Function |
+|--------|------|----------------|
+| GET | `/api/admin/stats` | Dashboard overview |
+| GET | `/api/admin/users` | User list (paginated) |
+| GET/PUT | `/api/admin/users/:id` | User detail / edit |
+| POST | `/api/admin/users/block/:userId` | Ban user |
+| POST | `/api/admin/wallets/adjust/:userId` | Adjust coins |
+| GET | `/api/admin/withdrawals/pending` | Withdrawal queue |
+| POST | `/api/admin/withdrawals/approve/:id` | Approve withdrawal |
+| GET | `/api/admin/announcements` | Announcement list |
+| POST | `/api/admin/announcement` | Send announcement |
+| GET/POST/PUT/DELETE | `/api/admin/staff/*` | Staff CRUD |
+| POST | `/api/admin/coins/generate` | Coin generation (Owner only) |
+| POST | `/api/admin/coins/deduct` | Coin deduction (Owner only) |
+| GET | `/api/admin/vip/plans` | VIP plan list |
+| GET/POST/PUT/DELETE | `/api/admin/events/*` | Event management |
+| GET/POST | `/api/admin/reports/*` | Report management |
+| GET | `/api/admin/audit-logs` | Audit trail |
+| GET/POST | `/api/admin/gifts/*` | Gift CRUD |
+| POST | `/api/admin/notifications/send` | Push broadcast |
+
+#### 📦 Treasury (`/api/treasury`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| POST | `/api/treasury/generate` | ✅ verifyOwner | Admin/Owner |
+| GET | `/api/treasury/logs` | ✅ verifyOwner | Admin/Owner |
+
+#### 🔍 Matchmaking (`/api/matchmaking`)
+| Method | Path | Auth | Panel |
+|--------|------|------|-------|
+| POST | `/api/matchmaking/search` | ✅ JWT | App |
+| POST | `/api/matchmaking/stop` | ✅ JWT | App |
 
 ---
 
-*End of Report*
+### 4.2 Socket.io Events — Complete Map
+
+#### 📡 Client → Server (Incoming Events)
+| Event | Payload | Handler File | Auth |
+|-------|---------|-------------|------|
+| `join_room` | `{ roomId, userId, userProfile }` | `roomSocket.js` | ✅ (Global socket auth) |
+| `leave_room` | `{ roomId, userId, userProfile }` | `roomSocket.js` | ✅ |
+| `toggle_mic` | `{ roomId, userId, isMuted }` | `roomSocket.js` | ✅ |
+| `kick_user` | `{ roomId, targetUserId, adminId }` | `roomSocket.js` | ✅ |
+| `admin_mute_user` | `{ roomId, targetUserId, adminId }` | `roomSocket.js` | ✅ |
+| `unkick_user` | `{ roomId, targetUserId, adminId }` | `roomSocket.js` | ✅ |
+| `admin_unmute_user` | `{ roomId, targetUserId, adminId }` | `roomSocket.js` | ✅ |
+| `send_room_message` | `{ roomId, senderId, message }` | `chatSocket.js` | ⚠️ Double auth |
+| `send_reaction` | `{ roomId, emoji }` | `chatSocket.js` | ⚠️ Double auth |
+| `claim_seat` | `{ roomId, userId, userName, userAvatar, seatIndex }` | `seatSocket.js` | ✅ |
+| `send_gift` | `{ roomId, senderId, receiverId, giftId, quantity }` | `giftSocket.js` | ❌ **No auth** |
+| `request_pk` | `{ targetRoomId }` | `pkBattleSocket.js` | ✅ |
+| `pk_send_gift` | `{ battleId, hostNumber, giftValue }` | `pkBattleSocket.js` | ✅ |
+
+#### 📡 Server → Client (Outgoing Events)
+| Event | Payload | Purpose |
+|-------|---------|---------|
+| `user_joined` | `{ userId, userProfile, message }` | Notify room of new member |
+| `user_left` | `{ userId, userProfile, message }` | Notify room of departure |
+| `mic_status_changed` | `{ userId, isMuted }` | Mic toggle broadcast |
+| `user_kicked` | `{ targetUserId }` | User was kicked from room |
+| `user_admin_muted` | `{ targetUserId }` | User muted by admin |
+| `user_unkicked` | `{ targetUserId }` | Kick was reversed |
+| `user_admin_unmuted` | `{ targetUserId }` | Mute was reversed |
+| `receive_room_message` | `{ roomId, senderId, message, messageId }` | New chat message |
+| `receive_reaction` | `{ roomId, emoji }` | Emoji reaction |
+| `seat_updated` | `{ seatIndex, userId, userName, userAvatar, isMuted, isLocked }` | Seat claimed |
+| `seat_error` | `{ message }` | Seat claim error |
+| `gift_animation` | `{ giftId, giftImageUrl, senderName, quantity }` | Gift animation trigger |
+| `gift_error` | `{ message }` | Gift send error |
+| `receive_gift` | `{ roomId, senderName, receiverName, giftName, iconUrl, animationType }` | Gift notification from REST |
+| `pk_started` | Full battle object | PK battle started |
+| `pk_update` | `{ remainingSeconds, host1Score, host2Score }` | PK score/timer update |
+| `pk_ended` | `{ winnerName }` | PK battle ended |
+| `force_logout` | `{ message }` | Admin force logout on ban |
+
+---
+
+## 5. 📋 SUMMARY & RECOMMENDATIONS
+
+### Critical Issues (Fix Immediately)
+1. **`chalk` missing from package.json** — `logger.middleware.js` will crash on require
+2. **Missing `GlobalSetting` require** in `admin.controller.js` — breaks settings endpoints
+3. **No `.env` file** — server will crash on startup due to missing env vars
+4. **Duplicate auth on socket** — `chatSocket.js` `io.use()` conflicts with `socket.js` auth
+5. **Dead route** — Moment search endpoint will never match due to Express param precedence
+
+### Medium Priority
+1. **Orphan `src/api/` directory** — either integrate or delete to avoid confusion
+2. **Two gift-send endpoints** — consolidate `wallet.routes.js` and `gift.routes.js` logic
+3. **Admin role check inconsistency** — `isAdmin.js` vs `adminMiddleware.js` role field mismatch
+4. **Missing socket auth** on `giftSocket.js` — security vulnerability
+5. **Missing auth middleware** on `chatRoutes.js` and `appUserRoutes.js`
+
+### Architecture Gaps
+1. **No notification sending service** — Firebase initialized but unused
+2. **No payment service abstraction** — Razorpay logic embedded in controller
+3. **No socket rate limiting** — DoS protection missing
+4. **No file upload middleware** — multer package unused
+5. **Empty `src/modules/` directory** — planned module structure never implemented
+
+---
+
+*End of Analysis Report — 0 files modified, 69 files inspected.*

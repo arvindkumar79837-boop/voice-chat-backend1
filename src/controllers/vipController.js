@@ -12,6 +12,43 @@ exports.getVipPlans = async (req, res) => {
   }
 };
 
+exports.createVipPlan = async (req, res) => {
+  try {
+    const { name, level, price, durationDays, benefits } = req.body;
+    if (!name || !level || !price || !durationDays) {
+      return res.status(400).json({ success: false, message: 'Name, level, price, and durationDays are required' });
+    }
+
+    const existingPlan = await VipPlan.findOne({ level });
+    if (existingPlan) {
+      return res.status(400).json({ success: false, message: `VIP Plan with level ${level} already exists` });
+    }
+
+    const plan = await VipPlan.create({ name, level, price, durationDays, benefits });
+    res.status(201).json({ success: true, message: 'VIP plan created successfully', plan });
+  } catch (error) {
+    console.error('Create VIP Plan Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to create VIP plan' });
+  }
+};
+
+exports.updateVipPlan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const plan = await VipPlan.findByIdAndUpdate(id, { $set: updates }, { new: true });
+    if (!plan) {
+      return res.status(404).json({ success: false, message: 'VIP Plan not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'VIP plan updated successfully', plan });
+  } catch (error) {
+    console.error('Update VIP Plan Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update VIP plan' });
+  }
+};
+
 exports.buyVip = async (req, res) => {
   try {
     const { planId } = req.body;

@@ -1,45 +1,87 @@
 const Room = require('../models/Room');
 
+const getOwnerId = (req) => {
+  return req.user?.id || req.user?.userId || req.user?._id || null;
+};
+
+const generateRoomId = () => {
+  return `room_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+};
+
 exports.getLiveRooms = async (req, res) => {
   try {
-    // Fetch live rooms and populate owner's details
-    const rooms = await Room.find({ status: 'live' })
-      .populate('ownerId', 'name avatar arvindId')
+    const rooms = await Room.find({
+      status: { $in: ['active', 'live'] }
+    })
+      .populate('ownerId', 'uid name username avatar arvindId')
       .sort({ activeUsers: -1, createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
+      success: true,
       message: 'Live rooms fetched successfully',
       rooms
     });
   } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch live rooms.',
+      error: error.message
+    });
   }
 };
 
 exports.createRoom = async (req, res) => {
   try {
-    const { name, coverImage, tags, maxUsers } = req.body;
-    const ownerId = req.user.userId; // Provided by authMiddleware
+    const ownerId = getOwnerId(req);
+    const {
+      title,
+      description = '',
+      coverImage = '',
+      tags = [],
+      language = 'English',
+      roomType = 'public',
+      password = ''
+    } = req.body;
 
-    if (!name) {
-      return res.status(400).json({ error: 'Room name is required' });
+    if (!ownerId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required to create a room.'
+      });
     }
 
-    const newRoom = new Room({
-      name,
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Room title is required.'
+      });
+    }
+
+    const room = await Room.create({
+      roomId: generateRoomId(),
       ownerId,
-      coverImage: coverImage || '',
-      tags: tags || [],
-      maxUsers: maxUsers || 50,
-      status: 'live',
-      activeUsers: 1 // The owner is automatically in the room
+      title: String(title).trim(),
+      description,
+      coverImage,
+      tags: Array.isArray(tags) ? tags : [],
+      language,
+      roomType,
+      password,
+      status: 'active',
+      activeUsers: 1
     });
 
-    await newRoom.save();
-
-    res.status(201).json({ message: 'Room created successfully', room: newRoom });
+    return res.status(201).json({
+      success: true,
+      message: 'Room created successfully',
+      room
+    });
   } catch (error) {
     console.error('Create Room Error:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create room.',
+      error: error.message
+    });
   }
 };

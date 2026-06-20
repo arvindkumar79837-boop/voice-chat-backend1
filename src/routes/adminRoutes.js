@@ -15,7 +15,8 @@ const familyController = require('../controllers/familyController');
 const supportController = require('../controllers/supportController');
 const authMiddleware = require('../middlewares/auth.middleware');
 const { verifyStaff } = require('../middlewares/adminMiddleware');
-const { verifyAdmin: isAdmin } = require('../middlewares/isAdmin');
+const verifyAdmin = require('../middlewares/isAdmin');
+const isAdmin = verifyAdmin;
 
 // Protect all admin routes
 router.use(authMiddleware);

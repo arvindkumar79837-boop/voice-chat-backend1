@@ -157,3 +157,90 @@ exports.deleteStaff = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
+
+exports.searchUser = async (req, res) => {
+  try {
+    const { query } = req.body;
+    if (!query) {
+      return res.status(400).json({ success: false, message: 'Search query is required' });
+    }
+
+    const users = await require('../models/User').find({
+      $or: [
+        { uid: { $regex: query, $options: 'i' } },
+        { name: { $regex: query, $options: 'i' } },
+        { phone: { $regex: query, $options: 'i' } }
+      ]
+    }).limit(20);
+
+    return res.status(200).json({ success: true, data: users });
+  } catch (error) {
+    console.error('Search User Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+exports.getAdminRoles = async (req, res) => {
+  try {
+    const roles = await Staff.find({}, { password: 0 }).select('role permissions isActive');
+    return res.status(200).json({ success: true, data: roles });
+  } catch (error) {
+    console.error('Get Admin Roles Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+exports.createAdminRole = async (req, res) => {
+  try {
+    const { role, permissions } = req.body;
+    if (!role) {
+      return res.status(400).json({ success: false, message: 'Role is required' });
+    }
+
+    const existing = await Staff.findOne({ role });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Role already exists' });
+    }
+
+    const item = await Staff.create({
+      uid: `role_${Date.now()}`,
+      loginId: `role_${Date.now()}`,
+      password: 'temp-role-password',
+      role,
+      permissions: permissions || [],
+      isActive: true
+    });
+
+    return res.status(201).json({ success: true, data: item });
+  } catch (error) {
+    console.error('Create Admin Role Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+exports.updateAdminRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role, permissions } = req.body;
+    const item = await Staff.findByIdAndUpdate(id, { role, permissions }, { new: true });
+    if (!item) {
+      return res.status(404).json({ success: false, message: 'Role not found' });
+    }
+
+    return res.status(200).json({ success: true, data: item });
+  } catch (error) {
+    console.error('Update Admin Role Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+exports.getAuditLogs = async (req, res) => {
+  try {
+    const AuditLog = require('../models/AuditLog');
+    const logs = await AuditLog.find().sort({ createdAt: -1 }).limit(100);
+    return res.status(200).json({ success: true, data: logs });
+  } catch (error) {
+    console.error('Get Audit Logs Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};

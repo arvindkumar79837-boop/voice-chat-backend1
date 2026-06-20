@@ -7,7 +7,13 @@ module.exports = (io) => {
     // User sends a gift in a live room
     socket.on('send_gift', async (data) => {
       try {
-        const { roomId, senderId, receiverId, giftId, quantity = 1 } = data;
+        // Use authenticated user from socket middleware - never trust client senderId
+        const senderId = socket.userId;
+        if (!senderId) {
+          return socket.emit('gift_error', { message: 'Authentication required to send gifts' });
+        }
+        
+        const { roomId, receiverId, giftId, quantity = 1 } = data;
         
         // Fetch gift details
         const gift = await Gift.findById(giftId);

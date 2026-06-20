@@ -50,3 +50,28 @@ exports.sendMessage = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+exports.replyToTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message, status } = req.body;
+
+    const ticket = await SupportTicket.findById(id);
+    if (!ticket) {
+      return res.status(404).json({ success: false, message: 'Ticket not found' });
+    }
+
+    if (message) {
+      ticket.messages.push({ text: message, createdAt: new Date() });
+    }
+    if (status) {
+      ticket.status = status;
+    }
+
+    await ticket.save();
+    return res.status(200).json({ success: true, data: ticket });
+  } catch (error) {
+    console.error('Reply To Ticket Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to reply to ticket' });
+  }
+};

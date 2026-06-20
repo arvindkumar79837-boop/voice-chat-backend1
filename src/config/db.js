@@ -64,4 +64,4 @@ const reconnectWithBackoff = async (retries = 5, delay = 1000) => {
   return false;
 };
 
-module.exports = { connectDB, reconnectWithBackoff };
+module.exports = connectDB;

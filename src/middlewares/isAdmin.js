@@ -1,6 +1,13 @@
+// Compatible with both:
+//   - adminMiddleware.js (sets req.isAdmin, req.userRole = 'OWNER.WEB')
+//   - Standalone JWT auth (sets req.user.role = 'admin')
 module.exports = (req, res, next) => {
-  // The `auth` middleware should run before this and attach the decoded token to req.user.
-  // We check if the user exists and if their role is strictly 'admin'.
+  if (req.isAdmin) {
+    return next();
+  }
+  if (req.userRole && (req.userRole === 'OWNER.WEB' || req.userRole.includes('ADMIN'))) {
+    return next();
+  }
   if (req.user && req.user.role === 'admin') {
     return next();
   }

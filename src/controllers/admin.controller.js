@@ -4,7 +4,7 @@ const Withdrawal = require('../models/Withdrawal');
 const Room = require('../models/Room');
 const Moment = require('../models/Moment');
 const Event = require('../models/Event');
-
+const GlobalSetting = require('../models/GlobalSetting');
 // ============================================================================
 // DASHBOARD STATS
 // ============================================================================
@@ -273,6 +273,143 @@ exports.adjustWallet = async (req, res) => {
     });
   } catch (error) {
     console.error('adjustWallet Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+exports.getLiveRooms = async (req, res) => {
+  try {
+    const rooms = await Room.find({ status: { $in: ['active', 'live'] } })
+      .populate('ownerId', 'uid name username avatar')
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    return res.status(200).json({
+      success: true,
+      data: rooms
+    });
+  } catch (error) {
+    console.error('getLiveRooms Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+exports.getBans = async (req, res) => {
+  try {
+    const users = await User.find({ isBanned: true })
+      .select('uid name username avatar email phone banReason bannedAt')
+      .sort({ bannedAt: -1 });
+
+    return res.status(200).json({ success: true, data: users });
+  } catch (error) {
+    console.error('getBans Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+exports.createBan = async (req, res) => {
+  try {
+    const { userId, reason } = req.body;
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'User ID is required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.isBanned = true;
+    user.banReason = reason || 'Banned by admin';
+    user.bannedAt = new Date();
+    await user.save();
+
+    return res.status(200).json({ success: true, message: 'User banned successfully', data: user });
+  } catch (error) {
+    console.error('createBan Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+exports.liftBan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.isBanned = false;
+    user.banReason = '';
+    await user.save();
+
+    return res.status(200).json({ success: true, message: 'Ban lifted successfully', data: user });
+  } catch (error) {
+    console.error('liftBan Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+// Alias for GET /api/admin/settings (delegates to getGlobalSettings for clarity)
+exports.getSettings = async (req, res) => {
+  return exports.getGlobalSettings(req, res);
+};
+
+// Alias for PUT /api/admin/settings (delegates to updateGlobalSettings for clarity)
+exports.updateSettings = async (req, res) => {
+  return exports.updateGlobalSettings(req, res);
+};
+
+exports.getGlobalSettings = async (req, res) => {
+  try {
+    const settings = await GlobalSetting.findOne();
+    return res.status(200).json({ success: true, data: settings || {} });
+  } catch (error) {
+    console.error('getGlobalSettings Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+exports.updateGlobalSettings = async (req, res) => {
+  try {
+    let settings = await GlobalSetting.findOne();
+    if (!settings) {
+      settings = new GlobalSetting();
+    }
+
+    Object.keys(req.body).forEach((key) => {
+      if (key in settings.schema.paths || settings[key] !== undefined) {
+        settings[key] = req.body[key];
+      }
+    });
+
+    await settings.save();
+    return res.status(200).json({ success: true, message: 'Global settings updated', data: settings });
+  } catch (error) {
+    console.error('updateGlobalSettings Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+exports.adminSearch = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) {
+      return res.status(400).json({ success: false, message: 'Search query is required' });
+    }
+
+    const users = await User.find({
+      $or: [
+        { uid: { $regex: q, $options: 'i' } },
+        { name: { $regex: q, $options: 'i' } },
+        { username: { $regex: q, $options: 'i' } },
+        { phone: { $regex: q, $options: 'i' } }
+      ]
+    }).limit(20);
+
+    return res.status(200).json({ success: true, data: { users } });
+  } catch (error) {
+    console.error('adminSearch Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

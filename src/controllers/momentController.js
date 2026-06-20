@@ -360,3 +360,35 @@ exports.searchMoments = async (req, res) => {
     });
   }
 };
+
+exports.getAllMoments = async (req, res) => {
+  try {
+    const moments = await Moment.find({ isDeleted: false })
+      .populate('userId', 'uid name avatar')
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    return res.status(200).json({ success: true, data: moments });
+  } catch (error) {
+    console.error('Get All Moments Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch moments' });
+  }
+};
+
+exports.adminDeleteMoment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const moment = await Moment.findById(id);
+    if (!moment) {
+      return res.status(404).json({ success: false, message: 'Moment not found' });
+    }
+
+    moment.isDeleted = true;
+    await moment.save();
+
+    return res.status(200).json({ success: true, message: 'Moment deleted by admin' });
+  } catch (error) {
+    console.error('Admin Delete Moment Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to delete moment' });
+  }
+};

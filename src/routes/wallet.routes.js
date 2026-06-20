@@ -62,18 +62,6 @@ router.post('/razorpay/verify', walletController.verifyPayment);
 router.post('/razorpay/webhook', walletController.handlePaymentWebhook);
 
 // ─────────────────────────────────────────────────────────────────────────
-// GIFT ROUTES
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * @route POST /api/wallet/send-gift
- * @desc Send gift to another user
- * @access Private
- * @body { recipientId, giftId, quantity }
- */
-router.post('/send-gift', walletController.sendGift);
-
-// ─────────────────────────────────────────────────────────────────────────
 // WITHDRAWAL ROUTES
 // ─────────────────────────────────────────────────────────────────────────
 

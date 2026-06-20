@@ -113,11 +113,12 @@ app.use('/api/chat', chatRoutes);               // Chat Message History
 app.use('/api/app-users', appUserRoutes);       // App User Actions (Agency, Withdrawal)
 
 // ─── NEW ROUTES ────────────────────────────────────────────────────────────
+app.use('/api/level', levelRoutes);             // User Levels & XP
 app.use('/api/inventory', inventoryRoutes);     // User Inventory
 app.use('/api/creator', creatorRoutes);         // Creator Economy
 app.use('/api/support', supportRoutes);         // Support & Tickets
 app.use('/api/moderation', moderationRoutes);   // Reports & Moderation
-app.use('/api/system', referralRoutes);         // Referral System
+app.use('/api/referral', referralRoutes);       // Referral System
 app.use('/api/moments', momentRoutes);          // Moments / Posts Feed
 app.use('/api/notifications', notificationRoutes); // Notifications
 app.use('/api/events', eventRoutes);            // Events

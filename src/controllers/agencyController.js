@@ -143,6 +143,58 @@ exports.getEarnings = async (req, res) => {
 // APPLY / JOIN AGENCY
 // POST /api/agency/apply
 // ─────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────
+// ADMIN: LIST ALL AGENCIES
+// GET /api/admin/agencies
+// ─────────────────────────────────────────────────────────────────────────
+exports.getAgencies = async (req, res) => {
+  try {
+    const agencies = await Agency.find()
+      .sort({ createdAt: -1 })
+      .lean();
+    return res.status(200).json({ success: true, data: agencies });
+  } catch (error) {
+    console.error('Get Agencies Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch agencies' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// ADMIN: APPROVE AGENCY
+// POST /api/admin/agencies/approve/:id
+// ─────────────────────────────────────────────────────────────────────────
+exports.approveAgency = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const agency = await Agency.findByIdAndUpdate(id, { isApproved: true, status: 'active' }, { new: true });
+    if (!agency) {
+      return res.status(404).json({ success: false, message: 'Agency not found' });
+    }
+    return res.status(200).json({ success: true, message: 'Agency approved successfully', agency });
+  } catch (error) {
+    console.error('Approve Agency Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to approve agency' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// ADMIN: REVOKE AGENCY
+// POST /api/admin/agencies/revoke/:id
+// ─────────────────────────────────────────────────────────────────────────
+exports.revokeAgency = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const agency = await Agency.findByIdAndUpdate(id, { isApproved: false, status: 'revoked' }, { new: true });
+    if (!agency) {
+      return res.status(404).json({ success: false, message: 'Agency not found' });
+    }
+    return res.status(200).json({ success: true, message: 'Agency revoked successfully', agency });
+  } catch (error) {
+    console.error('Revoke Agency Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to revoke agency' });
+  }
+};
+
 exports.applyForAgency = async (req, res) => {
   try {
     const { agencyId } = req.body;
