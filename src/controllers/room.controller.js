@@ -1,4 +1,5 @@
 const Room = require('../models/Room');
+const redisRankingIntegration = require('../services/redisRankingIntegration');
 
 const getOwnerId = (req) => {
   return req.user?.id || req.user?.userId || req.user?._id || null;
@@ -70,6 +71,9 @@ exports.createRoom = async (req, res) => {
       status: 'active',
       activeUsers: 1
     });
+
+    // Initialize room in Redis rankings
+    redisRankingIntegration.onRoomActivity(room._id, 1, ownerId).catch(err => console.error('Redis room init failed:', err.message));
 
     return res.status(201).json({
       success: true,

@@ -1,5 +1,9 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const Family = require('../models/Family');
+const VipSystem = require('../models/VipSystem');
+const CosmeticItem = require('../models/CosmeticItem');
 
 let io;
 
@@ -43,11 +47,108 @@ const initializeSocket = (server) => {
     });
 
     // ─── CONNECTION LOGGING ───────────────────────────────────────────────
-    io.on('connection', (socket) => {
-        console.log(`✅ Socket connected: ${socket.userId} (${socket.id})`);
+    io.on('connection', async (socket) => {
+        const userId = socket.userId;
+        console.log(`✅ Socket connected: ${userId} (${socket.id})`);
+
+        try {
+            const user = await User.findById(userId).select('familyId');
+            socket.familyId = user?.familyId || null;
+            socket.username = user?.username || 'Unknown';
+            socket.avatar = user?.avatar || '';
+        } catch (error) {
+            console.error('Error fetching user data for socket:', error);
+        }
+
+        // Initialize family socket handlers
+        if (socket.familyId) {
+            const { setupFamilySocketHandlers } = require('./sockets/familySocket');
+            setupFamilySocketHandlers(io, socket);
+        }
 
         socket.on('disconnect', () => {
-            console.log(`❌ Socket disconnected: ${socket.userId} (${socket.id})`);
+            console.log(`❌ Socket disconnected: ${userId} (${socket.id})`);
+        });
+    });
+
+    // ─── VIP ENTRY EFFECT HANDLER ───────────────────────────────────────
+    io.on('connection', (socket) => {
+        // Handle user joining a room with VIP entry effect
+        socket.on('join_room', async (data) => {
+            const { roomId } = data;
+            if (!roomId) return;
+
+            socket.join(roomId);
+            console.log(`User ${socket.userId} joined room ${roomId}`);
+
+            // Check if user has VIP entry effect
+            try {
+                const vipData = await VipSystem.findOne({ user_uid: socket.userId.toString() });
+                if (!vipData || (vipData.vip_level < 5 && !vipData.is_svip)) {
+                    return; // No entry effect for normal users
+                }
+
+                const user = vipData; // In production, fetch full user data
+                const entryEffect = vipData.active_cosmetics.entrance_car_id ?
+                    await CosmeticItem.findOne({ item_id: vipData.active_cosmetics.entrance_car_id }).lean() :
+                    null;
+
+                // Emit vip_entry event to all users in the room (including the entering user)
+                io.to(roomId).emit('vip_entry', {
+                    user_uid: socket.userId.toString(),
+                    vip_level: vipData.vip_level,
+                    is_svip: vipData.is_svip,
+                    svip_level: vipData.svip_level,
+                    entrance_effect: entryEffect ? {
+                        car_id: entryEffect.item_id,
+                        car_name: entryEffect.item_name,
+                        animation_url: entryEffect.animation_url || '',
+                        animation_duration_ms: entryEffect.animation_duration_ms || 3000,
+                        is_animated: entryEffect.is_animated || false
+                    } : null,
+                    frame_id: vipData.active_cosmetics.frame_id,
+                    name_color: vipData.active_cosmetics.name_color,
+                    badge_id: vipData.active_cosmetics.badge_id
+                });
+
+                // Global SVIP notification
+                if (vipData.is_svip && vipData.vip_global_alerts_enabled) {
+                    io.emit('vip_global_alert', {
+                        type: 'svip_entry',
+                        user_uid: socket.userId.toString(),
+                        svip_level: vipData.svip_level,
+                        room_id: roomId,
+                        message: `👑 The King has entered Room ${roomId}!`,
+                        timestamp: new Date()
+                    });
+                }
+            } catch (error) {
+                console.error('VIP entry effect error:', error);
+            }
+        });
+
+        socket.on('leave_room', (data) => {
+            const { roomId } = data;
+            if (!roomId) return;
+            socket.leave(roomId);
+            console.log(`User ${socket.userId} left room ${roomId}`);
+        });
+
+        // Handle real-time mission progress updates
+        socket.on('mission_progress', async (data) => {
+            const { mission_id, progress_amount } = data;
+            // This is handled by the REST API, but we can emit notifications here if needed
+            console.log(`Mission progress update: ${mission_id} +${progress_amount}`);
+        });
+
+        // Handle VIP level up notifications
+        socket.on('vip_level_up', (data) => {
+            // Broadcast level up to user's friends
+            socket.broadcast.emit('friend_level_up', {
+                user_uid: socket.userId.toString(),
+                new_level: data.new_level,
+                is_svip: data.is_svip
+            });
         });
     });
 

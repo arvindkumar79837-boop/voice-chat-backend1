@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Gift = require('../models/Gift');
 const GlobalSetting = require('../models/GlobalSetting');
 const Agency = require('../models/Agency');
+const redisRankingIntegration = require('../services/redisRankingIntegration');
 
 // Saare active gifts fetch karne ke liye (Flutter Store me dikhane ke liye)
 exports.getGifts = async (req, res) => {
@@ -27,8 +28,8 @@ exports.sendGift = async (req, res) => {
     if (!gift) return res.status(404).json({ error: 'Gift not found' });
 
     const sender = await User.findById(senderId);
-    if (sender.diamonds < gift.price) {
-      return res.status(400).json({ error: 'Insufficient diamonds! Please recharge.' });
+    if (sender.coins < gift.coinPrice) {
+      return res.status(400).json({ error: 'Insufficient coins! Please recharge.' });
     }
 
     const receiver = await User.findById(receiverId);
@@ -37,7 +38,7 @@ exports.sendGift = async (req, res) => {
     // Get System Settings for Commission Tax
     const settings = await GlobalSetting.findOne() || { giftCommission: 30 };
     const commissionRate = settings.giftCommission / 100;
-    const totalReceiverCoins = Math.floor(gift.price * (1 - commissionRate));
+    const totalReceiverCoins = Math.floor(gift.coinPrice * (1 - commissionRate));
 
     // --- COMMISSION ENGINE: Agency Split ---
     let finalHostCoins = totalReceiverCoins;
@@ -54,7 +55,7 @@ exports.sendGift = async (req, res) => {
     }
 
     // 1. Transaction: Sender se Diamonds kato, Receiver ko Coins do
-    sender.diamonds -= gift.price;
+    sender.coins -= gift.coinPrice;
     receiver.coins += finalHostCoins;
 
     await sender.save();
@@ -62,11 +63,21 @@ exports.sendGift = async (req, res) => {
 
     // 2. Real-time Socket Event Emit karo (app.js me set kiye gaye 'io' instance se)
     const io = req.app.get('io');
-    const giftData = { roomId, senderName: sender.name, receiverName: receiver.name, giftName: gift.name, iconUrl: gift.iconUrl, animationType: gift.animationType };
+    const giftData = { roomId, senderName: sender.name, receiverName: receiver.name, giftName: gift.giftName, previewImageUrl: gift.previewImageUrl };
     
     io.to(roomId).emit('receive_gift', giftData); // Uss room ke sabhi users ko animation dikhega!
 
-    res.status(200).json({ message: 'Gift sent successfully!', balance: sender.diamonds });
+    // 3. Update Redis Rankings (async, non-blocking)
+    redisRankingIntegration.onGiftSent(
+      senderId,
+      receiverId,
+      giftId,
+      gift.coinPrice,
+      gift.giftName,
+      gift.previewImageUrl || ''
+    ).catch(err => console.error('Redis ranking update failed:', err.message));
+
+    res.status(200).json({ message: 'Gift sent successfully!', balance: sender.coins });
   } catch (error) {
     res.status(500).json({ error: 'Internal Server Error' });
   }

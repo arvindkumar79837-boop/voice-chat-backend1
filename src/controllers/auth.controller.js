@@ -112,14 +112,14 @@ exports.verifyOtp = async (req, res, next) => {
         provider: user.provider
       },
        process.env.JWT_SECRET,
-       { expiresIn: '30d' }
+       { expiresIn: '15m' } // Short-lived access token
      );
  
      // Generate refresh token
      const refreshToken = jwt.sign(
        { userId: user._id.toString() },
        process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: '90d' }
+      { expiresIn: '90d' } // Long-lived refresh token
     );
 
     res.status(200).json({
@@ -187,7 +187,7 @@ exports.login = async (req, res, next) => {
     const token = jwt.sign(
       { userId: user._id.toString(), phone: user.phone },
        process.env.JWT_SECRET,
-       { expiresIn: '30d' }
+       { expiresIn: '15m' }
      );
  
      const refreshToken = jwt.sign(
@@ -264,7 +264,7 @@ exports.register = async (req, res, next) => {
     const token = jwt.sign(
       { userId: user._id.toString(), phone: user.phone },
        process.env.JWT_SECRET,
-       { expiresIn: '30d' }
+       { expiresIn: '15m' }
      );
  
      const refreshToken = jwt.sign(
@@ -326,7 +326,7 @@ exports.refreshToken = async (req, res, next) => {
       const newToken = jwt.sign(
         { userId: user._id.toString(), phone: user.phone },
         process.env.JWT_SECRET,
-        { expiresIn: '30d' }
+        { expiresIn: '15m' }
       );
 
       res.status(200).json({
@@ -395,6 +395,90 @@ exports.resendOtp = async (req, res, next) => {
     });
   } catch (error) {
     console.error('❌ Resend OTP Error:', error);
+    next(error);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DELETE ACCOUNT (Permanent Deletion)
+// ═══════════════════════════════════════════════════════════════════════════
+
+exports.deleteAccount = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Remove from Agency if member
+    if (user.agencyId) {
+      const Agency = require('../models/Agency');
+      await Agency.findByIdAndUpdate(user.agencyId, {
+        $pull: { hosts: userId }
+      });
+    }
+
+    // Soft delete user by anonymizing sensitive data
+    user.isDeleted = true;
+    user.isActive = false;
+    user.isBanned = true;
+    user.phone = 'DELETED-' + Date.now();
+    user.email = 'deleted@deleted.com';
+    user.name = 'Deleted User';
+    user.displayName = 'Deleted User';
+    user.avatar = '';
+    user.bio = '';
+    user.coverPhoto = '';
+    user.uid = 'DELETED-' + Date.now();
+    user.arvindId = 'DELETED';
+    user.firebaseUid = null;
+    user.privacy = {
+      showOnlineStatus: false,
+      showLastSeen: false,
+      showGallery: false,
+      showFollowers: false,
+      showFollowing: false,
+      showVisitorHistory: false
+    };
+    user.blockList = [];
+    user.followers = [];
+    user.following = [];
+    user.followersCount = 0;
+    user.followingCount = 0;
+    user.badges = [];
+    user.unlockedBadges = [];
+    user.gallery = [];
+    user.socialLinks = {
+      instagram: '',
+      youtube: '',
+      twitter: '',
+      website: ''
+    };
+    user.agencyId = null;
+    user.familyId = null;
+    user.deviceTokens = [];
+    user.registeredDevices = [];
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Account deleted permanently'
+    });
+  } catch (error) {
+    console.error('❌ Delete Account Error:', error);
     next(error);
   }
 };

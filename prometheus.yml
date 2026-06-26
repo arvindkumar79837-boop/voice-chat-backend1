@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'arvind-party'
+    environment: 'production'
+
+scrape_configs:
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:5000']
+    metrics_path: '/api/health/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'node'
+    static_configs:
+      - targets: ['localhost:9090']
