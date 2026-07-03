@@ -24,16 +24,34 @@ class QueueService {
 
   async connect() {
     try {
-      this.redisClient = new Redis({
-        host: process.env.REDIS_HOST || '127.0.0.1',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD || undefined,
-        db: parseInt(process.env.REDIS_DB || '0'),
-        retryStrategy: (times) => Math.min(times * 50, 1000),
-        maxRetriesPerRequest: null,
-        enableReadyCheck: true,
-        lazyConnect: true
-      });
+      let redisOptions = {};
+
+      if (process.env.REDIS_URL) {
+        const url = new URL(process.env.REDIS_URL);
+        redisOptions = {
+          host: url.hostname,
+          port: parseInt(url.port),
+          password: url.password || undefined,
+          db: parseInt((url.pathname || '/0').replace('/', '0')),
+          retryStrategy: (times) => Math.min(times * 50, 1000),
+          maxRetriesPerRequest: null,
+          enableReadyCheck: true,
+          lazyConnect: true
+        };
+      } else {
+        redisOptions = {
+          host: process.env.REDIS_HOST || '127.0.0.1',
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          password: process.env.REDIS_PASSWORD || undefined,
+          db: parseInt(process.env.REDIS_DB || '0'),
+          retryStrategy: (times) => Math.min(times * 50, 1000),
+          maxRetriesPerRequest: null,
+          enableReadyCheck: true,
+          lazyConnect: true
+        };
+      }
+
+      this.redisClient = new Redis(redisOptions);
 
       this.redisClient.on('error', (err) => {
         console.error('❌ Queue Redis Error:', err.message);
