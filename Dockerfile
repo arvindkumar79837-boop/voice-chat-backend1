@@ -23,6 +23,9 @@ RUN addgroup -g 1001 -S nodejs && \
 # Set working directory
 WORKDIR /app
 
+# Create logs directory and set ownership to nodejs user
+RUN mkdir -p /app/logs && chown nodejs:nodejs /app/logs
+
 # Copy package files
 COPY package*.json ./
 
