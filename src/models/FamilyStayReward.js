@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const familyStayRewardSchema = new mongoose.Schema({
-  familyId: { type: String, required: true, index: true },
-  uid: { type: String, required: true, index: true },
-  roomId: { type: String, required: true, index: true },
+  familyId: { type: String, required: true },
+  uid: { type: String, required: true },
+  roomId: { type: String, required: true },
   seatIndex: { type: Number, default: 0 },
   sessionStart: { type: Date, default: Date.now },
   sessionEnd: { type: Date },

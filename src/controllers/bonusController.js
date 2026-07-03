@@ -161,5 +161,3 @@ exports.removeBonus = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to remove bonus' });
   }
 };
-
-module.exports = {};

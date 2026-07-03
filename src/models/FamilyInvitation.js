@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 
 const familyInvitationSchema = new mongoose.Schema({
   invitation_id: { type: String, required: true, unique: true },
-  familyId: { type: String, required: true, index: true },
+  familyId: { type: String, required: true },
   family_name: { type: String, required: true },
   family_badge: { type: String, default: 'TEAM_ARVIND' },
-  sender_uid: { type: String, required: true, index: true },
+  sender_uid: { type: String, required: true },
   sender_name: { type: String, default: '' },
-  receiver_uid: { type: String, required: true, index: true },
+  receiver_uid: { type: String, required: true },
   status: {
     type: String,
     enum: ['pending', 'accepted', 'rejected', 'cancelled'],

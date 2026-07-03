@@ -9,8 +9,12 @@
     "install-all": "npm install"
   },
   "dependencies": {
+    "@sentry/integrations": "^7.114.0",
+    "@sentry/node": "^10.62.0",
+    "agora-access-token": "^2.0.4",
     "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
+    "bullmq": "^1.19.0",
     "chalk": "^4.1.2",
     "cloudinary": "^1.40.0",
     "cors": "^2.8.5",
@@ -21,12 +25,16 @@
     "firebase-admin": "^12.0.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
+    "livekit-server-sdk": "^2.15.5",
     "mongoose": "^8.3.4",
     "multer": "^1.4.5-lts.1",
+    "node-cron": "^4.5.0",
     "nodemailer": "^6.9.7",
     "razorpay": "^2.9.2",
     "redis": "^4.6.13",
+    "sharp": "^0.35.3",
     "socket.io": "^4.7.5",
+    "speakeasy": "^2.0.0",
     "twilio": "^4.10.0"
   },
   "devDependencies": {

@@ -1,12 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const attendanceController = require('../controllers/attendanceController');
-const io = require('../../server').io;
-
-attendanceController.ioInstance = io;
-
-router.use(auth);
+router.use(authMiddleware);
 
 router.post('/attendance/start', attendanceController.startSession);
 router.post('/attendance/end', attendanceController.endSession);

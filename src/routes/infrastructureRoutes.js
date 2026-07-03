@@ -9,8 +9,7 @@ const HealthAlertService = require('../services/healthAlertService');
 const DeploymentService = require('../services/deploymentService');
 const FeatureFlagService = require('../services/featureFlagService');
 const MonitoringService = require('../services/monitoringService');
-const { isAdmin } = require('../middlewares/isAdmin');
-const { normalizeReq } = require('../utils/requestParser');
+const isAdmin = require('../middlewares/isAdmin');
 
 router.use(isAdmin);
 

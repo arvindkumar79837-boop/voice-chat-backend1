@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const familyChatMessageSchema = new mongoose.Schema({
-  familyId: { type: String, required: true, index: true },
-  senderUid: { type: String, required: true, index: true },
+  familyId: { type: String, required: true },
+  senderUid: { type: String, required: true },
   senderName: { type: String, required: true },
   senderAvatar: { type: String },
   message: { type: String, required: true, maxlength: 500 },

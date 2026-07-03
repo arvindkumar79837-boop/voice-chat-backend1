@@ -261,3 +261,6 @@ exports.getPowerMatrixHistory = async (req, res) => {
     });
   }
 };
+
+// Export initializePowerMatrix for server startup
+exports.initializePowerMatrix = initializePowerMatrix;

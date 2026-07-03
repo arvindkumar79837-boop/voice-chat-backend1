@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const penaltyController = require('../controllers/penaltyController');
 
-router.use(auth);
+router.use(authMiddleware);
 
 router.post('/penalty/apply', penaltyController.applyPenalty);
 router.get('/penalty/history/:hostId', penaltyController.getHostPenalties);

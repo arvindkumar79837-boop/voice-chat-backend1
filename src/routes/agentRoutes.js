@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const agentController = require('../controllers/agentController');
 
-router.use(auth);
+router.use(authMiddleware);
 
 router.post('/agents/add', agentController.addAgent);
 router.get('/agents', agentController.listAgents);

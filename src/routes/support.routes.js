@@ -1,32 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const supportController = require('../controllers/supportController');
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 // FAQ Routes
 router.get('/faq', supportController.getFAQs);
 
 // Support Tickets (User & Admin)
-router.get('/tickets', auth, supportController.getTickets);
-router.post('/ticket/create', auth, supportController.createTicket);
-router.post('/ticket/reply', auth, supportController.replyToTicket);
-router.post('/message', auth, supportController.sendMessage);
+router.get('/tickets', authMiddleware, supportController.getTickets);
+router.post('/ticket/create', authMiddleware, supportController.createTicket);
+router.post('/ticket/reply', authMiddleware, supportController.replyToTicket);
+router.post('/message', authMiddleware, supportController.sendMessage);
 
 // Profile & Social
-router.post('/profile/update', auth, supportController.updateProfile);
-router.post('/profile/delete', auth, require('../controllers/auth.controller').deleteAccount);
-router.post('/follow', auth, supportController.followUser);
-router.get('/search', auth, supportController.searchUsers);
+router.post('/profile/update', authMiddleware, supportController.updateProfile);
+router.post('/profile/delete', authMiddleware, require('../controllers/auth.controller').deleteAccount);
+router.post('/follow', authMiddleware, supportController.followUser);
+router.get('/search', authMiddleware, supportController.searchUsers);
 
 // Privacy & Block List
-router.put('/privacy/toggle', auth, supportController.togglePrivacy);
-router.get('/blocked', auth, supportController.getBlockedUsers);
-router.post('/block', auth, supportController.addBlockedUser);
-router.post('/unblock', auth, supportController.removeBlockedUser);
-router.get('/check-block', auth, supportController.checkBlockStatus);
+router.put('/privacy/toggle', authMiddleware, supportController.togglePrivacy);
+router.get('/blocked', authMiddleware, supportController.getBlockedUsers);
+router.post('/block', authMiddleware, supportController.addBlockedUser);
+router.post('/unblock', authMiddleware, supportController.removeBlockedUser);
+router.get('/check-block', authMiddleware, supportController.checkBlockStatus);
 
 // Visitor History
-router.get('/visitors', auth, supportController.getVisitorHistory);
+router.get('/visitors', authMiddleware, supportController.getVisitorHistory);
 router.post('/visitors/record', supportController.recordVisitor);
 
 module.exports = router;

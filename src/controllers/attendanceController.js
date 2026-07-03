@@ -215,4 +215,4 @@ exports.getHostAttendanceHistory = async (req, res) => {
   }
 };
 
-module.exports = { ioInstance: null };
+module.exports.ioInstance = null;

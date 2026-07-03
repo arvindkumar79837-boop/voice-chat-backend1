@@ -6,9 +6,9 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-const authController = require('../controllers/auth.controller');
+const { logout, sendOtp, verifyOtp, resendOtp, register, refreshToken } = require('../controllers/auth.controller');
 const { validatePhone, validateOTP } = require('../middlewares/validation.middleware');
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 // ─────────────────────────────────────────────────────────────────────────
 // RATE LIMITER — 10 attempts per 15 min (dev-friendly)
@@ -33,7 +33,7 @@ const authLimiter = rateLimit({
  * Body: { phone: "9876543210" }
  * Sends a 6-digit OTP via SMS (or logs it in dev mode).
  */
-router.post('/send-otp', authLimiter, validatePhone(), authController.sendOtp);
+router.post('/send-otp', authLimiter, validatePhone(), sendOtp);
 
 /**
  * POST /api/auth/otp-verify
@@ -41,28 +41,28 @@ router.post('/send-otp', authLimiter, validatePhone(), authController.sendOtp);
  * Verifies OTP → auto-creates user if new → returns JWT + refreshToken.
  * This is the SINGLE entry point for both new and returning users.
  */
-router.post('/otp-verify', authLimiter, validatePhone(), validateOTP(), authController.verifyOtp);
+router.post('/otp-verify', authLimiter, validatePhone(), validateOTP(), verifyOtp);
 
 /**
  * POST /api/auth/resend-otp
  * Body: { phone: "9876543210" }
  * Resends a fresh OTP (resets the 5-minute TTL).
  */
-router.post('/resend-otp', authLimiter, validatePhone(), authController.resendOtp);
+router.post('/resend-otp', authLimiter, validatePhone(), resendOtp);
 
 /**
  * POST /api/auth/register
  * Body: { phone, name, gender?, dob? }
  * Completes profile after OTP verify when isProfileComplete is false.
  */
-router.post('/register', authLimiter, validatePhone(), authController.register);
+router.post('/register', authLimiter, validatePhone(), register);
 
 /**
  * POST /api/auth/refresh-token
  * Body: { refreshToken: "..." }
  * Issues a new access token without re-login.
  */
-router.post('/refresh-token', authController.refreshToken);
+router.post('/refresh-token', refreshToken);
 
 // ─────────────────────────────────────────────────────────────────────────
 // PROTECTED ROUTES
@@ -72,7 +72,7 @@ router.post('/refresh-token', authController.refreshToken);
  * POST /api/auth/logout
  * Header: Authorization: Bearer <token>
  */
-router.post('/logout', authMiddleware, authController.logout);
+router.post('/logout', authMiddleware, logout);
 
 /**
  * GET /api/auth/me

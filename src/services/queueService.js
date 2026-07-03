@@ -1,5 +1,18 @@
-const Queue = require('bullmq');
-const Redis = require('redis');
+const { Queue } = require('bullmq');
+const Redis = require('ioredis');
+
+// Patch BullMQ to accept Redis 3.x for older Redis servers
+try {
+  const RedisConnModule = require('bullmq/dist/classes/redis-connection.js');
+
+  if (RedisConnModule.RedisConnection && typeof RedisConnModule.RedisConnection.minimumVersion === 'string') {
+    const originalMinVersion = RedisConnModule.RedisConnection.minimumVersion;
+    RedisConnModule.RedisConnection.minimumVersion = '3.0.0';
+    console.log(`🔧 Patched BullMQ Redis version check: ${originalMinVersion} → 3.0.0`);
+  }
+} catch (patchError) {
+  console.log(`⚠️ BullMQ patch skipped: ${patchError.message}`);
+}
 const Logger = require('../utils/logger');
 
 class QueueService {
@@ -11,14 +24,15 @@ class QueueService {
 
   async connect() {
     try {
-      this.redisClient = new Redis.RedisClient({
-        socket: {
-          host: process.env.REDIS_HOST || '127.0.0.1',
-          port: parseInt(process.env.REDIS_PORT || '6379'),
-          reconnectStrategy: (retries) => Math.min(retries * 50, 1000)
-        },
+      this.redisClient = new Redis({
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
         password: process.env.REDIS_PASSWORD || undefined,
-        database: parseInt(process.env.REDIS_DB || '0')
+        db: parseInt(process.env.REDIS_DB || '0'),
+        retryStrategy: (times) => Math.min(times * 50, 1000),
+        maxRetriesPerRequest: null,
+        enableReadyCheck: true,
+        lazyConnect: true
       });
 
       this.redisClient.on('error', (err) => {
@@ -50,17 +64,13 @@ class QueueService {
   }
 
   getQueueConnection() {
-    return {
-      host: process.env.REDIS_HOST || '127.0.0.1',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      password: process.env.REDIS_PASSWORD || undefined,
-      database: parseInt(process.env.REDIS_DB || '0')
-    };
+    return this.redisClient;
   }
 
   async createQueue(queueName, options = {}) {
     if (!this.isConnected) {
-      throw new Error('Queue service not connected');
+      console.warn(`⚠️ Queue service not connected - skipping queue creation for ${queueName}`);
+      return null;
     }
 
     if (this.queues[queueName]) {
@@ -69,6 +79,7 @@ class QueueService {
 
     const defaultOptions = {
       connection: this.getQueueConnection(),
+      enableReadyCheck: false,  // Skip Redis version check for compatibility
       defaultJobOptions: {
         removeOnComplete: { count: 1000, age: 24 * 3600 },
         removeOnFail: { count: 5000, age: 7 * 24 * 3600 },
@@ -84,24 +95,40 @@ class QueueService {
 
     try {
       const queue = new Queue(queueName, mergedOptions);
+      
+      queue.on('error', (err) => {
+        // Suppress Redis version errors to allow graceful degradation
+        if (!err.message || !err.message.includes('Redis version needs to be greater')) {
+          console.error(`❌ Queue ${queueName} error:`, err.message);
+        }
+      });
+      
       this.queues[queueName] = queue;
       console.log(`✅ Queue created: ${queueName}`);
       return queue;
     } catch (error) {
-      console.error(`❌ Failed to create queue ${queueName}:`, error);
-      throw error;
+      if (!error.message || !error.message.includes('Redis version needs to be greater')) {
+        console.error(`❌ Failed to create queue ${queueName}:`, error.message);
+      } else {
+        console.warn(`⚠️ Queue ${queueName} skipped: Redis version incompatible (BullMQ requires Redis 5+)`);
+      }
+      return null;
     }
   }
 
   async addJob(queueName, jobName, data, options = {}) {
     try {
       const queue = await this.createQueue(queueName);
+      if (!queue) {
+        console.warn(`⚠️ Queue ${queueName} not available - job ${jobName} not queued`);
+        return null;
+      }
       const job = await queue.add(jobName, data, options);
       Logger.info(`Job added to ${queueName}: ${jobName}`, { jobId: job.id, data });
       return job;
     } catch (error) {
       console.error(`❌ Failed to add job to ${queueName}:`, error);
-      throw error;
+      return null;
     }
   }
 

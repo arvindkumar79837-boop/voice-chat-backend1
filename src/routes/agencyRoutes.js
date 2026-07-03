@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const agencyController = require('../controllers/agencyController');
 
 // All agency routes require authentication
-router.use(auth);
+router.use(authMiddleware);
 
 // GET  /api/agency          — Get current user's agency info
 router.get('/', agencyController.getMyAgency);

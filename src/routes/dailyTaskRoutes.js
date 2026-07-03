@@ -1,19 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const dailyTaskController = require('../controllers/dailyTaskController');
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const adminAuth = require('../middlewares/isAdmin');
 
 // ─── PUBLIC ROUTES ────────────────────────────────────────────────────
-router.get('/active', auth, dailyTaskController.getActiveTasks);
-router.put('/:taskId/progress', auth, dailyTaskController.updateTaskProgress);
-router.post('/:taskId/claim', auth, dailyTaskController.claimTaskReward);
+router.get('/active', authMiddleware, dailyTaskController.getActiveTasks);
+router.put('/:taskId/progress', authMiddleware, dailyTaskController.updateTaskProgress);
+router.post('/:taskId/claim', authMiddleware, dailyTaskController.claimTaskReward);
 
 // ─── ADMIN ROUTES ─────────────────────────────────────────────────────
-router.get('/admin/all', auth, adminAuth, dailyTaskController.adminGetAllTasks);
-router.post('/admin/create', auth, adminAuth, dailyTaskController.createDailyTask);
-router.put('/admin/:id', auth, adminAuth, dailyTaskController.adminUpdateTask);
-router.delete('/admin/:id', auth, adminAuth, dailyTaskController.adminDeleteTask);
-router.post('/admin/seed', auth, adminAuth, dailyTaskController.seedDefaultTasks);
+router.get('/admin/all', authMiddleware, adminAuth, dailyTaskController.adminGetAllTasks);
+router.post('/admin/create', authMiddleware, adminAuth, dailyTaskController.createDailyTask);
+router.put('/admin/:id', authMiddleware, adminAuth, dailyTaskController.adminUpdateTask);
+router.delete('/admin/:id', authMiddleware, adminAuth, dailyTaskController.adminDeleteTask);
+router.post('/admin/seed', authMiddleware, adminAuth, dailyTaskController.seedDefaultTasks);
 
 module.exports = router;

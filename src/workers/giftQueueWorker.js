@@ -1,3 +1,4 @@
+const { Worker } = require('bullmq');
 const QueueService = require('../services/queueService');
 const Gift = require('../models/Gift');
 const User = require('../models/User');
@@ -10,10 +11,12 @@ class GiftQueueWorker {
   constructor() {
     this.queueName = 'gift-processing';
     this.isRunning = false;
+    this.worker = null;
   }
 
   async start() {
     try {
+      // Ensure the queue exists
       const queue = await QueueService.createQueue(this.queueName, {
         defaultJobOptions: {
           removeOnComplete: { count: 500, age: 24 * 3600 },
@@ -26,24 +29,62 @@ class GiftQueueWorker {
         }
       });
 
-      queue.process('send_gift', async (job) => {
-        return this.processGiftSend(job);
+      // If queue creation failed due to Redis version, skip worker initialization
+      if (!queue) {
+        console.warn('⚠️ Gift Queue Worker skipped: Queue not available');
+        this.isRunning = false;
+        return;
+      }
+
+      // Create worker for processing jobs
+      this.worker = new Worker(this.queueName, async (job) => {
+        switch (job.name) {
+          case 'send_gift':
+            return this.processGiftSend(job);
+          case 'bulk_gift':
+            return this.processBulkGift(job);
+          case 'gift_animation':
+            return this.processGiftAnimation(job);
+          default:
+            throw new Error(`Unknown job type: ${job.name}`);
+        }
+      }, {
+        connection: QueueService.getQueueConnection(),
+        concurrency: 5,
       });
 
-      queue.process('bulk_gift', async (job) => {
-        return this.processBulkGift(job);
+      this.worker.on('completed', (job) => {
+        Logger.info('Job completed', { jobId: job.id, name: job.name });
       });
 
-      queue.process('gift_animation', async (job) => {
-        return this.processGiftAnimation(job);
+      this.worker.on('failed', (job, err) => {
+        // Suppress Redis version errors
+        if (!err.message || !err.message.includes('Redis version needs to be greater')) {
+          Logger.error('Job failed', { jobId: job?.id, name: job?.name, error: err.message });
+        }
+      });
+
+      this.worker.on('error', (err) => {
+        // Suppress Redis version errors to allow graceful degradation
+        if (!err.message || !err.message.includes('Redis version needs to be greater')) {
+          Logger.error('Worker error', { error: err.message });
+        } else {
+          console.warn('⚠️ Gift Queue Worker: Redis version incompatible, worker limited');
+        }
       });
 
       this.isRunning = true;
       Logger.info('Gift Queue Worker started', { queue: this.queueName });
       console.log('✅ Gift Queue Worker started');
     } catch (error) {
-      Logger.error('Failed to start Gift Queue Worker', { error: error.message });
-      console.error('❌ Gift Queue Worker failed to start:', error);
+      // Suppress Redis version errors during worker startup
+      if (!error.message || !error.message.includes('Redis version needs to be greater')) {
+        Logger.error('Failed to start Gift Queue Worker', { error: error.message });
+        console.error('❌ Gift Queue Worker failed to start:', error);
+      } else {
+        console.warn('⚠️ Gift Queue Worker skipped: Redis version incompatible (requires Redis 5+)');
+        this.isRunning = false;
+      }
     }
   }
 

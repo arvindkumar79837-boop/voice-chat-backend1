@@ -37,6 +37,7 @@ const webViewGameRoutes = require('./routes/webViewGameRoutes');
 const cpRoutes = require('./routes/cpRoutes');
 const treasuryRoutes = require('./routes/treasuryRoutes');
 const matchmakingRoutes = require('./routes/matchmakingRoutes');
+const blindDateRoutes = require('./routes/blindDateRoutes');
 const rankingRoutes = require('./routes/rankingRoutes');
 const vipRoutes = require('./routes/vipRoutes');
 const vipSystemRoutes = require('./routes/vipSystemRoutes');
@@ -69,6 +70,10 @@ const profileRoutes = require('./routes/profileRoutes');
 const antiBanRoutes = require('./routes/antiBanRoutes');
 const roomFeaturesRoutes = require('./routes/roomFeaturesRoutes');
 const youtubeRoutes = require('./routes/youtube.routes');
+const coinOrderRoutes = require('./routes/coinOrderRoutes');
+const rewardsRoutes = require('./routes/rewardsRoutes');
+const luckyDrawMobileRoutes = require('./routes/luckyDrawMobileRoutes');
+const socialRoutes = require('./routes/socialRoutes');
 
 const app = express();
 
@@ -158,6 +163,7 @@ app.use('/api/games', gameRoutes);          // Lucky Wheel, Scratch Card
 app.use('/api/cp', cpRoutes);               // Couple Pair System
 app.use('/api/treasury', treasuryRoutes);   // Global Treasury
 app.use('/api/matchmaking', matchmakingRoutes); // Dating/Matching
+app.use('/api/blind-date', blindDateRoutes);    // Mobile compatibility aliases
 app.use('/api/rankings', rankingRoutes);        // Wealth & Charm Rankings
 app.use('/api/vip', vipRoutes);                 // VIP Plans & Purchase
 app.use('/api/vip-system', vipSystemRoutes);    // VIP 1-15, SVIP, Premium, Cosmetics, Missions
@@ -200,6 +206,9 @@ app.use('/api/admin/anti-ban', antiBanRoutes); // Permanent Device Ban (Owner On
 // ─── ROOM FEATURES ROUTES ──────────────────────────────────────────────────
 app.use('/api/rooms/features', roomFeaturesRoutes);
 app.use('/api/youtube', youtubeRoutes);              // Shared YouTube Playlist & Player Control
+app.use('/api/coin-orders', coinOrderRoutes);        // Mobile Coin Orders / Vault (aliases CoinVault)
+app.use('/api/rewards', rewardsRoutes);              // User rewards (aliases RewardConfig + RewardInjector)
+app.use('/api/lucky-draw', luckyDrawMobileRoutes);   // Mobile aliases for /api/lucky-draws
 
 // ─── 404 HANDLER ───────────────────────────────────────────────────────────
 app.use((req, res) => {

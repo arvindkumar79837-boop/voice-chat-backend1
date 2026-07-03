@@ -368,4 +368,18 @@ async function syncToGameModel(config) {
       }
     );
   }
+
+
 }
+
+exports.getActiveLuckyDraws = async (req, res) => {
+  try {
+    const configs = await RewardConfig.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .lean();
+    res.status(200).json({ success: true, data: configs });
+  } catch (error) {
+    console.error('Get Active LuckyDraws Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch active rewards' });
+  }
+};

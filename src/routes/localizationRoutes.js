@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const localizationController = require('../controllers/localizationController');
-const { authenticateToken, isAdmin } = require('../middlewares/auth.middleware');
+const { authMiddleware: authenticateToken } = require('../middlewares/auth.middleware');
+const isAdmin = require('../middlewares/isAdmin');
 
 router.get('/translations', localizationController.getTranslations);
 

@@ -5,7 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const targetManagerController = require('../controllers/targetManagerController');
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const { verifyStaff } = require('../middlewares/adminMiddleware');
 const verifyAdmin = require('../middlewares/isAdmin');
 

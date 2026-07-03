@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const bonusController = require('../controllers/bonusController');
 
-router.use(auth);
+router.use(authMiddleware);
 
 router.post('/bonus/award', bonusController.awardBonus);
 router.get('/bonus/history/:hostId', bonusController.getHostBonuses);

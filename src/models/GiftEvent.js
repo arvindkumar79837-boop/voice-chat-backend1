@@ -43,6 +43,5 @@ const giftEventSchema = new mongoose.Schema({
 giftEventSchema.index({ senderId: 1, createdAt: -1 });
 giftEventSchema.index({ receiverId: 1, createdAt: -1 });
 giftEventSchema.index({ roomId: 1, createdAt: -1 });
-giftEventSchema.index({ idempotencyKey: 1 }, { unique: true });
 
 module.exports = mongoose.model('GiftEvent', giftEventSchema);

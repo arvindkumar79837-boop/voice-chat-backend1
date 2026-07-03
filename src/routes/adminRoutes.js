@@ -14,7 +14,7 @@ const agencyController = require('../controllers/agencyController');
 const familyController = require('../controllers/familyController');
 const supportController = require('../controllers/supportController');
 const rewardInjectorController = require('../controllers/rewardInjectorController');
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const { verifyStaff } = require('../middlewares/adminMiddleware');
 const verifyAdmin = require('../middlewares/isAdmin');
 const isAdmin = verifyAdmin;
@@ -186,17 +186,17 @@ router.post('/agencies/revoke/:id', verifyAdmin, agencyController.revokeAgency);
 // ===========================================================================
 
 // GET /api/admin/families
-router.get('/families', familyController.getFamilies);
+router.get('/families', familyController.adminGetAllFamilies);
 
 // DELETE /api/admin/families/:id
-router.delete('/families/:id', verifyAdmin, familyController.deleteFamily);
+router.delete('/families/:id', verifyAdmin, familyController.adminDeleteFamily);
 
 // ===========================================================================
 // EVENTS
 // ===========================================================================
 
 // GET /api/admin/events
-router.get('/events', eventController.getAdminEvents);
+router.get('/events', eventController.getActiveEvents);
 
 // POST /api/admin/events
 router.post('/events', verifyAdmin, eventController.createEvent);

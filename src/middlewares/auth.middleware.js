@@ -14,7 +14,7 @@ const { verifyAccessToken, isTokenBlacklisted } = require('../utils/jwt');
  * On expiry (TokenExpiredError) it returns a machine-readable code
  * so the Flutter app's Dio interceptor knows to call /auth/refresh.
  */
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({

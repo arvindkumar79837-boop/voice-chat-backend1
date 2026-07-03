@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const firebaseAuthController = require('../controllers/firebaseAuth.controller');
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

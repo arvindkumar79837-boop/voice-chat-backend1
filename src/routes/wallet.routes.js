@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const walletController = require('../controllers/walletController');
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware: auth } = require('../middlewares/auth.middleware');
 const adminAuth = require('../middlewares/isAdmin');
 
 // ===================== USER WALLET =====================

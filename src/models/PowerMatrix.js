@@ -85,9 +85,9 @@ const powerMatrixSchema = new mongoose.Schema({
     }
   },
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+    description: 'Can be a User ObjectId or "SYSTEM_INITIALIZATION" string for default setup'
   },
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,

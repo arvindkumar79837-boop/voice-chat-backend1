@@ -287,5 +287,3 @@ exports.getHostRanking = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch host ranking' });
   }
 };
-
-module.exports = {};

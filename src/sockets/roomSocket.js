@@ -1,5 +1,6 @@
 const Room = require('../models/Room');
 const crypto = require('crypto');
+const { generateLiveKitToken } = require('../services/livekitService');
 
 module.exports = (io, socket) => {
   // ─── User joins a live voice room ────────────────────────────
@@ -46,6 +47,12 @@ module.exports = (io, socket) => {
       });
 
       // Send current room state to the joining user
+      const liveKitTokenData = await generateLiveKitToken(
+        roomId,
+        userId,
+        userProfile?.name || 'User'
+      );
+
       socket.emit('room_state', {
         seats: updatedRoom?.seats || [],
         members: [],
@@ -59,6 +66,8 @@ module.exports = (io, socket) => {
         roomType: updatedRoom?.roomType || 'PUBLIC',
         isLive: updatedRoom?.isLive || false,
         liveKitRoom: updatedRoom?.liveKitRoom || '',
+        liveKitToken: liveKitTokenData?.token || null,
+        liveKitWsUrl: liveKitTokenData?.liveKitWsUrl || null,
       });
 
       // Check if user was previously admin-muted
@@ -173,6 +182,13 @@ module.exports = (io, socket) => {
 
       await room.save();
 
+      // Generate LiveKit token for seat claim
+      const liveKitTokenData = await generateLiveKitToken(
+        roomId,
+        userId,
+        userName || 'User'
+      );
+
       // Broadcast seat claimed with animated effects data
       io.to(roomId).emit('seat_claimed', {
         seatIndex,
@@ -183,6 +199,8 @@ module.exports = (io, socket) => {
         role: isHost ? 'owner' : 'broadcaster',
         isMuted: false,
         effect: 'seat_ring_animation',
+        liveKitToken: liveKitTokenData?.token || null,
+        liveKitWsUrl: liveKitTokenData?.liveKitWsUrl || null,
       });
 
       // Notify if user was previously on another seat

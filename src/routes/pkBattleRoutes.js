@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pkBattleController = require('../controllers/pkBattle.controller');
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 // All PK Battle routes require user authentication
 router.use(authMiddleware);

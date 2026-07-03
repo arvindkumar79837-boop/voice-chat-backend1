@@ -478,7 +478,4 @@ class EventSchedulerService {
   _lastDailyTaskResetDate = null; // Track last reset to ensure daily reset
 }
 
-const UserEventProgress = require("../models/UserEventProgress"); 
-const User = require("../models/User"); 
-
 module.exports = new EventSchedulerService();

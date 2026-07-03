@@ -3,7 +3,7 @@ const router = express.Router();
 const roomController = require('../controllers/room.controller');
 const roomProductionController = require('../controllers/room.production.controller');
 const powerMatrixController = require('../controllers/powerMatrixController');
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const { checkPowerMiddleware, checkRoomOwner } = require('../middlewares/powerValidation.middleware');
 const { verifyStaff } = require('../middlewares/adminMiddleware');
 

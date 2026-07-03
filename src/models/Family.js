@@ -7,7 +7,7 @@ const familySchema = new mongoose.Schema({
   family_slogan: { type: String, default: '', trim: true, maxlength: 100 },
   family_intro: { type: String, default: '', trim: true, maxlength: 500 },
   family_logo: { type: String, default: '' },
-  creator_uid: { type: String, required: true, index: true },
+  creator_uid: { type: String, required: true },
   current_level: { type: Number, default: 1, min: 1 },
   total_xp: { type: Number, default: 0, min: 0 },
   xp_for_next_level: { type: Number, default: 1000 },
@@ -51,7 +51,6 @@ const familySchema = new mongoose.Schema({
   unlocked_perks: [{ type: String }]
 }, { timestamps: true });
 
-familySchema.index({ family_id: 1 });
 familySchema.index({ creator_uid: 1 });
 familySchema.index({ current_level: -1, total_xp: -1 });
 familySchema.index({ is_active: 1, createdAt: -1 });

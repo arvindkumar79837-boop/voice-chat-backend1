@@ -153,5 +153,3 @@ exports.getMonthlyPenaltySummary = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch penalty summary' });
   }
 };
-
-module.exports = {};

@@ -1,84 +1,90 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
+const Wallet = require('../models/User');
+const Transaction = require('../models/Transaction');
 const Gift = require('../models/Gift');
-const GlobalSetting = require('../models/GlobalSetting');
-const Agency = require('../models/Agency');
-const redisRankingIntegration = require('../services/redisRankingIntegration');
+const Room = require('../models/Room');
+const { ApiError } = require('../utils/ApiError');
+const { ApiResponse } = require('../utils/apiResponse');
 
-// Saare active gifts fetch karne ke liye (Flutter Store me dikhane ke liye)
-exports.getGifts = async (req, res) => {
+/**
+ * @description Handles the logic of a user sending a gift to another user.
+ * @param {string} senderId - The ID of the user sending the gift.
+ * @param {string} receiverId - The ID of the user receiving the gift.
+ * @param {string} giftId - The ID of the gift being sent.
+ * @param {string} roomId - The ID of the room where the gift is being sent.
+ * @returns {Promise<object>} An object containing details of the transaction for socket emission.
+ */
+const sendGift = async (senderId, receiverId, giftId, roomId) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const gifts = await Gift.find({ isActive: true });
-    res.status(200).json({ gifts });
+    const gift = await Gift.findById(giftId).session(session);
+    if (!gift) {
+      throw new ApiError(404, 'Gift not found');
+    }
+
+    const senderWallet = await Wallet.findOne({ userId: senderId }).session(session);
+    const receiverWallet = await Wallet.findOne({ userId: receiverId }).session(session);
+    const room = await Room.findById(roomId).session(session);
+
+    if (!senderWallet || !receiverWallet) {
+      throw new ApiError(404, 'Wallets not found');
+    }
+    if (!room) {
+      throw new ApiError(404, 'Room not found');
+    }
+
+    if (senderWallet.coins < gift.price) {
+      throw new ApiError(400, 'Insufficient coins');
+    }
+
+    // Perform the transaction
+    senderWallet.coins -= gift.price;
+    receiverWallet.diamonds += gift.price; // Assuming 1 coin = 1 diamond for simplicity
+
+    await senderWallet.save({ session });
+    await receiverWallet.save({ session });
+
+    // Create transaction records
+    const senderTransaction = new Transaction({
+      userId: senderId,
+      type: 'gift_sent',
+      amount: gift.price,
+      description: `Sent ${gift.name} to user ${receiverId} in room ${roomId}`,
+      relatedUserId: receiverId,
+    });
+
+    const receiverTransaction = new Transaction({
+      userId: receiverId,
+      type: 'gift_received',
+      amount: gift.price,
+      description: `Received ${gift.name} from user ${senderId} in room ${roomId}`,
+      relatedUserId: senderId,
+    });
+
+    await senderTransaction.save({ session });
+    await receiverTransaction.save({ session });
+
+    await session.commitTransaction();
+
+    const sender = await User.findById(senderId).select('name profileImage').lean();
+
+    return {
+      gift,
+      sender,
+      receiverId,
+      roomId,
+    };
   } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
+    await session.abortTransaction();
+    throw error; // Re-throw to be caught by the socket handler
+  } finally {
+    session.endSession();
   }
 };
 
-// User jab kisi ko gift send karega
-exports.sendGift = async (req, res) => {
-  try {
-    const { receiverId, giftId, roomId } = req.body;
-    const senderId = req.user.userId; // authMiddleware se aayega
-
-    if (!receiverId || !giftId || !roomId) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const gift = await Gift.findById(giftId);
-    if (!gift) return res.status(404).json({ error: 'Gift not found' });
-
-    const sender = await User.findById(senderId);
-    if (sender.coins < gift.coinPrice) {
-      return res.status(400).json({ error: 'Insufficient coins! Please recharge.' });
-    }
-
-    const receiver = await User.findById(receiverId);
-    if (!receiver) return res.status(404).json({ error: 'Receiver not found' });
-
-    // Get System Settings for Commission Tax
-    const settings = await GlobalSetting.findOne() || { giftCommission: 30 };
-    const commissionRate = settings.giftCommission / 100;
-    const totalReceiverCoins = Math.floor(gift.coinPrice * (1 - commissionRate));
-
-    // --- COMMISSION ENGINE: Agency Split ---
-    let finalHostCoins = totalReceiverCoins;
-    
-    if (receiver.agencyId) {
-      const agency = await Agency.findById(receiver.agencyId);
-      if (agency) {
-        // Example: Agency gets 10% of the host's earnings
-        const agencyCommission = Math.floor(totalReceiverCoins * 0.10);
-        finalHostCoins = totalReceiverCoins - agencyCommission;
-        agency.earnings = (agency.earnings || 0) + agencyCommission;
-        await agency.save();
-      }
-    }
-
-    // 1. Transaction: Sender se Diamonds kato, Receiver ko Coins do
-    sender.coins -= gift.coinPrice;
-    receiver.coins += finalHostCoins;
-
-    await sender.save();
-    await receiver.save();
-
-    // 2. Real-time Socket Event Emit karo (app.js me set kiye gaye 'io' instance se)
-    const io = req.app.get('io');
-    const giftData = { roomId, senderName: sender.name, receiverName: receiver.name, giftName: gift.giftName, previewImageUrl: gift.previewImageUrl };
-    
-    io.to(roomId).emit('receive_gift', giftData); // Uss room ke sabhi users ko animation dikhega!
-
-    // 3. Update Redis Rankings (async, non-blocking)
-    redisRankingIntegration.onGiftSent(
-      senderId,
-      receiverId,
-      giftId,
-      gift.coinPrice,
-      gift.giftName,
-      gift.previewImageUrl || ''
-    ).catch(err => console.error('Redis ranking update failed:', err.message));
-
-    res.status(200).json({ message: 'Gift sent successfully!', balance: sender.coins });
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+module.exports = {
+  sendGift,
 };

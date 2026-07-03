@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const reportsController = require('../controllers/reportsController');
 
-router.use(auth);
+router.use(authMiddleware);
 
 router.get('/reports/realtime', reportsController.getRealtimeAnalytics);
 router.get('/reports/monthly', reportsController.getMonthlyReport);

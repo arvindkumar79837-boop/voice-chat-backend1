@@ -1,25 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const rankingController = require('../controllers/rankingController');
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const adminAuth = require('../middlewares/isAdmin');
 
 // ─── PUBLIC LEADERBOARD ROUTES ────────────────────────────────────────────
-router.get('/wealth', auth, rankingController.getTopWealth);
-router.get('/charm', auth, rankingController.getTopCharm);
-router.get('/gifts', auth, rankingController.getGiftRanking);
-router.get('/families', auth, rankingController.getFamilyRanking);
-router.get('/agencies', auth, rankingController.getAgencyRanking);
-router.get('/rooms', auth, rankingController.getRoomRanking);
-router.get('/pk-battles', auth, rankingController.getPKRanking);
-router.get('/rich-list', auth, rankingController.getRichList);
-router.get('/popular-list', auth, rankingController.getPopularList);
-router.get('/my-ranks', auth, rankingController.getMyRanks);
+router.get('/wealth', authMiddleware, rankingController.getTopWealth);
+router.get('/charm', authMiddleware, rankingController.getTopCharm);
+router.get('/gifts', authMiddleware, rankingController.getGiftRanking);
+router.get('/families', authMiddleware, rankingController.getFamilyRanking);
+router.get('/agencies', authMiddleware, rankingController.getAgencyRanking);
+router.get('/rooms', authMiddleware, rankingController.getRoomRanking);
+router.get('/pk-battles', authMiddleware, rankingController.getPKRanking);
+router.get('/rich-list', authMiddleware, rankingController.getRichList);
+router.get('/popular-list', authMiddleware, rankingController.getPopularList);
+router.get('/my-ranks', authMiddleware, rankingController.getMyRanks);
 
 // ─── ADMIN ROUTES ────────────────────────────────────────────────────────
-router.get('/admin/leaderboard', auth, adminAuth, rankingController.getAdminLeaderboard);
-router.post('/admin/reset', auth, adminAuth, rankingController.resetLeaderboard);
-router.get('/admin/stats', auth, adminAuth, rankingController.getRankingStats);
-router.post('/admin/flush-cache', auth, adminAuth, rankingController.flushRankingCache);
+router.get('/admin/leaderboard', authMiddleware, adminAuth, rankingController.getAdminLeaderboard);
+router.post('/admin/reset', authMiddleware, adminAuth, rankingController.resetLeaderboard);
+router.get('/admin/stats', authMiddleware, adminAuth, rankingController.getRankingStats);
+router.post('/admin/flush-cache', authMiddleware, adminAuth, rankingController.flushRankingCache);
 
 module.exports = router;

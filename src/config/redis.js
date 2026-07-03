@@ -5,18 +5,47 @@
 const redis = require('redis');
 
 let redisClient = null;
+let fallbackRedisClient = null;
 
 const connectRedis = async () => {
   try {
-    redisClient = redis.createClient({
-      socket: {
-        host: process.env.REDIS_HOST || '127.0.0.1',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        reconnectStrategy: (retries) => Math.min(retries * 50, 1000)
-      },
-      password: process.env.REDIS_PASSWORD || undefined,
-      database: parseInt(process.env.REDIS_DB || '0')
-    });
+    let clientConfig = {};
+
+    // Primary: Railway Redis URL (REDIS_URL) with dual-fallback broken into host/port/password
+    if (process.env.REDIS_URL) {
+      const url = new URL(process.env.REDIS_URL);
+      clientConfig = {
+        socket: {
+          host: url.hostname,
+          port: parseInt(url.port),
+          reconnectStrategy: (retries) => Math.min(retries * 50, 1000)
+        },
+        password: url.password || undefined,
+        database: parseInt((url.pathname || '/0').replace('/', '0'))
+      };
+    } else if (process.env.REDIS_HOST) {
+      // Secondary: Explicit host-based config
+      clientConfig = {
+        socket: {
+          host: process.env.REDIS_HOST,
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          reconnectStrategy: (retries) => Math.min(retries * 50, 1000)
+        },
+        password: process.env.REDIS_PASSWORD || undefined,
+        database: parseInt(process.env.REDIS_DB || '0')
+      };
+    } else {
+      // Fallback: Localhost
+      clientConfig = {
+        socket: {
+          host: '127.0.0.1',
+          port: 6379,
+          reconnectStrategy: (retries) => Math.min(retries * 50, 1000)
+        }
+      };
+    }
+
+    redisClient = redis.createClient(clientConfig);
 
     redisClient.on('error', (err) => {
       console.error('❌ Redis Client Error:', err.message);

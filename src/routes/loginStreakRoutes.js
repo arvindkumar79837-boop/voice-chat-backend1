@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const loginStreakController = require('../controllers/loginStreakController');
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const adminAuth = require('../middlewares/isAdmin');
 
 // ─── PUBLIC ROUTES ────────────────────────────────────────────────────
-router.get('/my-streak', auth, loginStreakController.getLoginStreak);
-router.post('/claim-daily', auth, loginStreakController.claimDailyLogin);
+router.get('/my-streak', authMiddleware, loginStreakController.getLoginStreak);
+router.post('/claim-daily', authMiddleware, loginStreakController.claimDailyLogin);
 
 // ─── ADMIN ROUTES ─────────────────────────────────────────────────────
-router.get('/admin/all', auth, adminAuth, loginStreakController.adminGetAllStreaks);
-router.put('/admin/reset/:userId', auth, adminAuth, loginStreakController.adminResetStreak);
+router.get('/admin/all', authMiddleware, adminAuth, loginStreakController.adminGetAllStreaks);
+router.put('/admin/reset/:userId', authMiddleware, adminAuth, loginStreakController.adminResetStreak);
 
 module.exports = router;

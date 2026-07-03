@@ -32,7 +32,9 @@ const auditLogSchema = new mongoose.Schema({
       'ROOM_CREATED', 'ROOM_CLOSED',
       'USER_KICKED', 'USER_MUTED',
       // Auth
-      'LOGIN', 'LOGOUT', 'TOKEN_REFRESH'
+      'LOGIN', 'LOGOUT', 'TOKEN_REFRESH',
+      // Scheduler
+      'SCHEDULER_AUDIT'
     ]
   },
 

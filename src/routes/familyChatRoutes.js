@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const FamilyChat = require('../models/FamilyChat');
 const Family = require('../models/Family');
 const User = require('../models/User');
 const { successResponse, errorResponse } = require('../utils/responseFormatter');
 
 // Get family chat messages
-router.get('/:familyId/messages', auth, async (req, res) => {
+router.get('/:familyId/messages', authMiddleware, async (req, res) => {
   try {
     const { familyId } = req.params;
     const { page = 1, limit = 50, before } = req.query;
@@ -39,7 +39,7 @@ router.get('/:familyId/messages', auth, async (req, res) => {
 });
 
 // Send family message
-router.post('/:familyId/messages', auth, async (req, res) => {
+router.post('/:familyId/messages', authMiddleware, async (req, res) => {
   try {
     const { familyId } = req.params;
     const { content, messageType = 'text', replyTo, mentions, attachments } = req.body;
@@ -82,7 +82,7 @@ router.post('/:familyId/messages', auth, async (req, res) => {
 });
 
 // Delete family message
-router.delete('/:familyId/messages/:messageId', auth, async (req, res) => {
+router.delete('/:familyId/messages/:messageId', authMiddleware, async (req, res) => {
   try {
     const { familyId, messageId } = req.params;
     const userId = req.user.userId;
@@ -120,7 +120,7 @@ router.delete('/:familyId/messages/:messageId', auth, async (req, res) => {
 });
 
 // Pin family message
-router.post('/:familyId/messages/:messageId/pin', auth, async (req, res) => {
+router.post('/:familyId/messages/:messageId/pin', authMiddleware, async (req, res) => {
   try {
     const { familyId, messageId } = req.params;
     const userId = req.user.userId;
@@ -151,7 +151,7 @@ router.post('/:familyId/messages/:messageId/pin', auth, async (req, res) => {
 });
 
 // Add reaction to message
-router.post('/:familyId/messages/:messageId/react', auth, async (req, res) => {
+router.post('/:familyId/messages/:messageId/react', authMiddleware, async (req, res) => {
   try {
     const { familyId, messageId } = req.params;
     const { emoji } = req.body;
@@ -197,7 +197,7 @@ router.post('/:familyId/messages/:messageId/react', auth, async (req, res) => {
 });
 
 // Get pinned messages
-router.get('/:familyId/pinned', auth, async (req, res) => {
+router.get('/:familyId/pinned', authMiddleware, async (req, res) => {
   try {
     const { familyId } = req.params;
     const userId = req.user.userId;

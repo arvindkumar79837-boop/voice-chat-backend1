@@ -6,7 +6,7 @@ const express = require('express');
 const router = express.Router();
 const moduleManagerController = require('../controllers/moduleManagerController');
 const staffController = require('../controllers/staffController');
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const { verifyStaff } = require('../middlewares/adminMiddleware');
 const verifyAdmin = require('../middlewares/isAdmin');
 
@@ -59,10 +59,10 @@ router.post('/agencies/:id/revoke', verifyAdmin, require('../controllers/agencyC
 // ===========================================================================
 
 // GET /api/admin/modules/families
-router.get('/families', require('../controllers/familyController').getFamilies);
+router.get('/families', require('../controllers/familyController').adminGetAllFamilies);
 
 // DELETE /api/admin/modules/families/:id
-router.delete('/families/:id', verifyAdmin, require('../controllers/familyController').deleteFamily);
+router.delete('/families/:id', verifyAdmin, require('../controllers/familyController').adminDeleteFamily);
 
 // ===========================================================================
 // FINANCE MANAGER MODULE
@@ -85,7 +85,7 @@ router.get('/finance/wallets', require('../controllers/admin.controller').getWal
 // ===========================================================================
 
 // GET /api/admin/modules/events
-router.get('/events', require('../controllers/eventController').getAdminEvents);
+router.get('/events', require('../controllers/eventController').getActiveEvents);
 
 // POST /api/admin/modules/events
 router.post('/events', verifyAdmin, require('../controllers/eventController').createEvent);

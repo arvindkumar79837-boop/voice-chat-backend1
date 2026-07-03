@@ -13,6 +13,5 @@ const walletConfigSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-walletConfigSchema.index({ configKey: 1 });
-
+// configKey already has unique: true which creates an index
 module.exports = mongoose.model('WalletConfig', walletConfigSchema);

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { verifyOwner } = require('../middlewares/adminMiddleware');
+const verifyAdmin = require('../middlewares/isAdmin');
 const staffController = require('../controllers/staffController');
 
 // 🌐 PUBLIC STAFF ROUTE

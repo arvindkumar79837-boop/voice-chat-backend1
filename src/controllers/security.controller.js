@@ -10,8 +10,7 @@ const BannedDevice = require('../models/BannedDevice');
 const BlockedIp = require('../models/BlockedIp');
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
-const authMiddleware = require('../middlewares/auth.middleware');
-const { requireRole } = require('../middlewares/auth.middleware');
+const { authMiddleware, requireRole } = require('../middlewares/auth.middleware');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DASHBOARD SUMMARY (requires owner or admin role)

@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const familyLeaderboardSchema = new mongoose.Schema({
-  familyId: { type: String, required: true, index: true },
-  uid: { type: String, required: true, index: true },
+  familyId: { type: String, required: true },
+  uid: { type: String, required: true },
   username: { type: String, default: '' },
   avatar: { type: String, default: '' },
   totalContribution: { type: Number, default: 0 },

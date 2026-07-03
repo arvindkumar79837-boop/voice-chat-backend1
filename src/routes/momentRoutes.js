@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const momentController = require('../controllers/momentController');
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 // All moment routes require authentication
 router.use(authMiddleware);

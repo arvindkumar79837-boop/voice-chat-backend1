@@ -25,6 +25,57 @@ const { initRedis } = require('./src/services/otp.service');
 const { connectRedis } = require('./src/config/redis');
 const app = require('./src/app');
 
+// ─── SETUP HTTP + SOCKET.IO ────────────────────────────────────────────────
+const server = http.createServer(app);
+const io = initializeSocket(server);
+
+// Make `io` accessible globally inside controllers
+app.set('io', io);
+
+// ─── SETUP SOCKET HANDLERS ─────────────────────────────────────────────────
+const { initializeSockets } = require('./src/sockets');
+initializeSockets(io);
+
+// ─── START ANALYTICS WORKER ─────────────────────────────────────────────
+try {
+  const AnalyticsWorker = require('./src/workers/analyticsWorker');
+  const analyticsWorker = new AnalyticsWorker(io);
+  analyticsWorker.start();
+  console.log('✅ Analytics Worker initialized');
+} catch (error) {
+  console.log('⚠️ Analytics Worker initialization skipped:', error.message);
+}
+
+// ─── START SCHEDULER SERVICE ──────────────────────────────────────────────
+const SchedulerService = require('./src/services/schedulerService');
+
+// Daily check: reset attendance flags for previous day and process end-of-day summaries
+SchedulerService.startScheduler(24 * 60 * 60 * 1000);
+
+// Monthly salary cron: runs at midnight on the 1st of every month
+const salaryInterval = setInterval(async () => {
+  const now = new Date();
+  if (now.getDate() === 1 && now.getHours() === 0 && now.getMinutes() === 0) {
+    try {
+      const Agency = require('./src/models/Agency');
+      const SalaryRecord = require('./src/models/SalaryRecord');
+      const agencies = await Agency.find({ isActive: true });
+      for (const agency of agencies) {
+        const lastMonth = now.getMonth();
+        const year = now.getFullYear();
+        const existing = await SalaryRecord.findOne({ agencyId: agency._id, month: lastMonth, year });
+        if (!existing) {
+          const salaryController = require('./src/controllers/salaryController');
+          await salaryController.calculateMonthlySalary({ params: { agencyId: agency._id.toString() } }, { status: () => ({ json: () => {} }) });
+        }
+      }
+      console.log('✅ Monthly salary cron executed for all agencies');
+    } catch (error) {
+      console.error('Monthly salary cron error:', error);
+    }
+  }
+}, 60 * 1000);
+
 // ─── INITIALIZE SERVICES ───────────────────────────────────────────────────
 (async () => {
   // Connect to MongoDB
@@ -68,7 +119,7 @@ const app = require('./src/app');
   // Initialize Power Matrix default configuration
   try {
     const powerMatrixController = require('./src/controllers/powerMatrixController');
-    await powerMatrixController.initializePowerMatrix();
+    await powerMatrixController.initializePowerMatrix('SYSTEM_INITIALIZATION');
     console.log('✅ Power Matrix initialized');
   } catch (error) {
     console.log('⚠️ Power Matrix initialization skipped:', error.message);
@@ -88,6 +139,15 @@ const app = require('./src/app');
     const queueService = require('./src/services/queueService');
     await queueService.connect();
     console.log('✅ Queue Service initialized');
+    
+    // Initialize Gift Queue Worker after Queue Service is connected
+    try {
+      const GiftQueueWorker = require('./src/workers/giftQueueWorker');
+      await GiftQueueWorker.start();
+      console.log('✅ Gift Queue Worker initialized');
+    } catch (error) {
+      console.log('⚠️ Gift Queue Worker initialization skipped:', error.message);
+    }
   } catch (error) {
     console.log('⚠️ Queue Service initialization skipped:', error.message);
   }
@@ -123,23 +183,33 @@ const app = require('./src/app');
     console.log('⚠️ CDN Service initialization skipped:', error.message);
   }
 
-  // Initialize Auto Scaling Service
-  try {
-    const autoScalingService = require('./src/services/autoScalingService');
-    autoScalingService.setIo(io);
-    autoScalingService.start();
-    console.log('✅ Auto Scaling Service initialized');
-  } catch (error) {
-    console.log('⚠️ Auto Scaling Service initialization skipped:', error.message);
+  // Initialize Auto Scaling Service (only in production with ENABLE_AUTOSCALING=true)
+  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_AUTOSCALING === 'true') {
+    try {
+      const autoScalingService = require('./src/services/autoScalingService');
+      autoScalingService.setIo(io);
+      autoScalingService.start();
+      console.log('✅ Auto Scaling Service initialized in Production mode.');
+    } catch (error) {
+      console.log('⚠️ Auto Scaling Service initialization skipped:', error.message);
+    }
+  } else {
+    console.log('⚠️ Auto Scaling is disabled (Development Mode / Local Machine).');
   }
 
-  // Initialize Backup Service
-  try {
-    const backupService = require('./src/services/backupService');
-    await backupService.initialize();
-    console.log('✅ Backup Service initialized');
-  } catch (error) {
-    console.log('⚠️ Backup Service initialization skipped:', error.message);
+  // Initialize Backup Service (only when ENABLE_BACKUP=true, saves RAM locally)
+  if (process.env.ENABLE_BACKUP === 'true') {
+    try {
+      const backupService = require('./src/services/backupService');
+      await backupService.initialize({
+        interval: parseInt(process.env.BACKUP_INTERVAL_MINUTES) || 60
+      });
+      console.log('✅ Backup Service initialized');
+    } catch (error) {
+      console.log('⚠️ Backup Service initialization skipped:', error.message);
+    }
+  } else {
+    console.log('⚠️ Backup Service skipped to save RAM on local machine.');
   }
 
   // Initialize Error Reporting Service (Sentry)
@@ -187,64 +257,6 @@ const app = require('./src/app');
     console.log('⚠️ Feature Flag Service initialization skipped:', error.message);
   }
 })();
-
-// ─── SETUP HTTP + SOCKET.IO ────────────────────────────────────────────────
-const server = http.createServer(app);
-const io = initializeSocket(server);
-
-// Make `io` accessible globally inside controllers
-app.set('io', io);
-
-// ─── SETUP SOCKET HANDLERS ─────────────────────────────────────────────────
-const { initializeSockets } = require('./src/sockets');
-
-initializeSockets(io);
-
-
-
-  // ─── START BACKGROUND WORKERS ────────────────────────────────────────────
-  const GiftQueueWorker = require('./src/workers/giftQueueWorker');
-  GiftQueueWorker.start();
-
-  // ─── START ANALYTICS WORKER ─────────────────────────────────────────────
-  try {
-    const AnalyticsWorker = require('./src/workers/analyticsWorker');
-    const analyticsWorker = new AnalyticsWorker(io);
-    analyticsWorker.start();
-    console.log('✅ Analytics Worker initialized');
-  } catch (error) {
-    console.log('⚠️ Analytics Worker initialization skipped:', error.message);
-  }
-
-// ─── START SCHEDULER SERVICE ──────────────────────────────────────────────
-const SchedulerService = require('./src/services/schedulerService');
-
-// Daily check: reset attendance flags for previous day and process end-of-day summaries
-SchedulerService.startScheduler(24 * 60 * 60 * 1000);
-
-// Monthly salary cron: runs at midnight on the 1st of every month
-const salaryInterval = setInterval(async () => {
-  const now = new Date();
-  if (now.getDate() === 1 && now.getHours() === 0 && now.getMinutes() === 0) {
-    try {
-      const Agency = require('./src/models/Agency');
-      const SalaryRecord = require('./src/models/SalaryRecord');
-      const agencies = await Agency.find({ isActive: true });
-      for (const agency of agencies) {
-        const lastMonth = now.getMonth();
-        const year = now.getFullYear();
-        const existing = await SalaryRecord.findOne({ agencyId: agency._id, month: lastMonth, year });
-        if (!existing) {
-          const salaryController = require('./src/controllers/salaryController');
-          await salaryController.calculateMonthlySalary({ params: { agencyId: agency._id.toString() } }, { status: () => ({ json: () => {} }) });
-        }
-      }
-      console.log('✅ Monthly salary cron executed for all agencies');
-    } catch (error) {
-      console.error('Monthly salary cron error:', error);
-    }
-  }
-}, 60 * 1000);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

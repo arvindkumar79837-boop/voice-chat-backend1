@@ -3,7 +3,7 @@ const Event = require('../models/Event');
 const UserEventProgress = require('../models/UserEventProgress');
 const EventPrizePool = require('../models/EventPrizePool');
 const WelcomeWeekTask = require('../models/WelcomeWeekTask');
-const { broadcastToUser } = require('../utils/socketBroadcaster');
+
 
 class EventSocket {
   /**

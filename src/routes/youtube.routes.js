@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const youtubeController = require('../controllers/youtube.controller');
-const authMiddleware = require('../middlewares/authMiddleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 // All routes require auth
 router.use(authMiddleware);

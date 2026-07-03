@@ -10,10 +10,9 @@ const deviceSessionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    index: true,
   },
   uid: { type: String, required: true },
-  sessionToken: { type: String, required: true, unique: true, index: true },
+  sessionToken: { type: String, required: true, unique: true },
   deviceId: { type: String, required: true },
   deviceInfo: {
     platform: { type: String },
@@ -44,6 +43,6 @@ const deviceSessionSchema = new mongoose.Schema({
 deviceSessionSchema.index({ userId: 1, isActive: 1 });
 deviceSessionSchema.index({ uid: 1, isActive: 1 });
 deviceSessionSchema.index({ deviceId: 1 });
-deviceSessionSchema.index({ sessionToken: 1 });
+// sessionToken already has unique: true which creates an index
 
 module.exports = mongoose.model('DeviceSession', deviceSessionSchema);

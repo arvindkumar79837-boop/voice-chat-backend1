@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const vipController = require('../controllers/vipController');
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware: auth } = require('../middlewares/auth.middleware');
 
 router.get('/plans', auth, vipController.getVipPlans);
 router.post('/buy', auth, vipController.buyVip);
