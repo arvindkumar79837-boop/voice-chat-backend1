@@ -41,7 +41,12 @@ const initRedis = async () => {
       isRedisConnected = false;
     });
 
-    await redisClient.connect();
+    // Add timeout to prevent hanging when Redis is not available
+    const connectPromise = redisClient.connect();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('OTP Redis connection timeout after 5s')), 5000)
+    );
+    await Promise.race([connectPromise, timeoutPromise]);
   } catch (error) {
     console.warn('⚠️ Redis connection failed, using in-memory storage:', error.message);
     isRedisConnected = false;

@@ -47,6 +47,12 @@ const connectRedis = async () => {
 
     redisClient = redis.createClient(clientConfig);
 
+    // Add connection timeout to prevent infinite hang
+    const connectPromise = redisClient.connect();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Redis connection timeout after 5s')), 5000)
+    );
+    
     redisClient.on('error', (err) => {
       console.error('❌ Redis Client Error:', err.message);
     });
@@ -67,7 +73,7 @@ const connectRedis = async () => {
       console.log('⚠️ Redis Client Disconnected');
     });
 
-    await redisClient.connect();
+    await Promise.race([connectPromise, timeoutPromise]);
     console.log('✅ Redis Connected Successfully');
     return true;
   } catch (error) {

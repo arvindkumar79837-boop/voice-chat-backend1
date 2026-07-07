@@ -67,7 +67,11 @@ class QueueService {
         this.isConnected = true;
       });
 
-      await this.redisClient.connect();
+      const connectPromise = this.redisClient.connect();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Queue Redis connection timeout after 5s')), 5000)
+      );
+      await Promise.race([connectPromise, timeoutPromise]);
       this.isConnected = true;
       console.log('✅ Queue Service Connected');
       return true;
