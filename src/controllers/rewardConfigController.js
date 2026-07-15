@@ -3,7 +3,7 @@ const LuckyDraw = require('../models/LuckyDraw');
 const TreasureHunt = require('../models/TreasureHunt');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
-const { getSocketIo } = require('../sockets/socketManager');
+const { getIO } = require('../config/socket');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONTROLLER: RewardConfigController — Dynamic reward configuration & management
@@ -154,7 +154,7 @@ exports.updateRewardConfig = async (req, res) => {
 
     // Broadcast update via Socket.IO for real-time sync
     try {
-      const io = getSocketIo();
+      const io = getIO();
       io.to(`game:${config.gameType}`).emit('reward_config_updated', {
         configId: config._id,
         configName: config.configName,
@@ -236,7 +236,7 @@ exports.deployRewardConfig = async (req, res) => {
 
     // Broadcast deployment
     try {
-      const io = getSocketIo();
+      const io = getIO();
       io.to(`game:${config.gameType}`).emit('reward_config_deployed', {
         configId: config._id,
         configName: config.configName,

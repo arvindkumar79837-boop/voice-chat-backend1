@@ -12,7 +12,7 @@ const GiftTransaction = require('../models/GiftTransaction');
 const Ranking = require('../models/Ranking');
 const mongoose = require('mongoose');
 const redisRankingIntegration = require('../services/redisRankingIntegration');
-const { getSocketIo } = require('../sockets/socketManager');
+const { getIO } = require('../config/socket');
 
 // ─── FAMILY CORE ───────────────────────────────────────────────────────
 
@@ -154,7 +154,7 @@ exports.joinFamily = async (req, res) => {
 
     redisRankingIntegration.onFamilyActivity(familyId, 0, userId).catch(err => console.error('Redis family join failed:', err.message));
 
-    const io = getSocketIo();
+    const io = getIO();
     io.to(`family:${familyId}`).emit('family:member_joined', {
       familyId,
       uid: user.uid,
@@ -196,7 +196,7 @@ exports.leaveFamily = async (req, res) => {
       await family.save();
     }
 
-    const io = getSocketIo();
+    const io = getIO();
     io.to(`family:${leavingFamilyId}`).emit('family:member_left', {
       familyId: leavingFamilyId,
       uid: user.uid,
@@ -273,7 +273,7 @@ exports.updateFamilyDetails = async (req, res) => {
 
     await family.save();
 
-    const io = getSocketIo();
+    const io = getIO();
     io.to(`family:${family.familyId}`).emit('family:details_updated', {
       familyId: family.familyId,
       family_name: family.family_name,
@@ -447,7 +447,7 @@ exports.sendInvitation = async (req, res) => {
 
     await invitation.save();
 
-    const io = getSocketIo();
+    const io = getIO();
     if (receiver.socketId) {
       io.to(receiver.socketId).emit('family:invitation_received', {
         invitation_id: invitation.invitation_id,
@@ -578,7 +578,7 @@ exports.respondToInvitation = async (req, res) => {
       family.members_list.push(user.uid);
       await family.save();
 
-      const io = getSocketIo();
+      const io = getIO();
       io.to(`family:${family.familyId}`).emit('family:member_joined', {
         familyId: family.familyId,
         uid: user.uid,
@@ -680,7 +680,7 @@ exports.assignAdmin = async (req, res) => {
     await targetUser.save();
     await family.save();
 
-    const io = getSocketIo();
+    const io = getIO();
     io.to(`family:${family.familyId}`).emit('family:admin_assigned', {
       familyId: family.familyId,
       uid: targetUid,
@@ -724,7 +724,7 @@ exports.removeAdmin = async (req, res) => {
 
     await family.save();
 
-    const io = getSocketIo();
+    const io = getIO();
     io.to(`family:${family.familyId}`).emit('family:admin_removed', {
       familyId: family.familyId,
       uid: targetUid
@@ -820,7 +820,7 @@ exports.transferOwnership = async (req, res) => {
     targetUser.familyRole = 'Patriarch';
     await targetUser.save();
 
-    const io = getSocketIo();
+    const io = getIO();
     io.to(`family:${family.familyId}`).emit('family:ownership_transferred', {
       familyId: family.familyId,
       newPatriarchUid: targetUid,
@@ -1993,7 +1993,7 @@ exports.setOfficialRoom = async (req, res) => {
     family.official_room_id = roomId;
     await family.save();
 
-    const io = getSocketIo();
+    const io = getIO();
     io.to(`family:${family.familyId}`).emit('family:official_room_updated', {
       familyId: family.familyId,
       official_room_id: roomId
@@ -2028,7 +2028,7 @@ async function checkAndUpgradeFamilyLevel(family) {
     family.unlocked_powers = getPowersForLevel(newLevel);
     await family.save();
 
-    const io = getSocketIo();
+    const io = getIO();
     io.to(`family:${family.familyId}`).emit('family:level_up', {
       familyId: family.familyId,
       newLevel: newLevel,

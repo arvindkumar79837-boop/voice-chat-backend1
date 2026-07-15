@@ -20,7 +20,7 @@ const router = express.Router();
  * @body { role?: 'host' | 'audience' | 'moderator' }
  * @returns { token, uid, expireTime, appId }
  */
-router.post('/room/:roomId/agora/token', async (req, res) => {
+router.post('/:roomId/agora/token', async (req, res) => {
   try {
     const { roomId } = req.params;
     const { role = 'audience', expireTime = 3600 } = req.body;

@@ -2,7 +2,6 @@
 // Web Panel se aane wale admin requests verify karta hai
 // Admin token alag se generate hota hai ya special role hota hai
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET;
 const jwt = require('jsonwebtoken');
 
 // General Admin/Staff verification
