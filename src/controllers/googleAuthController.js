@@ -45,7 +45,7 @@ exports.googleLogin = async (req, res) => {
     // Generate JWT
     const token = jwt.sign(
       { id: user._id, uid: user.uid, role: user.role, isUser: true },
-      process.env.JWT_SECRET || 'arvind_party_super_secret_key',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -105,7 +105,7 @@ exports.appleLogin = async (req, res) => {
 
     const token = jwt.sign(
       { id: user._id, uid: user.uid, role: user.role, isUser: true },
-      process.env.JWT_SECRET || 'arvind_party_super_secret_key',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 

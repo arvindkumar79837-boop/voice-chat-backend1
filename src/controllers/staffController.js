@@ -120,7 +120,7 @@ exports.loginStaff = async (req, res) => {
         isStaff: true,
         permissions: staff.permissions,
       },
-      process.env.JWT_SECRET || 'arvind_party_super_secret_key',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
