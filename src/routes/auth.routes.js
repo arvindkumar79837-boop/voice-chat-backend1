@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-const { logout, sendOtp, verifyOtp, resendOtp, register, refreshToken } = require('../controllers/auth.controller');
+const { login, logout, sendOtp, verifyOtp, resendOtp, register, refreshToken } = require('../controllers/auth.controller');
 const { validatePhone, validateOTP } = require('../middlewares/validation.middleware');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 
@@ -110,5 +110,40 @@ router.get('/me', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch user' });
   }
 });
+
+// ─── ADMIN VERIFY ────────────────────────────────────────────────────────────
+router.get('/admin/verify', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, message: 'No token provided' });
+    }
+    const token = authHeader.split(' ')[1];
+    const { verifyIdToken } = require('../config/firebase-admin');
+    const decoded = await verifyIdToken(token);
+    const Staff = require('../models/Staff');
+    const staff = await Staff.findOne({ uid: decoded.uid });
+    if (!staff) {
+      return res.status(403).json({ success: false, message: 'No staff account found' });
+    }
+    return res.json({
+      success: true,
+      data: {
+        role: staff.role,
+        permissions: staff.permissions,
+        name: staff.name,
+        uid: staff.uid
+      }
+    });
+  } catch (error) {
+    return res.status(401).json({ success: false, message: 'Invalid token' });
+  }
+});
+
+// ─── MOBILE APP ALIASES ──────────────────────────────────────────────────────
+router.post('/login', authLimiter, validatePhone(), login);
+router.post('/signup', authLimiter, validatePhone(), register);
+router.post('/phone-login', authLimiter, validatePhone(), sendOtp);
+router.post('/verify-otp', authLimiter, validatePhone(), validateOTP(), verifyOtp);
 
 module.exports = router;

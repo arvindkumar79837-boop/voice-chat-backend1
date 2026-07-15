@@ -8,16 +8,16 @@ const HealthController = require('../controllers/healthController');
  */
 
 // Simple health check (for load balancers)
-router.get('/health', HealthController.getSimpleHealth);
+router.get('/', HealthController.getSimpleHealth);
 
 // Detailed health check with all services
-router.get('/health/detailed', HealthController.getDetailedHealth);
+router.get('/detailed', HealthController.getDetailedHealth);
 
 // System metrics endpoint
-router.get('/health/metrics', HealthController.getMetrics);
+router.get('/metrics', HealthController.getMetrics);
 
 // Queue stats endpoint
-router.get('/health/queues', async (req, res) => {
+router.get('/queues', async (req, res) => {
   try {
     const QueueService = require('../services/queueService');
     const queues = QueueService.getConnectedQueues();
@@ -44,7 +44,7 @@ router.get('/health/queues', async (req, res) => {
 });
 
 // Redis stats endpoint
-router.get('/health/redis', async (req, res) => {
+router.get('/redis', async (req, res) => {
   try {
     const QueueService = require('../services/queueService');
     const redisInfo = await QueueService.getRedisClient();
@@ -77,7 +77,7 @@ router.get('/health/redis', async (req, res) => {
 });
 
 // Readiness probe (Kubernetes)
-router.get('/health/ready', (req, res) => {
+router.get('/ready', (req, res) => {
   const dbReady = require('mongoose').connection.readyState === 1;
   
   if (dbReady) {
@@ -88,7 +88,7 @@ router.get('/health/ready', (req, res) => {
 });
 
 // Liveness probe (Kubernetes)
-router.get('/health/live', (req, res) => {
+router.get('/live', (req, res) => {
   res.status(200).json({ status: 'alive', uptime: process.uptime() });
 });
 

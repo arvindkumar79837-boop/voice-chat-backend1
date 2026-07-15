@@ -137,6 +137,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 // Firebase + secure auth (refresh rotation, session revocation)
 app.use('/api/auth', authLimiter, require('./routes/authSecure.routes'));
 app.use('/api/auth/social', require('./routes/googleAuthRoutes')); // Google + Apple OAuth
+app.use('/api/auth', require('./routes/googleAuthRoutes')); // Mobile app aliases for /auth/google, /auth/apple
 app.use('/api/auth/social', socialAuthRoutes); // Social Login (Google, Apple, Facebook, Snapchat, Instagram, Guest)
 app.use('/api/auth', authLimiter, firebaseAuthRoutes); // Firebase ID Token + Apple Sign-In
 app.use('/api/users', userRoutes);
