@@ -1,5 +1,19 @@
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+const fs = require('fs');
+const envPath = path.join(__dirname, '.env');
+
+if (!fs.existsSync(envPath)) {
+  console.error('❌ FATAL: .env file not found!');
+  console.error('');
+  console.error('   Run the following command to get started:');
+  console.error('   $ cp .env.example .env');
+  console.error('');
+  console.error('   Then edit .env with your configuration values.');
+  console.error('');
+  process.exit(1);
+}
+
+require('dotenv').config({ path: envPath });
 
 // ─────────────────────────────────────────────────────────────────────────
 // ENVIRONMENT VARIABLE VALIDATION
@@ -16,7 +30,10 @@ const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
 if (missingEnvVars.length > 0) {
   console.error('❌ FATAL: Missing required environment variables:');
   missingEnvVars.forEach(key => console.error(`   - ${key}`));
-  console.error('Please set these in your .env file and restart the server.');
+  console.error('');
+  console.error('   Edit your .env file and add the missing values,');
+  console.error('   then restart the server.');
+  console.error('');
   process.exit(1);
 }
 
