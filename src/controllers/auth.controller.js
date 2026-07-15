@@ -6,7 +6,19 @@
 
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { sendOTP, verifyOTP } = require('../services/otp.service');
+
+// ─── HELPER: Generate a unique username from phone or random ────────────────
+const generateUsername = (prefix = 'user') => {
+  const suffix = Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
+  return `${prefix}_${suffix}`.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
+};
+
+// ─── HELPER: Generate a unique uid ───────────────────────────────────────────
+const generateUid = (prefix = 'UID') => {
+  return `${prefix}_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SEND OTP
@@ -88,8 +100,13 @@ exports.verifyOtp = async (req, res, next) => {
     if (isNewUser) {
       // Create new user
       const arvindId = `ARV-${Date.now().toString().slice(-8)}`;
+      const phoneSuffix = phone.slice(-4);
+      const username = generateUsername(`user${phoneSuffix}`);
+      const uid = generateUid('PH');
       user = await User.create({
         phone,
+        uid,
+        username,
         arvindId,
         provider: 'phone',
         isProfileComplete: false,
@@ -242,8 +259,13 @@ exports.register = async (req, res, next) => {
 
     // Create new user
     const arvindId = `ARV-${Date.now().toString().slice(-8)}`;
+    const phoneSuffix = phone.slice(-4);
+    const username = generateUsername(`user${phoneSuffix}`);
+    const uid = generateUid('PH');
     const user = await User.create({
       phone,
+      uid,
+      username,
       name,
       arvindId,
       gender,

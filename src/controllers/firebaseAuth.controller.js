@@ -71,11 +71,14 @@ exports.verifyFirebaseToken = async (req, res, next) => {
 
     if (isNewUser) {
       const arvindId = `ARV-${Date.now().toString().slice(-8)}`;
+      const crypto = require('crypto');
+      const uid = `FIREBASE_${firebaseUid}_${Date.now().toString(36)}`;
       const username = firebaseEmail
-        ? firebaseEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_')
-        : `user_${Date.now().toString().slice(-6)}`;
+        ? firebaseEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_') + '_' + crypto.randomBytes(2).toString('hex')
+        : `user_${Date.now().toString(36)}_${crypto.randomBytes(2).toString('hex')}`.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
 
       user = await User.create({
+        uid,
         firebaseUid: firebaseUid,
         email: firebaseEmail,
         phone: firebasePhone?.replace('+91', '') || null,
@@ -313,10 +316,13 @@ exports.verifyAppleToken = async (req, res, next) => {
 
     const isNewUser = !user;
     if (isNewUser) {
+      const crypto = require('crypto');
       const arvindId = `ARV-${Date.now().toString().slice(-8)}`;
-      const username = `apple_${Date.now().toString().slice(-6)}`;
+      const uid = `APPLE_${appleUid}_${Date.now().toString(36)}`;
+      const username = `apple_${Date.now().toString(36)}_${crypto.randomBytes(2).toString('hex')}`.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
 
       user = await User.create({
+        uid,
         firebaseUid: appleUid,
         email: appleEmail,
         username: username,

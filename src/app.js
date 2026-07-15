@@ -98,15 +98,15 @@ app.use('/api/', apiLimiter);
 // ─── STRICT RATE LIMITING FOR AUTH ENDPOINTS ───────────────────────────────
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // max 5 attempts per IP per 15 min
-  skipSuccessfulRequests: false, // count all requests
+  max: process.env.NODE_ENV === 'development' ? 1000 : 5,
+  skipSuccessfulRequests: process.env.NODE_ENV === 'development',
   message: { success: false, message: 'Too many login attempts. Please try again later.' }
 });
 
 const otpLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 3, // max 3 OTP attempts per minute
-  skipSuccessfulRequests: false,
+  max: process.env.NODE_ENV === 'development' ? 1000 : 3,
+  skipSuccessfulRequests: process.env.NODE_ENV === 'development',
   message: { success: false, message: 'Too many OTP verification attempts. Please try again in 1 minute.' }
 });
 

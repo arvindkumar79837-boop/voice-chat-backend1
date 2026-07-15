@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const Staff = require('../models/Staff');
 
@@ -18,6 +19,10 @@ exports.googleLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'ID token or Firebase UID required' });
     }
 
+    if (!firebaseUid || typeof firebaseUid !== 'string' || firebaseUid.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Valid Firebase UID is required' });
+    }
+
     let user;
     let isNewUser = false;
 
@@ -26,12 +31,13 @@ exports.googleLogin = async (req, res) => {
 
     if (!user) {
       // Create new user if not exists
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const randomSuffix = crypto.randomBytes(4).toString('hex');
+      const username = `google_${Date.now().toString(36)}_${randomSuffix}`.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
       user = new User({
         uid: firebaseUid,
+        username,
         name: `User_${randomSuffix}`,
-        phone: '',
-        email: '',
+        provider: 'google',
         isVerified: true,
         coins: 0,
         diamonds: 0,
@@ -85,15 +91,21 @@ exports.appleLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Identity token or Firebase UID required' });
     }
 
+    if (!firebaseUid || typeof firebaseUid !== 'string' || firebaseUid.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Valid Firebase UID is required' });
+    }
+
     let user = await User.findOne({ uid: firebaseUid });
 
     if (!user) {
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const randomSuffix = crypto.randomBytes(4).toString('hex');
+      const username = `apple_${Date.now().toString(36)}_${randomSuffix}`.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
       user = new User({
         uid: firebaseUid,
+        username,
         name: name || `Apple_${randomSuffix}`,
-        phone: '',
         email: email || '',
+        provider: 'apple',
         isVerified: true,
         coins: 0,
         diamonds: 0,

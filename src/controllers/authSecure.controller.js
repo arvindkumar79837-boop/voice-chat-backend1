@@ -328,22 +328,38 @@ exports.socialLogin = async (req, res, next) => {
   try {
     const { provider, providerToken, providerUid, email, displayName, photoUrl, deviceInfo } = req.body;
 
+    // ─── STRICT VALIDATION ───────────────────────────────────────────────
+    if (!provider || !providerUid) {
+      return res.status(400).json({ success: false, message: 'Provider and providerUid are required' });
+    }
+
     if (!['google', 'apple', 'facebook', 'snapchat', 'instagram'].includes(provider)) {
       return res.status(400).json({ success: false, message: 'Invalid social provider' });
     }
 
+    // Trim and sanitise strings
+    const sanitisedEmail = (email || '').trim();
+    const sanitisedDisplayName = (displayName || '').trim();
+    const sanitisedPhotoUrl = (photoUrl || '').trim();
+
+    // ─── LOOKUP BY PROVIDER —— existing user ─────────────────────────────
     let user = await User.findOne({ 'socialProviders.provider': provider, 'socialProviders.providerUid': providerUid });
 
     if (!user) {
-      let username = displayName || `user_${provider}_${Date.now().toString(36)}`;
-      username = username.replace(/[^a-zA-Z0-9_]/g, '').substring(0, 20);
+      // ─── NEW USER — assign a guaranteed-unique username ────────────────
+      const baseName = sanitisedDisplayName || `${provider}_user`;
+      const safeBase = baseName.replace(/[^a-zA-Z0-9_]/g, '').substring(0, 12) || `${provider}`;
+      let username = `${safeBase}_${Date.now().toString(36)}${crypto.randomBytes(2).toString('hex')}`;
+      username = username.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
+
+      const uid = `${provider}_${providerUid}_${Date.now().toString(36)}`;
 
       user = new User({
-        uid: `${provider}_${providerUid}`,
+        uid,
         username,
-        name: displayName || username,
-        email: email || '',
-        avatar: photoUrl || '',
+        name: sanitisedDisplayName || username,
+        email: sanitisedEmail || '',
+        avatar: sanitisedPhotoUrl || '',
         provider: provider,
         isProfileComplete: false,
         role: 'user',
@@ -353,9 +369,9 @@ exports.socialLogin = async (req, res, next) => {
         socialProviders: [{
           provider,
           providerUid,
-          email,
-          displayName,
-          photoUrl,
+          email: sanitisedEmail,
+          displayName: sanitisedDisplayName,
+          photoUrl: sanitisedPhotoUrl,
         }],
       });
 
@@ -422,11 +438,12 @@ exports.unlinkSocialAccount = async (req, res, next) => {
 
 exports.guestLogin = async (req, res, next) => {
   try {
+    const randomSuffix = crypto.randomBytes(4).toString('hex');
     const arvindId = `ARV-GUEST-${Date.now().toString(36).toUpperCase()}`;
     const user = new User({
-      uid: `guest_${Date.now().toString(36)}`,
+      uid: `guest_${Date.now().toString(36)}_${randomSuffix}`,
       arvindId,
-      username: `guest_${Date.now().toString(36).substring(0, 8)}`,
+      username: `guest_${Date.now().toString(36)}_${randomSuffix}`.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, ''),
       name: 'Guest User',
       provider: 'guest',
       isGuest: true,
