@@ -7,15 +7,6 @@ const jwt = require('jsonwebtoken');
 
 // General Admin/Staff verification
 const verifyStaff = (req, res, next) => {
-  const adminKey = req.headers['x-admin-key'];
-  
-  // Fallback for super admin testing using secret key
-  if (adminKey && adminKey === ADMIN_SECRET) {
-    req.isAdmin = true;
-    req.userRole = 'OWNER.WEB'; 
-    return next();
-  }
-  
   // Parse JWT token from Authorization header
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {

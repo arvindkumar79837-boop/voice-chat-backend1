@@ -3,11 +3,14 @@
  * High-performance leaderboard using Redis Sorted Sets
  */
 
-const redis = require('../config/redis');
+const { getRedisClient } = require('../config/redis');
 
 class RedisRankingService {
+  get client() {
+    return getRedisClient();
+  }
+
   constructor() {
-    this.client = redis;
     this.prefix = 'arvind:ranking:';
     this.TTL = 86400; // 24 hours cache TTL
   }
