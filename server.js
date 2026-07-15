@@ -6,6 +6,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 // ─────────────────────────────────────────────────────────────────────────
 const requiredEnvVars = [
   'JWT_SECRET',
+  'REFRESH_TOKEN_SECRET',
   'MONGO_URI',
   'PORT'
 ];
@@ -25,6 +26,7 @@ const { initializeSocket } = require('./src/config/socket');
 const { initRedis } = require('./src/services/otp.service');
 const { connectRedis } = require('./src/config/redis');
 const app = require('./src/app');
+const { initializeFirebaseAdmin } = require('./src/config/firebase-admin');
 
 // ─── SETUP HTTP + SOCKET.IO ────────────────────────────────────────────────
 const server = http.createServer(app);
@@ -54,28 +56,27 @@ const SchedulerService = require('./src/services/schedulerService');
 SchedulerService.startScheduler(24 * 60 * 60 * 1000);
 
 // Monthly salary cron: runs at midnight on the 1st of every month
-const salaryInterval = setInterval(async () => {
-  const now = new Date();
-  if (now.getDate() === 1 && now.getHours() === 0 && now.getMinutes() === 0) {
-    try {
-      const Agency = require('./src/models/Agency');
-      const SalaryRecord = require('./src/models/SalaryRecord');
-      const agencies = await Agency.find({ isActive: true });
-      for (const agency of agencies) {
-        const lastMonth = now.getMonth();
-        const year = now.getFullYear();
-        const existing = await SalaryRecord.findOne({ agencyId: agency._id, month: lastMonth, year });
-        if (!existing) {
-          const salaryController = require('./src/controllers/salaryController');
-          await salaryController.calculateMonthlySalary({ params: { agencyId: agency._id.toString() } }, { status: () => ({ json: () => {} }) });
-        }
+const cron = require('node-cron');
+cron.schedule('0 0 1 * *', async () => {
+  try {
+    const Agency = require('./src/models/Agency');
+    const SalaryRecord = require('./src/models/SalaryRecord');
+    const agencies = await Agency.find({ isActive: true });
+    for (const agency of agencies) {
+      const now = new Date();
+      const lastMonth = now.getMonth();
+      const year = now.getFullYear();
+      const existing = await SalaryRecord.findOne({ agencyId: agency._id, month: lastMonth, year });
+      if (!existing) {
+        const salaryController = require('./src/controllers/salaryController');
+        await salaryController.calculateMonthlySalary({ params: { agencyId: agency._id.toString() } }, { status: () => ({ json: () => {} }) });
       }
-      console.log('✅ Monthly salary cron executed for all agencies');
-    } catch (error) {
-      console.error('Monthly salary cron error:', error);
     }
+    console.log('✅ Monthly salary cron executed for all agencies');
+  } catch (error) {
+    console.error('Monthly salary cron error:', error);
   }
-}, 60 * 1000);
+});
 
 // ─── INITIALIZE SERVICES ───────────────────────────────────────────────────
 (async () => {
@@ -98,6 +99,14 @@ const salaryInterval = setInterval(async () => {
     await connectRedis();
   } catch (error) {
     console.log('⚠️ Ranking Redis Connection Error - Rankings will use MongoDB fallback');
+  }
+
+  // Initialize Firebase Admin SDK
+  try {
+    initializeFirebaseAdmin();
+    console.log('✅ Firebase Admin SDK initialized');
+  } catch (error) {
+    console.log('⚠️ Firebase Admin SDK initialization skipped:', error.message);
   }
 
   // Initialize default badges
@@ -258,6 +267,20 @@ const salaryInterval = setInterval(async () => {
     console.log('⚠️ Feature Flag Service initialization skipped:', error.message);
   }
 })();
+
+const gracefulShutdown = async (signal) => {
+  console.log(`Received ${signal}. Starting graceful shutdown...`);
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+};
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

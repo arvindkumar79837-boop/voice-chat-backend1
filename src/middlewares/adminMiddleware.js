@@ -2,7 +2,7 @@
 // Web Panel se aane wale admin requests verify karta hai
 // Admin token alag se generate hota hai ya special role hota hai
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'arvind_admin_2024';
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
 const jwt = require('jsonwebtoken');
 
 // General Admin/Staff verification
@@ -21,7 +21,7 @@ const verifyStaff = (req, res, next) => {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'arvind_party_super_secret_key');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = decoded;
     } catch (err) {
       return res.status(401).json({ success: false, message: 'Invalid or expired token' });

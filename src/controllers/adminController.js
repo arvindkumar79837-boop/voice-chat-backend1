@@ -1,3 +1,9 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// ⚠️ DEPRECATED — This file is dead code and NOT imported anywhere.
+//    It has been superseded by admin.controller.js (active).
+//    Kept for reference only — do NOT use in production.
+// ═══════════════════════════════════════════════════════════════════════════
+
 const mongoose = require('mongoose');
 const User = require('../models/User'); // User model aapke pas already hai
 const TreasuryLog = require('../models/TreasuryLog');

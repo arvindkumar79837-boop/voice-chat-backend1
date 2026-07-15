@@ -41,10 +41,6 @@ exports.sendOtp = async (req, res, next) => {
       phone: phone
     };
 
-    if (process.env.NODE_ENV === 'development') {
-      responseData.debugOtp = result.otp; // Only in dev - remove in production
-    }
-
     res.status(200).json(responseData);
   } catch (error) {
     console.error('❌ Send OTP Error:', error);
@@ -107,7 +103,7 @@ exports.verifyOtp = async (req, res, next) => {
     // Generate JWT token
     const token = jwt.sign(
       {
-        userId: user._id.toString(),
+        id: user._id.toString(),
         phone: user.phone,
         provider: user.provider
       },
@@ -117,7 +113,7 @@ exports.verifyOtp = async (req, res, next) => {
  
      // Generate refresh token
      const refreshToken = jwt.sign(
-       { userId: user._id.toString() },
+       { id: user._id.toString() },
        process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: '90d' } // Long-lived refresh token
     );
@@ -185,15 +181,15 @@ exports.login = async (req, res, next) => {
 
     // Generate tokens
     const token = jwt.sign(
-      { userId: user._id.toString(), phone: user.phone },
-       process.env.JWT_SECRET,
-       { expiresIn: '15m' }
+      { id: user._id.toString(), phone: user.phone },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
      );
  
      const refreshToken = jwt.sign(
-       { userId: user._id.toString() },
-       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: '90d' }
+      { id: user._id.toString() },
+      process.env.REFRESH_TOKEN_SECRET,
+     { expiresIn: '90d' }
     );
 
     res.status(200).json({
@@ -262,13 +258,13 @@ exports.register = async (req, res, next) => {
 
     // Generate tokens
     const token = jwt.sign(
-      { userId: user._id.toString(), phone: user.phone },
+      { id: user._id.toString(), phone: user.phone },
        process.env.JWT_SECRET,
        { expiresIn: '15m' }
      );
  
      const refreshToken = jwt.sign(
-       { userId: user._id.toString() },
+       { id: user._id.toString() },
        process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: '90d' }
     );
@@ -311,7 +307,7 @@ exports.refreshToken = async (req, res, next) => {
 
     try {
       const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-      const userId = decoded.userId;
+      const userId = decoded.id;
 
       // Find user
       const user = await User.findById(userId);
@@ -324,7 +320,7 @@ exports.refreshToken = async (req, res, next) => {
 
       // Generate new token
       const newToken = jwt.sign(
-        { userId: user._id.toString(), phone: user.phone },
+        { id: user._id.toString(), phone: user.phone },
         process.env.JWT_SECRET,
         { expiresIn: '15m' }
       );
@@ -354,7 +350,12 @@ exports.refreshToken = async (req, res, next) => {
 
 exports.logout = async (req, res, next) => {
   try {
-    // In a real app, you might blacklist the token here
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const { blacklistAccessToken } = require('../utils/jwt');
+      await blacklistAccessToken(token);
+    }
     res.status(200).json({
       success: true,
       message: 'Logged out successfully'

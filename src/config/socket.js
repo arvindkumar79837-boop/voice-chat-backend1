@@ -62,7 +62,7 @@ const initializeSocket = (server) => {
 
         // Initialize family socket handlers
         if (socket.familyId) {
-            const { setupFamilySocketHandlers } = require('./sockets/familySocket');
+            const { setupFamilySocketHandlers } = require('../sockets/familySocket');
             setupFamilySocketHandlers(io, socket);
         }
 

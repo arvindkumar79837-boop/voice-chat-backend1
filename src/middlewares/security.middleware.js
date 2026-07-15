@@ -51,9 +51,10 @@ const networkLockdown = async (req, res, next) => {
 
   } catch (error) {
     console.error('[Security Middleware] An unexpected error occurred:', error);
-    // Fail-safe: In case of an error in the middleware, allow the request to prevent service disruption.
-    // However, this should be monitored closely.
-    next();
+    return res.status(500).json({
+      success: false,
+      message: 'Internal security check failed. Please try again later.'
+    });
   }
 };
 

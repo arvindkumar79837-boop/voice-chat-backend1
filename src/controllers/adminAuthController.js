@@ -18,17 +18,16 @@ const { verifyOTP } = require('../services/otp.service'); // Assuming Firebase O
  */
 exports.login = async (req, res) => {
   try {
-    const { uid, idToken } = req.body;
-    let staffUid = uid;
-
-    // If idToken is provided, verify it first to get the UID
-    if (idToken && !uid) {
-      try {
-        const decodedToken = await verifyIdToken(idToken);
-        staffUid = decodedToken.uid;
-      } catch (fbError) {
-        return res.status(401).json({ success: false, message: 'Invalid Firebase ID token' });
-      }
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ success: false, message: 'Firebase ID token is required' });
+    }
+    let staffUid;
+    try {
+      const decodedToken = await verifyIdToken(idToken);
+      staffUid = decodedToken.uid;
+    } catch (fbError) {
+      return res.status(401).json({ success: false, message: 'Invalid Firebase ID token' });
     }
 
     if (staffUid) {

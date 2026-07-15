@@ -151,7 +151,8 @@ exports.updateUser = async (req, res) => {
 
 exports.toggleBan = async (req, res) => {
   try {
-    const { userId, isBanned, reason } = req.body;
+    const userId = req.params.userId;
+    const { isBanned, reason } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {

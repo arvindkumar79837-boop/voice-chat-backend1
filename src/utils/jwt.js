@@ -6,6 +6,17 @@
 
 const jwt = require('jsonwebtoken');
 
+let _redisClient = null;
+const _getRedisClient = async () => {
+  if (_redisClient && _redisClient.isOpen) return _redisClient;
+  const redis = require('redis');
+  const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
+  _redisClient = redis.createClient({ url: redisUrl, password: process.env.REDIS_PASSWORD || undefined });
+  _redisClient.on('error', (err) => console.error('Redis client error:', err));
+  await _redisClient.connect();
+  return _redisClient;
+};
+
 const ACCESS_TOKEN_EXPIRY  = '15m';
 const REFRESH_TOKEN_EXPIRY = '30d';
 const TOKEN_BLACKLIST_PREFIX = 'blacklist:';
@@ -58,15 +69,10 @@ const blacklistAccessToken = async (token) => {
   try {
     const decoded = jwt.decode(token);
     if (!decoded || !decoded.jti) return false;
-    // TTL: match the remaining time until expiry
     const ttl = Math.max(0, decoded.exp - Math.floor(Date.now() / 1000));
     if (ttl <= 0) return false;
-    const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
-    const redis = require('redis');
-    const client = redis.createClient({ url: redisUrl, password: process.env.REDIS_PASSWORD || undefined });
-    await client.connect();
+    const client = await _getRedisClient();
     await client.setEx(`${TOKEN_BLACKLIST_PREFIX}${decoded.jti}`, ttl, '1');
-    await client.quit();
     return true;
   } catch {
     return false;
@@ -80,12 +86,8 @@ const isTokenBlacklisted = async (token) => {
   try {
     const decoded = jwt.decode(token);
     if (!decoded || !decoded.jti) return false;
-    const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
-    const redis = require('redis');
-    const client = redis.createClient({ url: redisUrl, password: process.env.REDIS_PASSWORD || undefined });
-    await client.connect();
+    const client = await _getRedisClient();
     const exists = await client.exists(`${TOKEN_BLACKLIST_PREFIX}${decoded.jti}`);
-    await client.quit();
     return exists === 1;
   } catch {
     return false;

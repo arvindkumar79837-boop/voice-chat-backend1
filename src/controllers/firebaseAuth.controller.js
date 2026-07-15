@@ -113,7 +113,7 @@ exports.verifyFirebaseToken = async (req, res, next) => {
 
     const token = jwt.sign(
       {
-        userId: user._id.toString(),
+        id: user._id.toString(),
         uid: user.uid,
         firebaseUid: user.firebaseUid,
         phone: user.phone,
@@ -126,7 +126,7 @@ exports.verifyFirebaseToken = async (req, res, next) => {
     );
 
     const refreshToken = jwt.sign(
-      { userId: user._id.toString(), firebaseUid: user.firebaseUid },
+      { id: user._id.toString(), firebaseUid: user.firebaseUid },
       process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: '90d' },
     );
@@ -345,7 +345,7 @@ exports.verifyAppleToken = async (req, res, next) => {
 
     const token = jwt.sign(
       {
-        userId: user._id.toString(),
+        id: user._id.toString(),
         uid: user.uid,
         firebaseUid: user.firebaseUid,
         phone: user.phone,
@@ -358,7 +358,7 @@ exports.verifyAppleToken = async (req, res, next) => {
     );
 
     const refreshToken = jwt.sign(
-      { userId: user._id.toString(), firebaseUid: user.firebaseUid },
+      { id: user._id.toString(), firebaseUid: user.firebaseUid },
       process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: '90d' },
     );

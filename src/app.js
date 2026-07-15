@@ -14,6 +14,7 @@ const googleAuthRoutes = require('./routes/googleAuthRoutes');
 const firebaseAuthRoutes = require('./routes/firebaseAuth.routes');
 const userRoutes = require('./routes/user.routes');
 const adminRoutes = require('./routes/adminRoutes');
+const adminAuthRoutes = require('./routes/adminAuth');
 const staffRoutes = require('./routes/staffRoutes');
 const securityRoutes = require('./routes/securityRoutes');
 const socialAuthRoutes = require('./routes/socialAuthRoutes');
@@ -89,7 +90,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Rate Limiter for general APIs
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs
+  max: 200, // limit each IP to 200 requests per windowMs
   message: { success: false, message: 'Too many requests from this IP, please try again later.' }
 });
 app.use('/api/', apiLimiter);
@@ -140,6 +141,7 @@ app.use('/api/auth/social', socialAuthRoutes); // Social Login (Google, Apple, F
 app.use('/api/auth', authLimiter, firebaseAuthRoutes); // Firebase ID Token + Apple Sign-In
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);         // Dashboard, Coin Control, Ban, Withdrawals
+app.use('/api/admin/auth', adminAuthRoutes); // Admin Authentication
 app.use('/api/admin/modules', moduleManagerRoutes); // Specialized Manager Modules
 app.use('/api/localization', localizationRoutes); // Multi-Language & Translation Management
 app.use('/api/staff', staffRoutes);         // Staff Management (Owner Only)
