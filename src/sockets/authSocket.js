@@ -4,8 +4,7 @@
 // Handles: Force logout, suspicious login alerts, session notifications
 // ═══════════════════════════════════════════════════════════════════════════
 
-module.exports = (io) => {
-  io.on('connection', (socket) => {
+module.exports = (io, socket) => {
     console.log(`🔌 Auth Socket connected: ${socket.id}`);
 
     // Backward-compatible alias for Flutter client
@@ -130,5 +129,4 @@ module.exports = (io) => {
     // ─────────────────────────────────────────────────────────────────────
 
     console.log('✅ Auth socket events registered');
-  });
 };

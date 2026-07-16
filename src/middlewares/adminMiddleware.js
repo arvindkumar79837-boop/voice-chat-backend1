@@ -2,33 +2,38 @@
 // Web Panel se aane wale admin requests verify karta hai
 // Admin token alag se generate hota hai ya special role hota hai
 
-const jwt = require('jsonwebtoken');
+const { verifyAccessToken, isTokenBlacklisted } = require('../utils/jwt');
 
 // General Admin/Staff verification
-const verifyStaff = (req, res, next) => {
-  // Parse JWT token from Authorization header
+const verifyStaff = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.split(' ')[1];
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
-    } catch (err) {
-      return res.status(401).json({ success: false, message: 'Invalid or expired token' });
-    }
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'Staff authentication token required.' });
   }
 
-  // Real JWT Based Staff Verification
+  const token = authHeader.split(' ')[1];
+  try {
+    const blacklisted = await isTokenBlacklisted(token);
+    if (blacklisted) {
+      return res.status(401).json({ success: false, message: 'Staff token has been revoked.' });
+    }
+
+    const decoded = verifyAccessToken(token);
+    req.user = decoded;
+  } catch (err) {
+    return res.status(401).json({ success: false, message: 'Invalid or expired staff token.' });
+  }
+
   if (req.user && req.user.isStaff) {
     req.isAdmin = true;
-    req.userRole = req.user.role; // e.g., 'APP.ADMIN.WEB', 'BD.UID'
+    req.userRole = req.user.role;
     req.permissions = req.user.permissions || [];
     return next();
   }
 
-  return res.status(403).json({ 
-    success: false, 
-    message: 'Staff access required. Unauthorized.' 
+  return res.status(403).json({
+    success: false,
+    message: 'Staff access required. Unauthorized.'
   });
 };
 

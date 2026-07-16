@@ -3,8 +3,7 @@ const User = require('../models/User');
 const GiftEvent = require('../models/GiftEvent');
 const Room = require('../models/Room');
 
-module.exports = (io) => {
-  io.on('connection', (socket) => {
+module.exports = (io, socket) => {
 
     // ─── Send Gift via Socket (realtime with wallet check) ─────
     const handleSendGift = async (data) => {
@@ -330,5 +329,4 @@ module.exports = (io) => {
         senderName
       });
     });
-  });
 };

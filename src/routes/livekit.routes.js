@@ -2,17 +2,22 @@ const express = require('express');
 const router = express.Router();
 const asyncHandler = require('../utils/asyncHandler');
 const { generateLiveKitToken } = require('../services/livekitService');
+const { authMiddleware } = require('../middlewares/auth.middleware');
+
+// LiveKit token routes require authentication to prevent identity spoofing
+router.use(authMiddleware);
 
 router.get('/:roomId/livekit/token', asyncHandler(async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { userId, userName } = req.query;
+    const userId = req.user?.id || req.user?.userId || req.user?.uid;
 
     if (!userId) {
-      return res.status(400).json({ success: false, message: 'userId is required' });
+      return res.status(401).json({ success: false, message: 'Authenticated user required' });
     }
 
-    const result = await generateLiveKitToken(roomId, userId, userName || 'User');
+    const userName = req.query.userName || req.user?.name || 'User';
+    const result = await generateLiveKitToken(roomId, userId, userName);
 
     if (!result) {
       return res.status(500).json({ success: false, message: 'Failed to generate LiveKit token. Check LiveKit credentials.' });
@@ -32,13 +37,18 @@ router.get('/:roomId/livekit/token', asyncHandler(async (req, res) => {
 
 router.post('/token', asyncHandler(async (req, res) => {
   try {
-    const { roomId, userId, userName } = req.body;
+    const { roomId, userName } = req.body;
+    const userId = req.user?.id || req.user?.userId || req.user?.uid;
 
-    if (!roomId || !userId) {
-      return res.status(400).json({ success: false, message: 'roomId and userId are required' });
+    if (!roomId) {
+      return res.status(400).json({ success: false, message: 'roomId is required' });
     }
 
-    const result = await generateLiveKitToken(roomId, userId, userName || 'User');
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Authenticated user required' });
+    }
+
+    const result = await generateLiveKitToken(roomId, userId, userName || req.user?.name || 'User');
 
     if (!result) {
       return res.status(500).json({ success: false, message: 'Failed to generate LiveKit token. Check LiveKit credentials.' });
