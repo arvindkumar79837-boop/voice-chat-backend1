@@ -8,6 +8,11 @@ module.exports = (io) => {
   io.on('connection', (socket) => {
     console.log(`🔌 Auth Socket connected: ${socket.id}`);
 
+    // Backward-compatible alias for Flutter client
+    socket.on('heartbeat', (data, callback) => {
+      socket.emit('auth:heartbeat', data, callback);
+    });
+
     // ─────────────────────────────────────────────────────────────────────
     // USER AUTHENTICATES SOCKET WITH JWT
     // Client sends: { token: "jwt_token" }
@@ -107,6 +112,22 @@ module.exports = (io) => {
         console.error('❌ Force logout ack error:', error);
       }
     });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // NOTIFICATION NEW (Flutter client listens for this event)
+    // Emits notification:new to a specific user's room
+    // ─────────────────────────────────────────────────────────────────────
+    socket.on('notification:new', (data) => {
+      const { userId, notification } = data;
+      if (userId && notification) {
+        io.to(`user:${userId}`).emit('notification:new', notification);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // HELPER: Server-side utility to push notification to a user
+    // Can be called from REST controllers via io.to(`user:${userId}`)
+    // ─────────────────────────────────────────────────────────────────────
 
     console.log('✅ Auth socket events registered');
   });

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const asyncHandler = require('../utils/asyncHandler');
 const walletController = require('../controllers/walletController');
 const { authMiddleware: auth } = require('../middlewares/auth.middleware');
 const adminAuth = require('../middlewares/isAdmin');
@@ -7,89 +8,89 @@ const adminAuth = require('../middlewares/isAdmin');
 // ===================== USER WALLET =====================
 
 // Main Wallet - 4 Core Wallets in one endpoint
-router.get('/wallet', auth, walletController.getWallet);
-router.get('/wallet/transactions', auth, walletController.getTransactionHistory);
+router.get('/wallet', auth, asyncHandler(walletController.getWallet));
+router.get('/wallet/transactions', auth, asyncHandler(walletController.getTransactionHistory));
 
 // ===================== COIN WALLET - RECHARGE =====================
 
 // Coin Recharge - Create Razorpay Order
-router.post('/wallet/recharge/create-order', auth, walletController.createRazorpayOrder);
+router.post('/wallet/recharge/create-order', auth, asyncHandler(walletController.createRazorpayOrder));
 
 // Verify Payment
-router.post('/wallet/recharge/verify', auth, walletController.verifyPayment);
+router.post('/wallet/recharge/verify', auth, asyncHandler(walletController.verifyPayment));
 
 // Webhook for Razorpay
-router.post('/wallet/recharge/webhook', walletController.handlePaymentWebhook);
+router.post('/wallet/recharge/webhook', asyncHandler(walletController.handlePaymentWebhook));
 
 // ===================== SEND GIFT =====================
 
-router.post('/wallet/gift/send', auth, walletController.sendGift);
+router.post('/wallet/gift/send', auth, asyncHandler(walletController.sendGift));
 
 // ===================== DIAMOND EXCHANGE =====================
 
 // Wallet Exchange (Diamond to Coin)
-router.post('/wallet/exchange', auth, walletController.exchangeDiamondsToCoins);
+router.post('/wallet/exchange', auth, asyncHandler(walletController.exchangeDiamondsToCoins));
 
 // ===================== DIAMOND WITHDRAWAL =====================
 
 // Withdrawal Routes
-router.post('/wallet/withdraw/request', auth, walletController.requestWithdrawal);
-router.get('/wallet/withdraw/status', auth, walletController.getWithdrawalStatus);
+router.post('/wallet/withdraw/request', auth, asyncHandler(walletController.requestWithdrawal));
+router.get('/wallet/withdraw/status', auth, asyncHandler(walletController.getWithdrawalStatus));
 
 // ===================== FAMILY WALLET =====================
 
 // Family Wallet Routes
-router.get('/wallet/family', auth, walletController.getFamilyWallet);
-router.post('/wallet/family/contribute', auth, walletController.contributeToFamilyWallet);
-router.post('/wallet/family/task-reward', auth, adminAuth, walletController.addFamilyTaskReward);
-router.get('/wallet/family/transactions', auth, walletController.getFamilyWalletTransactions);
+router.get('/wallet/family', auth, asyncHandler(walletController.getFamilyWallet));
+router.post('/wallet/family/contribute', auth, asyncHandler(walletController.contributeToFamilyWallet));
+router.post('/wallet/family/task-reward', auth, adminAuth, asyncHandler(walletController.addFamilyTaskReward));
+router.get('/wallet/family/transactions', auth, asyncHandler(walletController.getFamilyWalletTransactions));
 
 // ===================== AGENCY WALLET & COMMISSION =====================
 
 // Agency Wallet Routes
-router.get('/wallet/agency', auth, walletController.getAgencyWallet);
-router.post('/wallet/agency/commission/credit', auth, adminAuth, walletController.creditAgencyCommission);
-router.post('/wallet/agency/withdraw/request', auth, walletController.requestAgencyWithdrawal);
-router.get('/wallet/agency/transactions', auth, walletController.getAgencyWalletTransactions);
+router.get('/wallet/agency', auth, asyncHandler(walletController.getAgencyWallet));
+router.post('/wallet/agency/commission/credit', auth, adminAuth, asyncHandler(walletController.creditAgencyCommission));
+router.post('/wallet/agency/withdraw/request', auth, asyncHandler(walletController.requestAgencyWithdrawal));
+router.get('/wallet/agency/transactions', auth, asyncHandler(walletController.getAgencyWalletTransactions));
 
 // Agency Master Wallet - Host Dashboard
-router.get('/wallet/agency/host-dashboard', auth, walletController.getHostAgencyDashboard);
+router.get('/wallet/agency/host-dashboard', auth, asyncHandler(walletController.getHostAgencyDashboard));
 
 // Agency Master Wallet - Owner Dashboard
-router.get('/wallet/agency/owner-dashboard', auth, walletController.getOwnerAgencyDashboard);
+router.get('/wallet/agency/owner-dashboard', auth, asyncHandler(walletController.getOwnerAgencyDashboard));
 
 // Agency Master Wallet - Monthly History
-router.get('/wallet/agency/monthly-history', auth, walletController.getAgencyMonthlyHistory);
+router.get('/wallet/agency/monthly-history', auth, asyncHandler(walletController.getAgencyMonthlyHistory));
 
 // Agency Master Wallet - Update Monthly Stats (Admin/System)
-router.post('/wallet/agency/monthly-stats/update', auth, adminAuth, walletController.updateAgencyMonthlyStats);
+router.post('/wallet/agency/monthly-stats/update', auth, adminAuth, asyncHandler(walletController.updateAgencyMonthlyStats));
 
 // ===================== INCOME ANALYTICS =====================
 
 // Income Analytics
-router.get('/wallet/income-analytics', auth, walletController.getIncomeAnalytics);
+router.get('/wallet/income-analytics', auth, asyncHandler(walletController.getIncomeAnalytics));
 
 // ===================== ADMIN ROUTES =====================
 
 // Admin Routes - Withdrawal Management
-router.get('/admin/withdrawals', auth, adminAuth, walletController.getAllWithdrawals);
-router.get('/admin/withdrawals/:id', auth, adminAuth, walletController.getWithdrawalDetails);
-router.put('/admin/withdrawals/:id/approve', auth, adminAuth, walletController.approveWithdrawal);
-router.put('/admin/withdrawals/:id/reject', auth, adminAuth, walletController.rejectWithdrawal);
-router.put('/admin/withdrawals/:id/process', auth, adminAuth, walletController.processWithdrawal);
+router.get('/admin/withdrawals', auth, adminAuth, asyncHandler(walletController.getAllWithdrawals));
+router.get('/admin/withdrawals/:id', auth, adminAuth, asyncHandler(walletController.getWithdrawalDetails));
+router.put('/admin/withdrawals/:id/approve', auth, adminAuth, asyncHandler(walletController.approveWithdrawal));
+router.put('/admin/withdrawals/:id/reject', auth, adminAuth, asyncHandler(walletController.rejectWithdrawal));
+router.put('/admin/withdrawals/:id/process', auth, adminAuth, asyncHandler(walletController.processWithdrawal));
 
 // Admin Routes - Wallet Management
-router.put('/admin/wallet/adjust', auth, adminAuth, walletController.adjustUserWallet);
-router.get('/admin/wallet/stats', auth, adminAuth, walletController.getWalletStats);
-router.get('/admin/wallet/config', auth, adminAuth, walletController.getWalletConfig);
-router.put('/admin/wallet/config', auth, adminAuth, walletController.updateWalletConfig);
+router.put('/admin/wallet/adjust', auth, adminAuth, asyncHandler(walletController.adjustUserWallet));
+router.get('/admin/wallet/stats', auth, adminAuth, asyncHandler(walletController.getWalletStats));
+router.get('/admin/wallet/config', auth, adminAuth, asyncHandler(walletController.getWalletConfig));
+router.put('/admin/wallet/config', auth, adminAuth, asyncHandler(walletController.updateWalletConfig));
 
 // Admin Routes - Transaction Management
-router.get('/admin/transactions', auth, adminAuth, walletController.getAllTransactions);
+router.get('/admin/transactions', auth, adminAuth, asyncHandler(walletController.getAllTransactions));
 
 // Admin Routes - Tax & Safety
-router.get('/admin/wallet/tax-records', auth, adminAuth, walletController.getTaxRecords);
-router.post('/admin/wallet/freeze', auth, adminAuth, walletController.freezeUserWallet);
-router.post('/admin/wallet/unfreeze', auth, adminAuth, walletController.unfreezeUserWallet);
+router.get('/admin/wallet/tax-records', auth, adminAuth, asyncHandler(walletController.getTaxRecords));
+router.post('/admin/wallet/freeze', auth, adminAuth, asyncHandler(walletController.freezeUserWallet));
+router.post('/admin/wallet/unfreeze', auth, adminAuth, asyncHandler(walletController.unfreezeUserWallet));
 
 module.exports = router;

@@ -25,4 +25,20 @@ module.exports = (io, socket) => {
   socket.on('send_reaction', (data) => {
     io.to(data.roomId).emit('receive_reaction', data);
   });
+
+  // Typing indicator for Flutter client
+  socket.on('chat:typing', (data) => {
+    const { roomId } = data;
+    if (roomId) {
+      socket.to(roomId).emit('chat:typing', data);
+    }
+  });
+
+  // Private chat message forwarding
+  socket.on('chat:private', (data) => {
+    const { receiverId } = data;
+    if (receiverId) {
+      io.to(`user:${receiverId}`).emit('chat:private', data);
+    }
+  });
 };

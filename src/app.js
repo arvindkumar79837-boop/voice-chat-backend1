@@ -43,6 +43,7 @@ const rankingRoutes = require('./routes/rankingRoutes');
 const vipRoutes = require('./routes/vipRoutes');
 const vipSystemRoutes = require('./routes/vipSystemRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const livekitRoutes = require('./routes/livekit.routes');
 const appUserRoutes = require('./routes/appUserRoutes');
 const levelRoutes = require('./routes/level.routes');
 const agoraRoutes = require('./controllers/agoraController');
@@ -77,6 +78,14 @@ const luckyDrawMobileRoutes = require('./routes/luckyDrawMobileRoutes');
 const socialRoutes = require('./routes/socialRoutes');
 
 const app = express();
+
+// ─── REQUEST ID FOR TRACING ────────────────────────────────────────────────
+const crypto = require('crypto');
+app.use((req, res, next) => {
+  req.id = req.headers['x-request-id'] || crypto.randomUUID();
+  res.setHeader('X-Request-ID', req.id);
+  next();
+});
 
 // ─── SECURITY MIDDLEWARES ────────────────────────────────────────────────
 app.use(helmet()); // Protects against XSS, clickjacking, etc.
@@ -181,6 +190,8 @@ app.use('/api/creator', creatorRoutes);         // Creator Economy
 app.use('/api/support', supportRoutes);         // Support & Tickets
 app.use('/api/moderation', moderationRoutes);   // Reports & Moderation
 app.use('/api/referral', referralRoutes);       // Referral System
+app.use('/api/room', livekitRoutes);              // LiveKit token generation
+app.use('/api/livekit', livekitRoutes);            // LiveKit token fallback
 app.use('/api/room', agoraRoutes);              // Agora token & seat management
 app.use('/api/moments', momentRoutes);          // Moments / Posts Feed
 app.use('/api/notifications', notificationRoutes); // Notifications

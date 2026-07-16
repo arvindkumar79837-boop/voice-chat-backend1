@@ -1,91 +1,144 @@
 const express = require('express');
 const router = express.Router();
+const asyncHandler = require('../utils/asyncHandler');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const familyController = require('../controllers/familyController');
+const Family = require('../models/Family');
+const FamilyTask = require('../models/FamilyTask');
+const User = require('../models/User');
+
+// ─── Flutter-compatible family routes ──────────────────────────
+router.get('/members', authMiddleware, asyncHandler(async (req, res) => {
+  const { familyId } = req.query;
+  if (!familyId) return res.status(400).json({ success: false, message: 'familyId required' });
+
+  const family = await Family.findOne({ family_id: familyId });
+  if (!family) return res.json({ success: true, members: [] });
+
+  const memberUsers = await User.find({ uid: { $in: family.members_list } })
+    .select('uid username avatar level displayName name');
+  res.json({ success: true, members: memberUsers });
+}));
+
+router.get('/ranking', authMiddleware, asyncHandler(async (req, res) => {
+  const { period = 'all' } = req.query;
+  const families = await Family.find({ is_active: true, is_banned: false })
+    .sort({ total_xp: -1 }).limit(50);
+  res.json({ success: true, rankings: families.map((f, i) => ({ ...f.toObject(), rank: i + 1 })) });
+}));
+
+router.get('/points', authMiddleware, asyncHandler(async (req, res) => {
+  const { familyId } = req.query;
+  if (!familyId) return res.status(400).json({ success: false, message: 'familyId required' });
+
+  const family = await Family.findOne({ family_id: familyId }).select('family_points');
+  res.json({ success: true, points: family?.family_points || 0 });
+}));
+
+router.post('/upgrade', authMiddleware, asyncHandler(async (req, res) => {
+  const { familyId, upgradeType } = req.body;
+  if (!familyId) return res.status(400).json({ success: false, message: 'familyId required' });
+
+  const family = await Family.findOne({ family_id: familyId });
+  if (!family) return res.status(404).json({ success: false, message: 'Family not found' });
+
+  family.current_level = (family.current_level || 1) + 1;
+  await family.save();
+
+  res.json({ success: true, family });
+}));
+
+router.get('/tasks/daily', authMiddleware, asyncHandler(async (req, res) => {
+  const { familyId } = req.query;
+  if (!familyId) return res.status(400).json({ success: false, message: 'familyId required' });
+
+  const dailyTasks = await FamilyTask.find({ familyId, taskType: 'daily_active_members', status: { $ne: 'expired' } });
+  res.json({ success: true, tasks: dailyTasks });
+}));
 
 // ─── FAMILY CORE ───────────────────────────────────────────────────────
-router.get('/mine', authMiddleware, familyController.getMyFamily);
-router.post('/create', authMiddleware, familyController.createFamily);
-router.post('/join', authMiddleware, familyController.joinFamily);
-router.post('/leave', authMiddleware, familyController.leaveFamily);
-router.get('/search', authMiddleware, familyController.searchFamilies);
-router.get('/search/users', authMiddleware, familyController.searchUsersByUid);
-router.get('/search/users-to-invite', authMiddleware, familyController.searchUsersToInvite);
-router.get('/:familyId', authMiddleware, familyController.getFamilyInfo);
-router.put('/update', authMiddleware, familyController.updateFamilyDetails);
+router.get('/mine', authMiddleware, asyncHandler(familyController.getMyFamily));
+router.post('/create', authMiddleware, asyncHandler(familyController.createFamily));
+router.post('/join', authMiddleware, asyncHandler(familyController.joinFamily));
+router.post('/leave', authMiddleware, asyncHandler(familyController.leaveFamily));
+router.get('/search', authMiddleware, asyncHandler(familyController.searchFamilies));
+router.get('/search/users', authMiddleware, asyncHandler(familyController.searchUsersByUid));
+router.get('/search/users-to-invite', authMiddleware, asyncHandler(familyController.searchUsersToInvite));
+router.get('/:familyId', authMiddleware, asyncHandler(familyController.getFamilyInfo));
+router.put('/update', authMiddleware, asyncHandler(familyController.updateFamilyDetails));
 
 // ─── INVITATION SYSTEM ─────────────────────────────────────────────────
-router.post('/invite/send', authMiddleware, familyController.sendInvitation);
-router.get('/invite/my', authMiddleware, familyController.getMyInvitations);
-router.get('/invite/sent', authMiddleware, familyController.getSentInvitations);
-router.post('/invite/respond', authMiddleware, familyController.respondToInvitation);
-router.post('/invite/cancel', authMiddleware, familyController.cancelInvitation);
+router.post('/invite/send', authMiddleware, asyncHandler(familyController.sendInvitation));
+router.get('/invite/my', authMiddleware, asyncHandler(familyController.getMyInvitations));
+router.get('/invite/sent', authMiddleware, asyncHandler(familyController.getSentInvitations));
+router.post('/invite/respond', authMiddleware, asyncHandler(familyController.respondToInvitation));
+router.post('/invite/cancel', authMiddleware, asyncHandler(familyController.cancelInvitation));
 
 // ─── ADMIN MANAGEMENT ──────────────────────────────────────────────────
-router.post('/admin/assign', authMiddleware, familyController.assignAdmin);
-router.post('/admin/remove', authMiddleware, familyController.removeAdmin);
-router.get('/admin/list', authMiddleware, familyController.getAdminList);
-router.post('/admin/transfer-ownership', authMiddleware, familyController.transferOwnership);
+router.post('/admin/assign', authMiddleware, asyncHandler(familyController.assignAdmin));
+router.post('/admin/remove', authMiddleware, asyncHandler(familyController.removeAdmin));
+router.get('/admin/list', authMiddleware, asyncHandler(familyController.getAdminList));
+router.post('/admin/transfer-ownership', authMiddleware, asyncHandler(familyController.transferOwnership));
 
 // ─── FAMILY TASKS ──────────────────────────────────────────────────────
-router.get('/tasks', authMiddleware, familyController.getFamilyTasks);
-router.get('/tasks/progress', authMiddleware, familyController.getTaskProgress);
-router.post('/tasks/submit', authMiddleware, familyController.submitTaskProgress);
-router.post('/tasks/claim', authMiddleware, familyController.claimTaskRewards);
+router.get('/tasks', authMiddleware, asyncHandler(familyController.getFamilyTasks));
+router.get('/tasks/progress', authMiddleware, asyncHandler(familyController.getTaskProgress));
+router.post('/tasks/submit', authMiddleware, asyncHandler(familyController.submitTaskProgress));
+router.post('/tasks/claim', authMiddleware, asyncHandler(familyController.claimTaskRewards));
 
 // ─── FAMILY SHOP ───────────────────────────────────────────────────────
-router.get('/shop/items', authMiddleware, familyController.getFamilyShopItems);
-router.post('/shop/purchase', authMiddleware, familyController.purchaseFamilyShopItem);
-router.get('/shop/inventory', authMiddleware, familyController.getFamilyInventory);
+router.get('/shop/items', authMiddleware, asyncHandler(familyController.getFamilyShopItems));
+router.post('/shop/purchase', authMiddleware, asyncHandler(familyController.purchaseFamilyShopItem));
+router.get('/shop/inventory', authMiddleware, asyncHandler(familyController.getFamilyInventory));
 
 // ─── FAMILY CHAT ───────────────────────────────────────────────────────
-router.get('/chat/messages', authMiddleware, familyController.getFamilyChatMessages);
-router.post('/chat/send', authMiddleware, familyController.sendFamilyChatMessage);
-router.post('/chat/delete', authMiddleware, familyController.deleteFamilyChatMessage);
-router.post('/chat/pin', authMiddleware, familyController.pinFamilyChatMessage);
-router.post('/chat/reaction', authMiddleware, familyController.addChatReaction);
+router.get('/chat/messages', authMiddleware, asyncHandler(familyController.getFamilyChatMessages));
+router.post('/chat/send', authMiddleware, asyncHandler(familyController.sendFamilyChatMessage));
+router.post('/chat/delete', authMiddleware, asyncHandler(familyController.deleteFamilyChatMessage));
+router.post('/chat/pin', authMiddleware, asyncHandler(familyController.pinFamilyChatMessage));
+router.post('/chat/reaction', authMiddleware, asyncHandler(familyController.addChatReaction));
 
 // ─── FAMILY PK BATTLES ─────────────────────────────────────────────────
-router.post('/pk/create', authMiddleware, familyController.createFamilyPK);
-router.post('/pk/join', authMiddleware, familyController.joinFamilyPK);
-router.get('/pk/active', authMiddleware, familyController.getActiveFamilyPK);
-router.get('/pk/history', authMiddleware, familyController.getFamilyPKHistory);
-router.get('/pk/battle/:battleId', authMiddleware, familyController.getFamilyPKDetail);
+router.post('/pk/create', authMiddleware, asyncHandler(familyController.createFamilyPK));
+router.post('/pk/join', authMiddleware, asyncHandler(familyController.joinFamilyPK));
+router.get('/pk/active', authMiddleware, asyncHandler(familyController.getActiveFamilyPK));
+router.get('/pk/history', authMiddleware, asyncHandler(familyController.getFamilyPKHistory));
+router.get('/pk/battle/:battleId', authMiddleware, asyncHandler(familyController.getFamilyPKDetail));
 
 // ─── FAMILY WARS ───────────────────────────────────────────────────────
-router.get('/wars/active', authMiddleware, familyController.getActiveFamilyWars);
-router.get('/wars/history', authMiddleware, familyController.getFamilyWarHistory);
-router.post('/wars/register', authMiddleware, familyController.registerForFamilyWar);
-router.get('/wars/:warId/leaderboard', authMiddleware, familyController.getWarLeaderboard);
-router.get('/wars/:warId/my-contribution', authMiddleware, familyController.getMyWarContribution);
+router.get('/wars/active', authMiddleware, asyncHandler(familyController.getActiveFamilyWars));
+router.get('/wars/history', authMiddleware, asyncHandler(familyController.getFamilyWarHistory));
+router.post('/wars/register', authMiddleware, asyncHandler(familyController.registerForFamilyWar));
+router.get('/wars/:warId/leaderboard', authMiddleware, asyncHandler(familyController.getWarLeaderboard));
+router.get('/wars/:warId/my-contribution', authMiddleware, asyncHandler(familyController.getMyWarContribution));
 
 // ─── FAMILY RANKINGS ───────────────────────────────────────────────────
-router.get('/rankings/daily', familyController.getDailyFamilyRankings);
-router.get('/rankings/weekly', familyController.getWeeklyFamilyRankings);
-router.get('/rankings/monthly', familyController.getMonthlyFamilyRankings);
+router.get('/rankings/daily', asyncHandler(familyController.getDailyFamilyRankings));
+router.get('/rankings/weekly', asyncHandler(familyController.getWeeklyFamilyRankings));
+router.get('/rankings/monthly', asyncHandler(familyController.getMonthlyFamilyRankings));
 
 // ─── FAMILY LEADERBOARD ────────────────────────────────────────────────
-router.get('/leaderboard', authMiddleware, familyController.getFamilyLeaderboard);
-router.post('/leaderboard/update', authMiddleware, familyController.updateLeaderboard);
+router.get('/leaderboard', authMiddleware, asyncHandler(familyController.getFamilyLeaderboard));
+router.post('/leaderboard/update', authMiddleware, asyncHandler(familyController.updateLeaderboard));
 
 // ─── FAMILY STAY REWARD ────────────────────────────────────────────────
-router.post('/stay/start', authMiddleware, familyController.startStaySession);
-router.post('/stay/redeem', authMiddleware, familyController.redeemStayReward);
-router.post('/stay/end', authMiddleware, familyController.endStaySession);
-router.get('/stay/my', authMiddleware, familyController.getMyStaySession);
+router.post('/stay/start', authMiddleware, asyncHandler(familyController.startStaySession));
+router.post('/stay/redeem', authMiddleware, asyncHandler(familyController.redeemStayReward));
+router.post('/stay/end', authMiddleware, asyncHandler(familyController.endStaySession));
+router.get('/stay/my', authMiddleware, asyncHandler(familyController.getMyStaySession));
 
 // ─── REWARD CONFIG (OWNER PANEL) ───────────────────────────────────────
-router.get('/rewards/config', authMiddleware, familyController.getRewardConfig);
-router.put('/rewards/config', authMiddleware, familyController.updateRewardConfig);
+router.get('/rewards/config', authMiddleware, asyncHandler(familyController.getRewardConfig));
+router.put('/rewards/config', authMiddleware, asyncHandler(familyController.updateRewardConfig));
 
 // ─── OFFICIAL ROOM ─────────────────────────────────────────────────────
-router.post('/room/set-official', authMiddleware, familyController.setOfficialRoom);
+router.post('/room/set-official', authMiddleware, asyncHandler(familyController.setOfficialRoom));
 
 // ─── ADMIN ROUTES ──────────────────────────────────────────────────────
-router.get('/admin/all', authMiddleware, familyController.adminGetAllFamilies);
-router.put('/admin/:familyId/toggle', authMiddleware, familyController.adminToggleFamilyStatus);
-router.put('/admin/:familyId/ban', authMiddleware, familyController.adminBanFamily);
-router.put('/admin/:familyId/unban', authMiddleware, familyController.adminUnbanFamily);
-router.delete('/admin/:familyId', authMiddleware, familyController.adminDeleteFamily);
+router.get('/admin/all', authMiddleware, asyncHandler(familyController.adminGetAllFamilies));
+router.put('/admin/:familyId/toggle', authMiddleware, asyncHandler(familyController.adminToggleFamilyStatus));
+router.put('/admin/:familyId/ban', authMiddleware, asyncHandler(familyController.adminBanFamily));
+router.put('/admin/:familyId/unban', authMiddleware, asyncHandler(familyController.adminUnbanFamily));
+router.delete('/admin/:familyId', authMiddleware, asyncHandler(familyController.adminDeleteFamily));
 
 module.exports = router;

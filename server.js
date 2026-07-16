@@ -96,13 +96,14 @@ cron.schedule('0 0 1 * *', async () => {
 });
 
 // ─── INITIALIZE SERVICES ───────────────────────────────────────────────────
-(async () => {
-  // Connect to MongoDB
+(async function initializeServices() {
   try {
-    await connectDB();
-  } catch (error) {
-    console.log('⚠️ MongoDB Connection Error - Server running without DB');
-  }
+    // Connect to MongoDB
+    try {
+      await connectDB();
+    } catch (error) {
+      console.log('⚠️ MongoDB Connection Error - Server running without DB');
+    }
 
   // Initialize Redis for OTP storage
   try {
@@ -283,33 +284,84 @@ cron.schedule('0 0 1 * *', async () => {
   } catch (error) {
     console.log('⚠️ Feature Flag Service initialization skipped:', error.message);
   }
+
+  } catch (error) {
+    console.error('❌ Critical error during service initialization:', error.message);
+  }
 })();
 
+// ─── GRACEFUL SHUTDOWN ──────────────────────────────────────────────────────
 const gracefulShutdown = async (signal) => {
-  console.log(`Received ${signal}. Starting graceful shutdown...`);
+  console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+
+  // Stop accepting new connections
   server.close(() => {
-    console.log('HTTP server closed');
-    process.exit(0);
+    console.log('✅ HTTP server closed');
   });
+
+  // Disconnect Socket.IO
+  try {
+    const { getIO } = require('./src/config/socket');
+    const io = getIO();
+    io.close(() => {
+      console.log('✅ Socket.IO server closed');
+    });
+  } catch (_) {}
+
+  // Disconnect Redis
+  try {
+    const { connectRedis } = require('./src/config/redis');
+    if (connectRedis && typeof connectRedis.quit === 'function') {
+      await connectRedis.quit();
+    }
+  } catch (_) {}
+
+  // Force exit after timeout
   setTimeout(() => {
-    console.error('Forced shutdown after timeout');
+    console.error('⚠️ Forced shutdown after 10s timeout');
     process.exit(1);
   }, 10000);
 };
+
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-process.on('unhandledRejection', (reason) => {
-  console.error('UNHANDLED REJECTION:', reason);
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ UNHANDLED REJECTION at:', promise, 'reason:', reason);
 });
+
 process.on('uncaughtException', (err) => {
-  console.error('UNCAUGHT EXCEPTION:', err);
+  console.error('❌ UNCAUGHT EXCEPTION:', err.message);
+  console.error(err.stack);
   gracefulShutdown('uncaughtException');
 });
 
+// ─── START SERVER ───────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-  console.log(`📡 Socket.io ready`);
-  console.log(`🌐 http://localhost:${PORT}`);
-});
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+try {
+  server.listen(PORT, () => {
+    console.log('');
+    console.log('═══════════════════════════════════════════════════════');
+    console.log(`  🦁 ARVIND PARTY BACKEND`);
+    console.log(`  🌍 Environment : ${NODE_ENV}`);
+    console.log(`  🚀 Port        : ${PORT}`);
+    console.log(`  📡 Socket.IO   : enabled`);
+    console.log(`  🌐 URL         : http://localhost:${PORT}`);
+    console.log(`  ❤️  Health      : http://localhost:${PORT}/health`);
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('');
+  });
+
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ FATAL: Port ${PORT} is already in use`);
+      process.exit(1);
+    }
+    console.error('❌ Server error:', error);
+  });
+} catch (error) {
+  console.error('❌ FATAL: Failed to start server:', error.message);
+  process.exit(1);
+}

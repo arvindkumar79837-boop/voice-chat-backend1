@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const asyncHandler = require('../utils/asyncHandler');
 const socialController = require('../controllers/socialController');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 
@@ -8,33 +9,33 @@ const { authMiddleware } = require('../middlewares/auth.middleware');
 // ─────────────────────────────────────────────────────────────────────────
 
 // Follow user
-router.post('/follow/:userId', authMiddleware, socialController.followUser);
+router.post('/follow/:userId', authMiddleware, asyncHandler(socialController.followUser));
 
 // Unfollow user
-router.post('/unfollow/:userId', authMiddleware, socialController.unfollowUser);
+router.post('/unfollow/:userId', authMiddleware, asyncHandler(socialController.unfollowUser));
 
 // Get followers list
-router.get('/followers/:userId', authMiddleware, socialController.getFollowers);
+router.get('/followers/:userId', authMiddleware, asyncHandler(socialController.getFollowers));
 
 // Get following list
-router.get('/following/:userId', authMiddleware, socialController.getFollowing);
+router.get('/following/:userId', authMiddleware, asyncHandler(socialController.getFollowing));
 
 // Record profile visit
-router.post('/visit/:userId', authMiddleware, socialController.recordVisit);
+router.post('/visit/:userId', authMiddleware, asyncHandler(socialController.recordVisit));
 
 // Get visitor history
-router.get('/visitors', authMiddleware, socialController.getVisitorHistory);
+router.get('/visitors', authMiddleware, asyncHandler(socialController.getVisitorHistory));
 
 // Block user
-router.post('/block/:userId', authMiddleware, socialController.blockUser);
+router.post('/block/:userId', authMiddleware, asyncHandler(socialController.blockUser));
 
 // Unblock user
-router.post('/unblock/:userId', authMiddleware, socialController.unblockUser);
+router.post('/unblock/:userId', authMiddleware, asyncHandler(socialController.unblockUser));
 
 // Get block list
-router.get('/block-list', authMiddleware, socialController.getBlockList);
+router.get('/block-list', authMiddleware, asyncHandler(socialController.getBlockList));
 
 // Check block status
-router.get('/check-block/:userId', authMiddleware, socialController.checkBlockStatus);
+router.get('/check-block/:userId', authMiddleware, asyncHandler(socialController.checkBlockStatus));
 
 module.exports = router;

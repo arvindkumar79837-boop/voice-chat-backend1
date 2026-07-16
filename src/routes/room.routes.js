@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const asyncHandler = require('../utils/asyncHandler');
 const roomController = require('../controllers/room.controller');
 const roomProductionController = require('../controllers/room.production.controller');
 const powerMatrixController = require('../controllers/powerMatrixController');
@@ -8,61 +9,61 @@ const { checkPowerMiddleware, checkRoomOwner } = require('../middlewares/powerVa
 const { verifyStaff } = require('../middlewares/adminMiddleware');
 
 // ─── Room Varieties & Discovery ─────────────────────────────────
-router.get('/live', roomProductionController.getLiveRooms);
-router.get('/type/:roomType', roomProductionController.getRoomsByType);
-router.get('/ranking', roomProductionController.getRoomRanking);
-router.post('/create', authMiddleware, roomProductionController.createRoom);
+router.get('/live', asyncHandler(roomProductionController.getLiveRooms));
+router.get('/type/:roomType', asyncHandler(roomProductionController.getRoomsByType));
+router.get('/ranking', asyncHandler(roomProductionController.getRoomRanking));
+router.post('/create', authMiddleware, asyncHandler(roomProductionController.createRoom));
 
 // ─── Room Detail & Access ───────────────────────────────────────
-router.get('/:roomId', roomProductionController.getRoomDetail);
-router.post('/:roomId/join', authMiddleware, roomProductionController.joinRoom);
-router.post('/:roomId/verify-password', authMiddleware, roomProductionController.verifyPassword);
+router.get('/:roomId', asyncHandler(roomProductionController.getRoomDetail));
+router.post('/:roomId/join', authMiddleware, asyncHandler(roomProductionController.joinRoom));
+router.post('/:roomId/verify-password', authMiddleware, asyncHandler(roomProductionController.verifyPassword));
 
 // ─── Advanced Seat Controls ─────────────────────────────────────
-router.post('/:roomId/seats/:seatIndex/lock', [authMiddleware, checkRoomOwner], roomProductionController.toggleSeatLock);
-router.post('/:roomId/seats/:seatIndex/mute', [authMiddleware, checkRoomOwner, checkPowerMiddleware], roomProductionController.toggleSeatMute);
-router.post('/:roomId/seats/:seatIndex/claim', authMiddleware, roomProductionController.claimSeat);
-router.post('/:roomId/seats/:seatIndex/release', authMiddleware, roomProductionController.releaseSeat);
-router.post('/:roomId/seats/:seatIndex/kick', [authMiddleware, checkRoomOwner, checkPowerMiddleware], roomProductionController.kickFromSeat);
+router.post('/:roomId/seats/:seatIndex/lock', [authMiddleware, checkRoomOwner], asyncHandler(roomProductionController.toggleSeatLock));
+router.post('/:roomId/seats/:seatIndex/mute', [authMiddleware, checkRoomOwner, checkPowerMiddleware], asyncHandler(roomProductionController.toggleSeatMute));
+router.post('/:roomId/seats/:seatIndex/claim', authMiddleware, asyncHandler(roomProductionController.claimSeat));
+router.post('/:roomId/seats/:seatIndex/release', authMiddleware, asyncHandler(roomProductionController.releaseSeat));
+router.post('/:roomId/seats/:seatIndex/kick', [authMiddleware, checkRoomOwner, checkPowerMiddleware], asyncHandler(roomProductionController.kickFromSeat));
 
 // ─── Room Cosmetics ─────────────────────────────────────────────
-router.put('/:roomId/cosmetics', [authMiddleware, checkRoomOwner], roomProductionController.updateCosmetics);
-router.post('/:roomId/cosmetics/purchase-background', [authMiddleware, checkRoomOwner], roomProductionController.purchaseBackground);
+router.put('/:roomId/cosmetics', [authMiddleware, checkRoomOwner], asyncHandler(roomProductionController.updateCosmetics));
+router.post('/:roomId/cosmetics/purchase-background', [authMiddleware, checkRoomOwner], asyncHandler(roomProductionController.purchaseBackground));
 
 // ─── Room Gifts ─────────────────────────────────────────────────
-router.post('/:roomId/gift', authMiddleware, roomProductionController.sendGiftToRoom);
+router.post('/:roomId/gift', authMiddleware, asyncHandler(roomProductionController.sendGiftToRoom));
 
 // ─── Room PK Battles ────────────────────────────────────────────
-router.post('/:roomId/pk/challenge', authMiddleware, roomProductionController.challengeRoomPK);
-router.get('/:roomId/pk/status', roomProductionController.getPKStatus);
+router.post('/:roomId/pk/challenge', authMiddleware, asyncHandler(roomProductionController.challengeRoomPK));
+router.get('/:roomId/pk/status', asyncHandler(roomProductionController.getPKStatus));
 
 // ─── Room Tasks ─────────────────────────────────────────────────
-router.get('/:roomId/tasks', roomProductionController.getRoomTasks);
-router.put('/:roomId/tasks/:taskId/progress', authMiddleware, roomProductionController.updateTaskProgress);
-router.post('/:roomId/tasks/:taskId/claim', authMiddleware, roomProductionController.claimTaskReward);
+router.get('/:roomId/tasks', asyncHandler(roomProductionController.getRoomTasks));
+router.put('/:roomId/tasks/:taskId/progress', authMiddleware, asyncHandler(roomProductionController.updateTaskProgress));
+router.post('/:roomId/tasks/:taskId/claim', authMiddleware, asyncHandler(roomProductionController.claimTaskReward));
 
 // ─── Room Management (Owner) ────────────────────────────────────
-router.put('/:roomId/settings', [authMiddleware, checkRoomOwner], roomProductionController.updateRoomSettings);
-router.delete('/:roomId', [authMiddleware, checkRoomOwner], roomProductionController.closeRoom);
-router.post('/:roomId/toggle-live', [authMiddleware, checkRoomOwner], roomProductionController.toggleLive);
+router.put('/:roomId/settings', [authMiddleware, checkRoomOwner], asyncHandler(roomProductionController.updateRoomSettings));
+router.delete('/:roomId', [authMiddleware, checkRoomOwner], asyncHandler(roomProductionController.closeRoom));
+router.post('/:roomId/toggle-live', [authMiddleware, checkRoomOwner], asyncHandler(roomProductionController.toggleLive));
 
 // ===========================================================================
 // POWER MATRIX
 // ===========================================================================
 
 // GET /api/rooms/power-matrix
-router.get('/power-matrix', authMiddleware, verifyStaff, powerMatrixController.getPowerMatrix);
+router.get('/power-matrix', authMiddleware, verifyStaff, asyncHandler(powerMatrixController.getPowerMatrix));
 
 // PUT /api/rooms/power-matrix
-router.put('/power-matrix', authMiddleware, verifyStaff, powerMatrixController.updatePowerMatrix);
+router.put('/power-matrix', authMiddleware, verifyStaff, asyncHandler(powerMatrixController.updatePowerMatrix));
 
 // POST /api/rooms/power-matrix/reset
-router.post('/power-matrix/reset', authMiddleware, verifyStaff, powerMatrixController.resetPowerMatrix);
+router.post('/power-matrix/reset', authMiddleware, verifyStaff, asyncHandler(powerMatrixController.resetPowerMatrix));
 
 // POST /api/rooms/check-power
-router.post('/check-power', authMiddleware, checkPowerMiddleware, powerMatrixController.checkUserPower);
+router.post('/check-power', authMiddleware, checkPowerMiddleware, asyncHandler(powerMatrixController.checkUserPower));
 
 // GET /api/rooms/power-matrix/history
-router.get('/power-matrix/history', authMiddleware, verifyStaff, powerMatrixController.getPowerMatrixHistory);
+router.get('/power-matrix/history', authMiddleware, verifyStaff, asyncHandler(powerMatrixController.getPowerMatrixHistory));
 
 module.exports = router;

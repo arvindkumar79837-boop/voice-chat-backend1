@@ -6,8 +6,8 @@ const Room = require('../models/Room');
 module.exports = (io) => {
   io.on('connection', (socket) => {
 
-    // ─── Send Gift via Socket (real-time with wallet check) ─────
-    socket.on('send_gift', async (data) => {
+    // ─── Send Gift via Socket (realtime with wallet check) ─────
+    const handleSendGift = async (data) => {
       try {
         const { roomId, senderId, senderName, receiverId, giftId, giftName, quantity, cost } = data;
 
@@ -80,6 +80,17 @@ module.exports = (io) => {
 
         // Emit to all users in the room
         io.to(roomId).emit('live_gift_effect', payload);
+        io.to(roomId).emit('gift:animation', {
+          giftId: gift._id.toString(),
+          giftType: gift.giftType,
+          animationUrl: gift.animationUrl || gift.svgaUrl || gift.animationJsonUrl || '',
+          senderId,
+          senderName: senderName || sender.name || 'User',
+          receiverId,
+          quantity: parseInt(quantity) || 1,
+          coinCost: cost,
+          timestamp: Date.now()
+        });
 
         // SVGA animation trigger
         if (gift.giftType === 'SVGA' && gift.svgaUrl) {
@@ -190,7 +201,9 @@ module.exports = (io) => {
         console.error('Send Gift Socket Error:', error);
         socket.emit('gift_error', { message: 'Failed to send gift.' });
       }
-    });
+    };
+    socket.on('send_gift', handleSendGift);
+    socket.on('gift:send', handleSendGift);
 
     // ─── Combo Gift Burst ──────────────────────────────────────
     socket.on('send_combo_gift', async (data) => {

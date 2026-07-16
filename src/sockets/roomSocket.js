@@ -4,7 +4,7 @@ const { generateLiveKitToken } = require('../services/livekitService');
 
 module.exports = (io, socket) => {
   // ─── User joins a live voice room ────────────────────────────
-  socket.on('join_room', async ({ roomId, userId, userProfile }) => {
+  const handleJoinRoom = async ({ roomId, userId, userProfile }) => {
     try {
       const room = await Room.findOne({ roomId });
       if (!room) {
@@ -40,6 +40,12 @@ module.exports = (io, socket) => {
 
       // Notify others in the room
       socket.to(roomId).emit('user_joined', {
+        userId,
+        userProfile,
+        message: `${userProfile?.name || 'A user'} entered the room`,
+        activeUsers: updatedRoom?.activeUsers || 0,
+      });
+      socket.to(roomId).emit('room:user_joined', {
         userId,
         userProfile,
         message: `${userProfile?.name || 'A user'} entered the room`,
@@ -81,10 +87,12 @@ module.exports = (io, socket) => {
       console.error('Error joining room:', error);
       socket.emit('room_error', { message: 'Failed to join room.' });
     }
-  });
+  };
+  socket.on('join_room', handleJoinRoom);
+  socket.on('room:join', handleJoinRoom);
 
   // ─── User leaves a voice room ────────────────────────────────
-  socket.on('leave_room', async ({ roomId, userId, userProfile }) => {
+  const handleLeaveRoom = async ({ roomId, userId, userProfile }) => {
     socket.leave(roomId);
 
     // Decrement active users in the database
@@ -119,10 +127,18 @@ module.exports = (io, socket) => {
       message: `${userProfile?.name || 'A user'} left the room`,
       activeUsers: room?.activeUsers || 0,
     });
-  });
+    socket.to(roomId).emit('room:user_left', {
+      userId,
+      userProfile,
+      message: `${userProfile?.name || 'A user'} left the room`,
+      activeUsers: room?.activeUsers || 0,
+    });
+  };
+  socket.on('leave_room', handleLeaveRoom);
+  socket.on('room:leave', handleLeaveRoom);
 
   // ─── Mic status toggle (mute/unmute) ─────────────────────────
-  socket.on('toggle_mic', async ({ roomId, userId, isMuted }) => {
+  const handleToggleMic = async ({ roomId, userId, isMuted }) => {
     io.to(roomId).emit('mic_status_changed', { userId, isMuted });
 
     // Update seat mute state in DB
@@ -130,10 +146,12 @@ module.exports = (io, socket) => {
       { roomId, 'seats.userId': userId },
       { $set: { 'seats.$.isMuted': isMuted } }
     );
-  });
+  };
+  socket.on('toggle_mic', handleToggleMic);
+  socket.on('seat:mute', handleToggleMic);
 
   // ─── Claim a seat (with LiveKit audio sync) ──────────────────
-  socket.on('claim_seat', async (data) => {
+  const handleClaimSeat = async (data) => {
     try {
       const { roomId, userId, userName, userAvatar, seatIndex } = data;
 
@@ -169,6 +187,12 @@ module.exports = (io, socket) => {
         room.seats[existingSeatIdx].isMuted = false;
         room.seats[existingSeatIdx].isHost = false;
         room.seats[existingSeatIdx].joinedAt = null;
+        io.to(roomId).emit('seat_vacated', { seatIndex: existingSeatIdx });
+        io.to(roomId).emit('seat_animation', {
+          seatIndex: existingSeatIdx,
+          effect: 'vacate_fade_out',
+          userId: userId
+        });
       }
 
       // Assign the seat
@@ -198,9 +222,14 @@ module.exports = (io, socket) => {
         isHost,
         role: isHost ? 'owner' : 'broadcaster',
         isMuted: false,
-        effect: 'seat_ring_animation',
+        effect: isHost ? 'vip_seat_ring_gold' : 'seat_ring_blue',
         liveKitToken: liveKitTokenData?.token || null,
         liveKitWsUrl: liveKitTokenData?.liveKitWsUrl || null,
+      });
+      io.to(roomId).emit('seat_animation', {
+        seatIndex,
+        effect: 'sound_wave_active',
+        userId: userId
       });
 
       // Notify if user was previously on another seat
@@ -211,10 +240,12 @@ module.exports = (io, socket) => {
       console.error('Claim Seat Error:', error);
       socket.emit('seat_error', { message: 'Failed to claim the seat.' });
     }
-  });
+  };
+  socket.on('claim_seat', handleClaimSeat);
+  socket.on('seat:join', handleClaimSeat);
 
   // ─── Leave a seat ────────────────────────────────────────────
-  socket.on('leave_seat', async ({ roomId, seatIndex }) => {
+  const handleLeaveSeat = async ({ roomId, seatIndex, userId }) => {
     try {
       const room = await Room.findOne({ roomId });
       if (!room) return;
@@ -230,14 +261,21 @@ module.exports = (io, socket) => {
 
       await room.save();
 
-      io.to(roomId).emit('seat_vacated', { seatIndex });
+      io.to(roomId).emit('seat_vacated', { seatIndex, userId });
+      io.to(roomId).emit('seat_animation', {
+        seatIndex,
+        effect: 'vacate_fade_out',
+        userId: userId
+      });
     } catch (error) {
       console.error('Leave Seat Error:', error);
     }
-  });
+  };
+  socket.on('leave_seat', handleLeaveSeat);
+  socket.on('seat:leave', handleLeaveSeat);
 
   // ─── Admin: Lock/unlock seat ─────────────────────────────────
-  socket.on('lock_seat', async ({ roomId, seatIndex, adminId }) => {
+  const handleLockSeat = async ({ roomId, seatIndex, adminId }) => {
     try {
       const room = await Room.findOne({ roomId });
       if (!room) return;
@@ -268,10 +306,13 @@ module.exports = (io, socket) => {
       }
 
       io.to(roomId).emit('seat_locked', { seatIndex });
+      io.to(roomId).emit('seat_animation', { seatIndex, effect: 'lock_icon_appear' });
     } catch (error) {
       console.error('Lock Seat Error:', error);
     }
-  });
+  };
+  socket.on('lock_seat', handleLockSeat);
+  socket.on('seat:lock', handleLockSeat);
 
   socket.on('unlock_seat', async ({ roomId, seatIndex, adminId }) => {
     try {
@@ -290,6 +331,7 @@ module.exports = (io, socket) => {
       await room.save();
 
       io.to(roomId).emit('seat_unlocked', { seatIndex });
+      io.to(roomId).emit('seat_animation', { seatIndex, effect: 'unlock_sparkle' });
     } catch (error) {
       console.error('Unlock Seat Error:', error);
     }
@@ -316,6 +358,7 @@ module.exports = (io, socket) => {
         seatIndex,
         userId: room.seats[seatIndex].userId,
       });
+      io.to(roomId).emit('seat_animation', { seatIndex, effect: 'mic_off_red_overlay' });
     } catch (error) {
       console.error('Mute Seat Error:', error);
     }
@@ -341,6 +384,7 @@ module.exports = (io, socket) => {
         seatIndex,
         userId: room.seats[seatIndex].userId,
       });
+      io.to(roomId).emit('seat_animation', { seatIndex, effect: 'mic_on_green_pulse' });
     } catch (error) {
       console.error('Unmute Seat Error:', error);
     }
@@ -378,6 +422,7 @@ module.exports = (io, socket) => {
         seatIndex,
         targetUserId: kickedUserId,
       });
+      io.to(roomId).emit('seat_animation', { seatIndex, effect: 'kick_red_flash' });
     } catch (error) {
       console.error('Kick From Seat Error:', error);
     }
@@ -593,7 +638,7 @@ module.exports = (io, socket) => {
   });
 
   // ─── Room Send Message ───────────────────────────────────────
-  socket.on('send_room_message', async (data) => {
+  const handleSendMessage = async (data) => {
     const { roomId, senderId, senderName, message, isVip } = data;
     if (!roomId || !senderId || !message) return;
 
@@ -608,16 +653,20 @@ module.exports = (io, socket) => {
     };
 
     io.to(roomId).emit('receive_room_message', messageData);
-  });
+  };
+  socket.on('send_room_message', handleSendMessage);
+  socket.on('room:message', handleSendMessage);
 
   // ─── Room: Raise Hand ────────────────────────────────────────
-  socket.on('raise_hand', async ({ roomId, userId, userName }) => {
+  const handleRaiseHand = async ({ roomId, userId, userName }) => {
     socket.to(roomId).emit('raise_hand_notification', {
       userId,
       userName: userName || 'Someone',
       message: `${userName || 'Someone'} wants to speak`,
     });
-  });
+  };
+  socket.on('raise_hand', handleRaiseHand);
+  socket.on('seat:raise_hand', handleRaiseHand);
 
   // ─── Room: Close Room ────────────────────────────────────────
   socket.on('close_room', async ({ roomId, ownerId }) => {
