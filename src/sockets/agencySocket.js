@@ -1,8 +1,12 @@
 const User = require('../models/User');
 
 function agencySocket(io, socket) {
-    const userId = socket.data?.userId || socket.handshake.query.userId;
-    if (!userId) return;
+    const userId = socket.data?.userId;
+    if (!userId) {
+      socket.emit('error', { message: 'Authentication required' });
+      socket.disconnect(true);
+      return;
+    }
 
     socket.on('join_agency', async ({ agencyId }) => {
       try {

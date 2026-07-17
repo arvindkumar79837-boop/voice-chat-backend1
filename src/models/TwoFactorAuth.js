@@ -11,7 +11,6 @@ const twoFactorAuthSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
     unique: true,
-    index: true,
   },
   uid: { type: String, required: true, unique: true },
   isEnabled: { type: Boolean, default: false },

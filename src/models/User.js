@@ -147,6 +147,11 @@ const userSchema = new mongoose.Schema({
     entryEffect: { type: String, default: '' },
     customTitle: { type: String, default: '' }
   },
+  inventory: [{
+    itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'ShopItem' },
+    purchasedAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date },
+  }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 }, { timestamps: true });

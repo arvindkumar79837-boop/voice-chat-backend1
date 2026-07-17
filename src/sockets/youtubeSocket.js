@@ -9,8 +9,10 @@ function youtubeSocket(io, socket) {
   console.log(`YouTube socket middleware initialized for ${socket.id}`);
 
   // Join room
-  socket.on('youtube:join_room', async ({ roomId, userId }) => {
+  socket.on('youtube:join_room', async ({ roomId }) => {
     try {
+      const userId = socket.data.userId;
+      if (!userId) return;
       socket.join(roomId);
       const playlist = await YouTubePlaylist.findOne({ roomId });
       if (playlist) {
@@ -29,8 +31,10 @@ function youtubeSocket(io, socket) {
   });
 
   // Leave room
-  socket.on('youtube:leave_room', async ({ roomId, userId }) => {
+  socket.on('youtube:leave_room', async ({ roomId }) => {
     try {
+      const userId = socket.data.userId;
+      if (!userId) return;
       socket.leave(roomId);
       const playlist = await YouTubePlaylist.findOne({ roomId });
       if (playlist) {

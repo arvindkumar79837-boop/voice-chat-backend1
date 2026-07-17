@@ -5,19 +5,16 @@ const reportSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    index: true
   },
   reportedUserId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: null,
-    index: true
   },
   roomId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Room',
     default: null,
-    index: true
   },
   contentType: {
     type: String,

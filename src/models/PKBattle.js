@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const pkBattleSchema = new mongoose.Schema({
-  hostId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-  opponentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  hostId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  opponentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: 'Room', required: true },
   status: { 
     type: String, 

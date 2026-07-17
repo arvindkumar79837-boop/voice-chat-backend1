@@ -159,7 +159,6 @@ const roomSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    index: true
   },
   ownerId: {
     type: mongoose.Schema.Types.ObjectId,

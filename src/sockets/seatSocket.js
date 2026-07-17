@@ -63,19 +63,23 @@ module.exports = (io, socket) => {
   });
 
   // ─── User sound wave animation trigger ────────────────────────
-  socket.on('user_start_speaking', ({ roomId, seatIndex, userId }) => {
+  socket.on('user_start_speaking', ({ roomId, seatIndex }) => {
+    const userId = socket.data.userId;
+    if (!userId) return;
     io.to(roomId).emit('seat_animation', {
       seatIndex,
       effect: 'sound_wave_active',
-      userId: userId
+      userId
     });
   });
 
-  socket.on('user_stop_speaking', ({ roomId, seatIndex, userId }) => {
+  socket.on('user_stop_speaking', ({ roomId, seatIndex }) => {
+    const userId = socket.data.userId;
+    if (!userId) return;
     io.to(roomId).emit('seat_animation', {
       seatIndex,
       effect: 'sound_wave_idle',
-      userId: userId
+      userId
     });
   });
 };

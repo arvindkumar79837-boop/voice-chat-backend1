@@ -5,7 +5,6 @@ const revenueSummarySchema = new mongoose.Schema({
     type: String,
     default: 'main_summary',
     unique: true,
-    index: true
   },
   totalRevenue: { type: Number, default: 0 },
   todayRevenue: { type: Number, default: 0 },

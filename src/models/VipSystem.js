@@ -5,7 +5,6 @@ const VipSystemSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    index: true
   },
   // VIP Level 1-15 (normal VIP earned via recharge/gifting)
   vip_level: {

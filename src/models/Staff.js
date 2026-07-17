@@ -10,7 +10,6 @@ const staffSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    index: true,
   },
   loginId: {
     type: String,

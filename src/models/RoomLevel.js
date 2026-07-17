@@ -20,7 +20,6 @@ const roomLevelSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    index: true
   },
   currentLevel: {
     type: Number,
