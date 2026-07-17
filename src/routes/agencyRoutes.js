@@ -3,6 +3,7 @@ const router = express.Router();
 const asyncHandler = require('../utils/asyncHandler');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const agencyController = require('../controllers/agencyController');
+const agencyCommissionController = require('../controllers/agencyCommissionController');
 
 // All agency routes require authentication
 router.use(authMiddleware);
@@ -22,16 +23,11 @@ router.get('/earnings', asyncHandler(agencyController.getEarnings));
 // POST /api/agency/apply    — Apply/join an agency
 router.post('/apply', asyncHandler(agencyController.applyForAgency));
 
-// GET  /api/agency/commission-tiers — Commission tier info
-router.get('/commission-tiers', asyncHandler(async (req, res) => {
-  const tiers = [
-    { level: 1, name: 'Bronze', minEarnings: 0, commission: 10 },
-    { level: 2, name: 'Silver', minEarnings: 10000, commission: 12 },
-    { level: 3, name: 'Gold', minEarnings: 50000, commission: 15 },
-    { level: 4, name: 'Platinum', minEarnings: 100000, commission: 18 },
-    { level: 5, name: 'Diamond', minEarnings: 500000, commission: 20 },
-  ];
-  res.json({ success: true, tiers });
-}));
+// ─── AGENCY COMMISSION ─────────────────────────────────────────────────
+router.get('/commission-tiers', asyncHandler(agencyCommissionController.getCommissionTiers));
+router.post('/commission-tiers', asyncHandler(agencyCommissionController.createCommissionTier));
+router.put('/commission-tiers/:tierId', asyncHandler(agencyCommissionController.updateCommissionTier));
+router.delete('/commission-tiers/:tierId', asyncHandler(agencyCommissionController.deleteCommissionTier));
+router.post('/commission/calculate', asyncHandler(agencyCommissionController.calculateCommission));
 
 module.exports = router;

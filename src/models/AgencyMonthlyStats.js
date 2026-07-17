@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const agencyMonthlyStatsSchema = new mongoose.Schema({
-  agencyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agency', required: true, index: true },
+  agencyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agency', required: true },
   agencyName: { type: String, required: true },
   year: { type: Number, required: true },
   month: { type: Number, required: true, min: 1, max: 12 },

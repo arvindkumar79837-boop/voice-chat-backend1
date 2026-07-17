@@ -1,18 +1,17 @@
 const mongoose = require('mongoose');
 
 const agencyInvitationSchema = new mongoose.Schema({
-  agencyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agency', required: true, index: true },
+  agencyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agency', required: true },
   agencyName: { type: String, required: true },
   invitedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   invitedByUid: { type: String, required: true },
-  targetUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  targetUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   targetUid: { type: String, required: true },
   message: { type: String, default: '' },
   status: {
     type: String,
     enum: ['pending', 'accepted', 'rejected'],
-    default: 'pending',
-    index: true
+    default: 'pending'
   },
   respondedAt: { type: Date },
   specialRoles: {

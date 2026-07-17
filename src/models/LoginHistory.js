@@ -10,10 +10,9 @@ const loginHistorySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    index: true,
   },
   uid: { type: String, required: true },
-  loginAt: { type: Date, default: Date.now, index: true },
+  loginAt: { type: Date, default: Date.now },
   logoutAt: { type: Date },
   ipAddress: { type: String },
   location: {

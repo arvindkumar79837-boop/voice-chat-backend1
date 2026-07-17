@@ -4,11 +4,13 @@ const GiftEvent = require('../models/GiftEvent');
 const Room = require('../models/Room');
 
 module.exports = (io, socket) => {
+    const authedUserId = socket.data.userId;
 
     // ─── Send Gift via Socket (realtime with wallet check) ─────
     const handleSendGift = async (data) => {
       try {
-        const { roomId, senderId, senderName, receiverId, giftId, giftName, quantity, cost } = data;
+        const { roomId, senderName, receiverId, giftId, giftName, quantity, cost } = data;
+        const senderId = authedUserId;
 
         if (!senderId || !giftId || !receiverId) {
           return socket.emit('gift_error', { message: 'Missing required fields.' });
@@ -207,7 +209,8 @@ module.exports = (io, socket) => {
     // ─── Combo Gift Burst ──────────────────────────────────────
     socket.on('send_combo_gift', async (data) => {
       try {
-        const { roomId, senderId, senderName, receiverId, giftId, giftName, comboMultiplier } = data;
+        const { roomId, senderName, receiverId, giftId, giftName, comboMultiplier } = data;
+        const senderId = authedUserId;
         const multiplier = parseInt(comboMultiplier) || 5;
         const totalQty = multiplier;
 
@@ -289,7 +292,8 @@ module.exports = (io, socket) => {
     });
 
     // ─── Treasure Chest Tap (claim coins) ──────────────────────
-    socket.on('claim_treasure', async ({ roomId, userId, userName, giftEventId }) => {
+    socket.on('claim_treasure', async ({ roomId, userName, giftEventId }) => {
+      const userId = authedUserId;
       try {
         // Random claim amount between 10-500
         const claimAmount = Math.floor(Math.random() * 490) + 10;

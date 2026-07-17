@@ -3,6 +3,7 @@ const router = express.Router();
 const asyncHandler = require('../utils/asyncHandler');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const familyController = require('../controllers/familyController');
+const familyWarController = require('../controllers/familyWarController');
 const Family = require('../models/Family');
 const FamilyTask = require('../models/FamilyTask');
 const User = require('../models/User');
@@ -106,11 +107,14 @@ router.get('/pk/history', authMiddleware, asyncHandler(familyController.getFamil
 router.get('/pk/battle/:battleId', authMiddleware, asyncHandler(familyController.getFamilyPKDetail));
 
 // ─── FAMILY WARS ───────────────────────────────────────────────────────
-router.get('/wars/active', authMiddleware, asyncHandler(familyController.getActiveFamilyWars));
-router.get('/wars/history', authMiddleware, asyncHandler(familyController.getFamilyWarHistory));
-router.post('/wars/register', authMiddleware, asyncHandler(familyController.registerForFamilyWar));
-router.get('/wars/:warId/leaderboard', authMiddleware, asyncHandler(familyController.getWarLeaderboard));
-router.get('/wars/:warId/my-contribution', authMiddleware, asyncHandler(familyController.getMyWarContribution));
+router.post('/wars/create', authMiddleware, asyncHandler(familyWarController.createWar));
+router.get('/wars', authMiddleware, asyncHandler(familyWarController.getAllWars));
+router.get('/wars/active', authMiddleware, asyncHandler(familyWarController.getActiveWars));
+router.get('/wars/:warId', authMiddleware, asyncHandler(familyWarController.getWarById));
+router.put('/wars/:warId/status', authMiddleware, asyncHandler(familyWarController.updateWarStatus));
+router.post('/wars/:warId/gift', authMiddleware, asyncHandler(familyWarController.submitFamilyWarGift));
+router.post('/wars/:warId/cancel', authMiddleware, asyncHandler(familyWarController.cancelWar));
+router.get('/wars/:warId/leaderboard', authMiddleware, asyncHandler(familyWarController.getWarLeaderboard));
 
 // ─── FAMILY RANKINGS ───────────────────────────────────────────────────
 router.get('/rankings/daily', asyncHandler(familyController.getDailyFamilyRankings));

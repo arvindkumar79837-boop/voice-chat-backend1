@@ -76,6 +76,7 @@ const coinOrderRoutes = require('./routes/coinOrderRoutes');
 const rewardsRoutes = require('./routes/rewardsRoutes');
 const luckyDrawMobileRoutes = require('./routes/luckyDrawMobileRoutes');
 const socialRoutes = require('./routes/socialRoutes');
+const missionRoutes = require('./routes/missionRoutes');
 
 const app = express();
 
@@ -211,6 +212,7 @@ app.use('/api/infrastructure', infrastructureRoutes); // Auto-Scaling, CDN, Back
 
 // ─── USER PROFILE ROUTES ──────────────────────────────────────────────────
 app.use('/api/social', socialRoutes); // Follow, Unfollow, Block, Visitors
+app.use('/api/missions', missionRoutes); // Daily missions & rewards
 app.use('/api/profile', profileRoutes); // Avatar, Display Name, Bio, XP, Level, Badges
 
 // ─── ANTI-BAN & DEVICE MANAGEMENT ROUTES ──────────────────────────────────

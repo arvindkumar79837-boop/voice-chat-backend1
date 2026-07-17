@@ -5,8 +5,7 @@ const appLocalizationStringSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    trim: true,
-    index: true
+    trim: true
   },
   translations: {
     type: Map,

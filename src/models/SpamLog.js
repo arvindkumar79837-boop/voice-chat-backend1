@@ -7,7 +7,7 @@
 const mongoose = require('mongoose');
 
 const spamLogSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   uid: { type: String, index: true },
   roomId: { type: String },
   type: {

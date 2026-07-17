@@ -58,12 +58,10 @@ const staffSchema = new mongoose.Schema({
       'backup_manager',
       'settings_manager',
     ],
-    index: true,
   },
   roleLevel: {
     type: Number,
     default: 0,
-    index: true,
   },
   parentRole: {
     type: String,

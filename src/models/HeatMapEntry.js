@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const heatMapEntrySchema = new mongoose.Schema({
-  country: { type: String, required: true, index: true },
-  state: { type: String, default: '', index: true },
+  country: { type: String, required: true },
+  state: { type: String, default: '' },
   city: { type: String, default: '' },
   latitude: { type: Number, default: 0 },
   longitude: { type: Number, default: 0 },
@@ -15,7 +15,7 @@ const heatMapEntrySchema = new mongoose.Schema({
   diamondsSpent: { type: Number, default: 0 },
   hour: { type: Number, min: 0, max: 23, default: 0 },
   dayOfWeek: { type: Number, min: 0, max: 6, default: 0 },
-  date: { type: Date, required: true, index: true }
+  date: { type: Date, required: true }
 }, { timestamps: true });
 
 heatMapEntrySchema.index({ country: 1, date: -1 });

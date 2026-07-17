@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const userActivitySchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-  date: { type: Date, required: true, index: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  date: { type: Date, required: true },
   isActive: { type: Boolean, default: false },
   timeSpentMinutes: { type: Number, default: 0 },
   sessionsCount: { type: Number, default: 0 },

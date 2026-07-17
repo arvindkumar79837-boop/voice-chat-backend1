@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const agencyAnalyticSchema = new mongoose.Schema({
-  agencyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agency', required: true, index: true },
+  agencyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agency', required: true },
   agencyName: { type: String, required: true },
   agencyOwnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   totalDiamondsEarned: { type: Number, default: 0 },
@@ -20,7 +20,7 @@ const agencyAnalyticSchema = new mongoose.Schema({
   rankingPosition: { type: Number, default: 0 },
   previousRankingPosition: { type: Number, default: 0 },
   trend: { type: String, enum: ['up', 'down', 'stable'], default: 'stable' },
-  date: { type: Date, required: true, index: true }
+  date: { type: Date, required: true }
 }, { timestamps: true });
 
 agencyAnalyticSchema.index({ agencyId: 1, date: -1 });

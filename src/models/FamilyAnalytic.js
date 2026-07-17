@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const familyAnalyticSchema = new mongoose.Schema({
-  familyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Family', required: true, index: true },
+  familyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Family', required: true },
   familyName: { type: String, required: true },
   familyOwnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   totalMembers: { type: Number, default: 0 },
@@ -19,7 +19,7 @@ const familyAnalyticSchema = new mongoose.Schema({
   topContributorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   topContributorName: { type: String, default: '' },
   topContributorDiamonds: { type: Number, default: 0 },
-  date: { type: Date, required: true, index: true }
+  date: { type: Date, required: true }
 }, { timestamps: true });
 
 familyAnalyticSchema.index({ familyId: 1, date: -1 });

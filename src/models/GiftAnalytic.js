@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const giftAnalyticSchema = new mongoose.Schema({
-  giftId: { type: String, required: true, index: true },
+  giftId: { type: String, required: true },
   giftName: { type: String, required: true },
   giftCategory: { type: String, default: 'standard' },
   totalSentCount: { type: Number, default: 0 },
@@ -16,7 +16,7 @@ const giftAnalyticSchema = new mongoose.Schema({
   highestProgressiveBlastValue: { type: Number, default: 0 },
   highestProgressiveBlastRoomId: { type: mongoose.Schema.Types.ObjectId, ref: 'Room' },
   highestProgressiveBlastRoomName: { type: String, default: '' },
-  date: { type: Date, required: true, index: true }
+  date: { type: Date, required: true }
 }, { timestamps: true });
 
 giftAnalyticSchema.index({ giftId: 1, date: -1 });

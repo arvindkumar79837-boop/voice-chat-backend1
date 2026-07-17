@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const roomFollowerSchema = new mongoose.Schema({
   roomId: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,

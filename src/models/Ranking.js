@@ -23,18 +23,15 @@ const schema = new mongoose.Schema({
         type: String,
         required: true,
         enum: ['sender', 'receiver', 'host', 'room', 'family', 'agency', 'pk_battle', 'weekly_war'],
-        index: true
     },
     period: {
         type: String,
         required: true,
         enum: ['daily', 'weekly', 'monthly', 'all_time'],
-        index: true
     },
     periodStart: {
         type: Date,
         required: true,
-        index: true
     },
     periodEnd: {
         type: Date,

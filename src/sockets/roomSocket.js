@@ -5,8 +5,10 @@ const crypto = require('crypto');
 const { generateLiveKitToken } = require('../services/livekitService');
 
 module.exports = (io, socket) => {
+  const authedUserId = socket.data.userId;
+
   // ─── User joins a live voice room ────────────────────────────
-  const handleJoinRoom = async ({ roomId, userId, userProfile }) => {
+  const handleJoinRoom = async ({ roomId, userProfile }) => {
     try {
       const room = await Room.findOne({ roomId });
       if (!room) {
@@ -30,6 +32,7 @@ module.exports = (io, socket) => {
         });
       }
 
+      const userId = authedUserId;
       socket.join(roomId);
 
       // Increment active users in the MongoDB database
@@ -134,7 +137,8 @@ module.exports = (io, socket) => {
   socket.on('room:join', handleJoinRoom);
 
   // ─── User leaves a voice room ────────────────────────────────
-  const handleLeaveRoom = async ({ roomId, userId, userProfile }) => {
+  const handleLeaveRoom = async ({ roomId, userProfile }) => {
+    const userId = authedUserId;
     socket.leave(roomId);
 
     // Decrement active users in the database
@@ -180,7 +184,8 @@ module.exports = (io, socket) => {
   socket.on('room:leave', handleLeaveRoom);
 
   // ─── Mic status toggle (mute/unmute) ─────────────────────────
-  const handleToggleMic = async ({ roomId, userId, isMuted }) => {
+  const handleToggleMic = async ({ roomId, isMuted }) => {
+    const userId = authedUserId;
     io.to(roomId).emit('mic_status_changed', { userId, isMuted });
 
     // Update seat mute state in DB
@@ -195,7 +200,8 @@ module.exports = (io, socket) => {
   // ─── Claim a seat (with LiveKit audio sync) ──────────────────
   const handleClaimSeat = async (data) => {
     try {
-      const { roomId, userId, userName, userAvatar, seatIndex } = data;
+      const { roomId, userName, userAvatar, seatIndex } = data;
+      const userId = authedUserId;
 
       const room = await Room.findOne({ roomId });
       if (!room) {
@@ -287,8 +293,9 @@ module.exports = (io, socket) => {
   socket.on('seat:join', handleClaimSeat);
 
   // ─── Leave a seat ────────────────────────────────────────────
-  const handleLeaveSeat = async ({ roomId, seatIndex, userId }) => {
+  const handleLeaveSeat = async ({ roomId, seatIndex }) => {
     try {
+      const userId = authedUserId;
       const room = await Room.findOne({ roomId });
       if (!room) return;
 
@@ -317,7 +324,8 @@ module.exports = (io, socket) => {
   socket.on('seat:leave', handleLeaveSeat);
 
   // ─── Admin: Lock/unlock seat ─────────────────────────────────
-  const handleLockSeat = async ({ roomId, seatIndex, adminId }) => {
+  const handleLockSeat = async ({ roomId, seatIndex }) => {
+    const adminId = authedUserId;
     try {
       const room = await Room.findOne({ roomId });
       if (!room) return;
@@ -356,8 +364,9 @@ module.exports = (io, socket) => {
   socket.on('lock_seat', handleLockSeat);
   socket.on('seat:lock', handleLockSeat);
 
-  socket.on('unlock_seat', async ({ roomId, seatIndex, adminId }) => {
+  socket.on('unlock_seat', async ({ roomId, seatIndex }) => {
     try {
+      const adminId = authedUserId;
       const room = await Room.findOne({ roomId });
       if (!room) return;
 
@@ -380,8 +389,9 @@ module.exports = (io, socket) => {
   });
 
   // ─── Admin: Mute/unmute seat ─────────────────────────────────
-  socket.on('admin_mute_seat', async ({ roomId, seatIndex, adminId }) => {
+  socket.on('admin_mute_seat', async ({ roomId, seatIndex }) => {
     try {
+      const adminId = authedUserId;
       const room = await Room.findOne({ roomId });
       if (!room) return;
 
@@ -406,8 +416,9 @@ module.exports = (io, socket) => {
     }
   });
 
-  socket.on('admin_unmute_seat', async ({ roomId, seatIndex, adminId }) => {
+  socket.on('admin_unmute_seat', async ({ roomId, seatIndex }) => {
     try {
+      const adminId = authedUserId;
       const room = await Room.findOne({ roomId });
       if (!room) return;
 
@@ -433,8 +444,9 @@ module.exports = (io, socket) => {
   });
 
   // ─── Admin: Kick user from seat ──────────────────────────────
-  socket.on('kick_from_seat', async ({ roomId, seatIndex, adminId }) => {
+  socket.on('kick_from_seat', async ({ roomId, seatIndex }) => {
     try {
+      const adminId = authedUserId;
       const room = await Room.findOne({ roomId });
       if (!room) return;
 
@@ -471,7 +483,8 @@ module.exports = (io, socket) => {
   });
 
   // ─── Room Moderation: Kick User ──────────────────────────────
-  socket.on('kick_user', async ({ roomId, targetUserId, adminId }) => {
+  socket.on('kick_user', async ({ roomId, targetUserId }) => {
+    const adminId = authedUserId;
     try {
       await Room.findOneAndUpdate(
         { roomId },
@@ -503,7 +516,8 @@ module.exports = (io, socket) => {
   });
 
   // ─── Room Moderation: Admin Mute User ────────────────────────
-  socket.on('admin_mute_user', async ({ roomId, targetUserId, adminId }) => {
+  socket.on('admin_mute_user', async ({ roomId, targetUserId }) => {
+    const adminId = authedUserId;
     try {
       await Room.findOneAndUpdate(
         { roomId },
@@ -517,7 +531,8 @@ module.exports = (io, socket) => {
   });
 
   // ─── Room Moderation: Unkick User (Forgive) ──────────────────
-  socket.on('unkick_user', async ({ roomId, targetUserId, adminId }) => {
+  socket.on('unkick_user', async ({ roomId, targetUserId }) => {
+    const adminId = authedUserId;
     try {
       await Room.findOneAndUpdate(
         { roomId },
@@ -530,7 +545,8 @@ module.exports = (io, socket) => {
   });
 
   // ─── Room Moderation: Admin Unmute User ──────────────────────
-  socket.on('admin_unmute_user', async ({ roomId, targetUserId, adminId }) => {
+  socket.on('admin_unmute_user', async ({ roomId, targetUserId }) => {
+    const adminId = authedUserId;
     try {
       await Room.findOneAndUpdate(
         { roomId },
@@ -605,7 +621,8 @@ module.exports = (io, socket) => {
   );
 
   // ─── Update seat layout (owner only) ─────────────────────────
-  socket.on('update_seat_layout', async ({ roomId, seatCount, adminId }) => {
+  socket.on('update_seat_layout', async ({ roomId, seatCount }) => {
+    const adminId = authedUserId;
     try {
       const room = await Room.findOne({ roomId });
       if (!room || room.ownerId.toString() !== adminId?.toString()) return;
@@ -648,8 +665,14 @@ module.exports = (io, socket) => {
   });
 
   // ─── Room PK: Update score ───────────────────────────────────
-  socket.on('pk_update_score', async ({ roomId, score, userId }) => {
+  socket.on('pk_update_score', async ({ roomId, score }) => {
     try {
+      const userId = authedUserId;
+      // Room-membership validation: verify socket is in the target room
+      const socketsInRoom = await io.in(roomId).fetchSockets();
+      const isMember = socketsInRoom.some((s) => s.data.userId === userId);
+      if (!isMember) return;
+
       const room = await Room.findOne({ roomId });
       if (
         !room ||
@@ -681,7 +704,8 @@ module.exports = (io, socket) => {
 
   // ─── Room Send Message ───────────────────────────────────────
   const handleSendMessage = async (data) => {
-    const { roomId, senderId, senderName, message, isVip } = data;
+    const { roomId, senderName, message, isVip } = data;
+    const senderId = authedUserId;
     if (!roomId || !senderId || !message) return;
 
     const messageData = {
@@ -701,7 +725,8 @@ module.exports = (io, socket) => {
   socket.on('room:message', handleSendMessage);
 
   // ─── Room: Raise Hand ────────────────────────────────────────
-  const handleRaiseHand = async ({ roomId, userId, userName }) => {
+  const handleRaiseHand = async ({ roomId, userName }) => {
+    const userId = authedUserId;
     socket.to(roomId).emit('raise_hand_notification', {
       userId,
       userName: userName || 'Someone',
@@ -712,7 +737,8 @@ module.exports = (io, socket) => {
   socket.on('seat:raise_hand', handleRaiseHand);
 
   // ─── Room: Close Room ────────────────────────────────────────
-  socket.on('close_room', async ({ roomId, ownerId }) => {
+  socket.on('close_room', async ({ roomId }) => {
+    const ownerId = authedUserId;
     try {
       const room = await Room.findOne({ roomId });
       if (!room || room.ownerId.toString() !== ownerId?.toString()) return;

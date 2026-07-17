@@ -7,7 +7,7 @@
 const mongoose = require('mongoose');
 
 const fraudAlertSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   uid: { type: String, required: true },
   type: {
     type: String,
