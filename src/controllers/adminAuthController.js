@@ -143,11 +143,40 @@ exports.verifyTwoFactor = async (req, res) => {
 };
 
 /**
- * Refresh token endpoint (stub)
+ * Refresh token endpoint
  */
 exports.refreshToken = async (req, res) => {
   try {
-    return res.status(200).json({ success: true, message: 'Token refreshed (stub)' });
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ success: false, message: 'Refresh token is required' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    } catch (tokenError) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired refresh token' });
+    }
+
+    if (!decoded.isStaff) {
+      return res.status(403).json({ success: false, message: 'Invalid token payload' });
+    }
+
+    const staff = await Staff.findOne({ uid: decoded.uid });
+    if (!staff || !staff.isActive) {
+      return res.status(403).json({ success: false, message: 'Staff account not found or disabled' });
+    }
+
+    const tokens = generateStaffTokens(staff);
+
+    return res.json({
+      success: true,
+      message: 'Token refreshed successfully',
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      role: staff.role,
+    });
   } catch (e) {
     console.error('Admin Refresh Token Error:', e);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });

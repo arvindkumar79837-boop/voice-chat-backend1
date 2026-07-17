@@ -60,12 +60,18 @@ exports.getUserCenter = async (req, res) => {
       ];
     }
 
-    // Get frames (for now, using hardcoded frames)
-    const frames = [
-      { id: 'f1', name: 'Default Ring', imagePath: 'ring', isUnlocked: true, isEquipped: user?.equippedFrame === 'f1' },
-      { id: 'f2', name: 'Gold Ring', imagePath: 'gold_ring', isUnlocked: user?.unlockedFrames.includes('f2'), isEquipped: user?.equippedFrame === 'f2' },
-      { id: 'f3', name: 'Diamond Ring', imagePath: 'diamond_ring', isUnlocked: user?.unlockedFrames.includes('f3'), isEquipped: user?.equippedFrame === 'f3' }
+    // Get frames — catalog-driven from user's unlockedFrames
+    const frameCatalog = [
+      { id: 'f1', name: 'Default Ring', imagePath: 'ring' },
+      { id: 'f2', name: 'Gold Ring', imagePath: 'gold_ring' },
+      { id: 'f3', name: 'Diamond Ring', imagePath: 'diamond_ring' },
     ];
+    const unlockedSet = new Set(user?.unlockedFrames || []);
+    const frames = frameCatalog.map((f) => ({
+      ...f,
+      isUnlocked: unlockedSet.has(f.id),
+      isEquipped: user?.equippedFrame === f.id,
+    }));
 
     // Returning real structured response for the app to render dynamically
     res.status(200).json({

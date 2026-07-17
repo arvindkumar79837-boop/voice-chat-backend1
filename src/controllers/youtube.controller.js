@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 const YouTubePlaylist = require('../models/YouTubePlaylist');
+const axios = require('axios');
 
 const youtubeController = {
   // Get room playlist
@@ -20,20 +21,43 @@ const youtubeController = {
     }
   },
 
-  // Search videos (mock integration with YouTube API)
+  // Search videos via YouTube Data API v3
   searchVideos: async (req, res) => {
     try {
       const { q } = req.query;
       if (!q) {
         return res.status(400).json({ success: false, message: 'Query is required' });
       }
-      // TODO: Integrate with YouTube Data API v3
-      const mockVideos = [
-        { id: 'yt1', title: `Result for: ${q}`, thumbnailUrl: 'https://picsum.photos/320/180', videoUrl: 'https://youtube.com/watch?v=dQw4w9WgXcQ', channelName: 'Channel', duration: 240, views: 1000 }
-      ];
-      res.json({ success: true, videos: mockVideos });
+
+      const apiKey = process.env.YOUTUBE_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ success: false, message: 'YouTube API key not configured' });
+      }
+
+      const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+        params: {
+          q,
+          part: 'snippet',
+          type: 'video',
+          maxResults: 25,
+          key: apiKey,
+        },
+      });
+
+      const videos = response.data.items.map((item) => ({
+        id: item.id.videoId,
+        title: item.snippet.title,
+        description: item.snippet.description,
+        thumbnailUrl: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url,
+        channelName: item.snippet.channelTitle,
+        channelId: item.snippet.channelId,
+        publishedAt: item.snippet.publishedAt,
+      }));
+
+      res.json({ success: true, videos });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      console.error('YouTube Search Error:', error.response?.data || error.message);
+      res.status(500).json({ success: false, message: 'Failed to search YouTube videos' });
     }
   },
 
