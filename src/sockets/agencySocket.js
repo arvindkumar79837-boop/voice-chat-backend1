@@ -1,7 +1,7 @@
 const User = require('../models/User');
 
 function agencySocket(io, socket) {
-    const userId = socket.handshake.query.userId;
+    const userId = socket.data?.userId || socket.handshake.query.userId;
     if (!userId) return;
 
     socket.on('join_agency', async ({ agencyId }) => {

@@ -10,7 +10,7 @@ function setupRoomFeaturesSocket(io) {
   const roomFeaturesNamespace = io.of('/room-features');
 
   roomFeaturesNamespace.use((socket, next) => {
-    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+    const token = socket.handshake.auth?.token || socket.handshake.query?.token || socket.handshake.headers.authorization?.split(' ')[1];
     if (!token) return next(new Error('Authentication required'));
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);

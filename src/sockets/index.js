@@ -17,7 +17,7 @@ const youtubeSocket = require('./youtubeSocket');
 
 // Shared JWT auth middleware for socket namespaces
 const socketAuthMiddleware = (socket, next) => {
-  const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+  const token = socket.handshake.auth?.token || socket.handshake.query?.token || socket.handshake.headers.authorization?.split(' ')[1];
   if (!token) {
     return next(new Error('Authentication required'));
   }
@@ -32,42 +32,46 @@ const socketAuthMiddleware = (socket, next) => {
 };
 
 const initializeSockets = (io) => {
-  // ─── /events namespace (self-contained in eventSocket.js, JWT inside) ──
-  eventSocket.initialize(io);
+  try {
+    // ─── /events namespace (self-contained in eventSocket.js, JWT inside) ──
+    eventSocket.initialize(io);
 
-  // ─── /room-features namespace (self-contained in roomFeaturesSocket.js, JWT inside) ──
-  require('./roomFeaturesSocket').setupRoomFeaturesSocket(io);
+    // ─── /room-features namespace (self-contained in roomFeaturesSocket.js, JWT inside) ──
+    require('./roomFeaturesSocket').setupRoomFeaturesSocket(io);
 
-  // ─── /youtube namespace — JWT auth required ────────────────────
-  const youtubeNamespace = io.of('/youtube');
-  youtubeNamespace.use(socketAuthMiddleware);
-  youtubeNamespace.on('connection', (socket) => {
-    console.log('YouTube namespace client connected:', socket.id);
-    youtubeSocket(io, socket);
-  });
-
-  // ─── Default namespace — existing handlers ──────────────────────
-  io.on('connection', (socket) => {
-    console.log('A user connected');
-
-    authSocket(io, socket);
-    roomSocket(io, socket);
-    chatSocket(io, socket);
-    seatSocket(io, socket);
-    giftSocket(io, socket);
-    pkBattleSocket(io, socket);
-    familySocket(io, socket);
-    agencySocket(io, socket);
-    analyticsSocket(io, socket);
-    gameSocket(io, socket);
-    rewardSocket.initRewardSocket(io, socket);
-    powerMatrixSocket(io, socket);
-    matchmakingSocket(io, socket);
-
-    socket.on('disconnect', () => {
-      console.log('A user disconnected');
+    // ─── /youtube namespace — JWT auth required ────────────────────
+    const youtubeNamespace = io.of('/youtube');
+    youtubeNamespace.use(socketAuthMiddleware);
+    youtubeNamespace.on('connection', (socket) => {
+      console.log('YouTube namespace client connected:', socket.id);
+      youtubeSocket(io, socket);
     });
-  });
+
+    // ─── Default namespace — existing handlers ──────────────────────
+    io.on('connection', (socket) => {
+      console.log('A user connected');
+
+      authSocket(io, socket);
+      roomSocket(io, socket);
+      chatSocket(io, socket);
+      seatSocket(io, socket);
+      giftSocket(io, socket);
+      pkBattleSocket(io, socket);
+      familySocket(io, socket);
+      agencySocket(io, socket);
+      analyticsSocket(io, socket);
+      gameSocket(io, socket);
+      rewardSocket.initRewardSocket(io, socket);
+      powerMatrixSocket(io, socket);
+      matchmakingSocket(io, socket);
+
+      socket.on('disconnect', () => {
+        console.log('A user disconnected');
+      });
+    });
+  } catch (err) {
+    console.error('❌ Socket initialization failed:', err);
+  }
 };
 
 module.exports = { initializeSockets };
