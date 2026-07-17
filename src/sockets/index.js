@@ -5,7 +5,7 @@ const chatSocket = require('./chatSocket');
 const seatSocket = require('./seatSocket');
 const giftSocket = require('./giftSocket');
 const pkBattleSocket = require('./pkBattleSocket');
-const familySocket = require('./familySocket');
+const { setupFamilySocketHandlers } = require('./familySocket');
 const agencySocket = require('./agencySocket');
 const analyticsSocket = require('./analytics.socket');
 const gameSocket = require('../config/sockets/gameSocket');
@@ -57,7 +57,7 @@ const initializeSockets = (io) => {
       seatSocket(io, socket);
       giftSocket(io, socket);
       pkBattleSocket(io, socket);
-      familySocket(io, socket);
+      setupFamilySocketHandlers(io, socket);
       agencySocket(io, socket);
       analyticsSocket(io, socket);
       gameSocket(io, socket);

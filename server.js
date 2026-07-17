@@ -38,8 +38,9 @@ if (missingEnvVars.length > 0) {
 }
 
 const http = require('http');
+const { Server } = require('socket.io');
 const connectDB = require('./src/config/db');
-const { initializeSocket } = require('./src/config/socket');
+const { setIO } = require('./src/config/socket');
 const { initRedis } = require('./src/services/otp.service');
 const { connectRedis } = require('./src/config/redis');
 const app = require('./src/app');
@@ -47,7 +48,25 @@ const { initializeFirebaseAdmin } = require('./src/config/firebase-admin');
 
 // ─── SETUP HTTP + SOCKET.IO ────────────────────────────────────────────────
 const server = http.createServer(app);
-const io = initializeSocket(server);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || [
+      'http://192.168.1.100:5000',
+      'http://192.168.1.100:3000',
+      'http://localhost:5000',
+      'http://localhost:3000',
+      process.env.MOBILE_DEEP_LINK_URL
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  reconnectionAttempts: 5,
+  transports: ['websocket', 'polling']
+});
+setIO(io);
 
 // Make `io` accessible globally inside controllers
 app.set('io', io);

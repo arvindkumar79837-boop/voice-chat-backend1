@@ -143,6 +143,18 @@ exports.verifyTwoFactor = async (req, res) => {
 };
 
 /**
+ * Refresh token endpoint (stub)
+ */
+exports.refreshToken = async (req, res) => {
+  try {
+    return res.status(200).json({ success: true, message: 'Token refreshed (stub)' });
+  } catch (e) {
+    console.error('Admin Refresh Token Error:', e);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+/**
  * Helper function to generate staff tokens.
  */
 const generateStaffTokens = (staff) => {

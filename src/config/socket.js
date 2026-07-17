@@ -151,6 +151,10 @@ const getIO = () => {
     return io;
 };
 
+const setIO = (ioInstance) => {
+    io = ioInstance;
+};
+
 const emitToUser = (userId, event, data) => {
     if (!io) return;
     io.to(`user:${userId}`).emit(event, data);
@@ -159,5 +163,6 @@ const emitToUser = (userId, event, data) => {
 module.exports = {
     initializeSocket,
     getIO,
+    setIO,
     emitToUser
 };

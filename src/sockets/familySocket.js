@@ -11,7 +11,7 @@ const staySessionKey = (uid) => `family:stay:${uid}`;
 // ──────────────────────────────────────────────
 // Socket.io Family Chat + Stay Reward Middleware
 // ──────────────────────────────────────────────
-function familyChatMiddleware(io, socket) {
+function setupFamilySocketHandlers(io, socket) {
   const uid = socket.user?.uid;
 
   if (!uid) {
@@ -346,4 +346,4 @@ function familyChatMiddleware(io, socket) {
   });
 }
 
-module.exports = familyChatMiddleware;
+exports.setupFamilySocketHandlers = setupFamilySocketHandlers;
