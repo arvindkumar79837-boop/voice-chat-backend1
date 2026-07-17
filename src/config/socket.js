@@ -37,8 +37,8 @@ const initializeSocket = (server) => {
 
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            socket.userId = decoded.userId;
-            socket.userRole = decoded.role;
+            socket.data.userId = decoded.userId;
+            socket.data.userRole = decoded.role;
             next();
         } catch (error) {
             console.error('Socket auth error:', error.message);
@@ -48,7 +48,7 @@ const initializeSocket = (server) => {
 
     // ─── CONNECTION LOGGING ───────────────────────────────────────────────
     io.on('connection', async (socket) => {
-        const userId = socket.userId;
+        const userId = socket.data.userId;
         console.log(`✅ Socket connected: ${userId} (${socket.id})`);
 
         try {
@@ -79,11 +79,11 @@ const initializeSocket = (server) => {
             if (!roomId) return;
 
             socket.join(roomId);
-            console.log(`User ${socket.userId} joined room ${roomId}`);
+            console.log(`User ${socket.data.userId} joined room ${roomId}`);
 
             // Check if user has VIP entry effect
             try {
-                const vipData = await VipSystem.findOne({ user_uid: socket.userId.toString() });
+                const vipData = await VipSystem.findOne({ user_uid: socket.data.userId.toString() });
                 if (!vipData || (vipData.vip_level < 5 && !vipData.is_svip)) {
                     return; // No entry effect for normal users
                 }
@@ -95,7 +95,7 @@ const initializeSocket = (server) => {
 
                 // Emit vip_entry event to all users in the room (including the entering user)
                 io.to(roomId).emit('vip_entry', {
-                    user_uid: socket.userId.toString(),
+                    user_uid: socket.data.userId.toString(),
                     vip_level: vipData.vip_level,
                     is_svip: vipData.is_svip,
                     svip_level: vipData.svip_level,
@@ -115,7 +115,7 @@ const initializeSocket = (server) => {
                 if (vipData.is_svip && vipData.vip_global_alerts_enabled) {
                     io.emit('vip_global_alert', {
                         type: 'svip_entry',
-                        user_uid: socket.userId.toString(),
+                        user_uid: socket.data.userId.toString(),
                         svip_level: vipData.svip_level,
                         room_id: roomId,
                         message: `👑 The King has entered Room ${roomId}!`,
@@ -131,7 +131,7 @@ const initializeSocket = (server) => {
             const { roomId } = data;
             if (!roomId) return;
             socket.leave(roomId);
-            console.log(`User ${socket.userId} left room ${roomId}`);
+            console.log(`User ${socket.data.userId} left room ${roomId}`);
         });
 
         // Handle real-time mission progress updates
@@ -145,7 +145,7 @@ const initializeSocket = (server) => {
         socket.on('vip_level_up', (data) => {
             // Broadcast level up to user's friends
             socket.broadcast.emit('friend_level_up', {
-                user_uid: socket.userId.toString(),
+                user_uid: socket.data.userId.toString(),
                 new_level: data.new_level,
                 is_svip: data.is_svip
             });
@@ -162,7 +162,13 @@ const getIO = () => {
     return io;
 };
 
+const emitToUser = (userId, event, data) => {
+    if (!io) return;
+    io.to(`user:${userId}`).emit(event, data);
+};
+
 module.exports = {
     initializeSocket,
-    getIO
+    getIO,
+    emitToUser
 };

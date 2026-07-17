@@ -53,62 +53,54 @@ const attemptToMatchUsers = async (io) => {
   }
 };
 
-// Main socket handler function, following the project's established pattern.
-module.exports = (io) => {
-  // This matchmaking logic does not need to be inside a connection block
-  // because it's triggered by a periodic timer, not a specific client's connection event.
-  // We can define the client-side event listeners on the main `io` object if needed,
-  // but for a simple queue, it's better to handle it within the auth/main connection.
-  // However, to strictly follow the project's pattern of one file per feature,
-  // we will wrap it. The logic will still be triggered by the external setInterval.
-  
-  // NOTE: For a real-world scenario, this setInterval should be managed in a central place.
-  // We define it here to keep the logic self-contained as per the analysis.
-  // The `io` object is passed in from server.js.
-  const matchmakingInterval = setInterval(() => {
+// Global matchmaking interval — runs once at import time, not per-connection
+let matchmakingInterval;
+
+const startMatchmaking = (io) => {
+  if (matchmakingInterval) return;
+  matchmakingInterval = setInterval(() => {
     attemptToMatchUsers(io);
-  }, 5000); // Try to match every 5 seconds
+  }, 5000);
+};
 
-  console.log('✅ Matchmaking Service initialized.');
+// Direct socket handler (no io.on('connection') wrapper — prevents listener accumulation)
+// Called from index.js inside the default namespace's io.on('connection')
+module.exports = (io, socket) => {
+  startMatchmaking(io);
+  socket.on('blind_date:start_search', async () => {
+    if (matchmakingQueue.some(user => user.socketId === socket.id)) return;
+    try {
+      const user = await User.findById(socket.data.userId).lean();
+      if (!user) return;
+      const queueEntry = {
+        socketId: socket.id,
+        userId: user._id.toString(),
+        name: user.name || user.username,
+        avatar: user.avatar,
+        age: user.age,
+        gender: user.gender,
+      };
+      matchmakingQueue.push(queueEntry);
+      console.log(`[Matchmaking] ${queueEntry.name} joined queue. Size: ${matchmakingQueue.length}`);
+      attemptToMatchUsers(io);
+    } catch (error) {
+      console.error('[Matchmaking] Error adding user to queue:', error);
+    }
+  });
 
-  // This part is for client-specific events, which will be registered once
-  // for every connected client due to the project's architecture.
-  io.on('connection', (socket) => {
-    socket.on('blind_date:start_search', async () => {
-      if (matchmakingQueue.some(user => user.socketId === socket.id)) return;
-      try {
-        const user = await User.findById(socket.data.userId).lean();
-        if (!user) return;
-        const queueEntry = {
-          socketId: socket.id,
-          userId: user._id.toString(),
-          name: user.name || user.username,
-          avatar: user.avatar,
-          age: user.age,
-          gender: user.gender,
-        };
-        matchmakingQueue.push(queueEntry);
-        console.log(`[Matchmaking] ${queueEntry.name} joined queue. Size: ${matchmakingQueue.length}`);
-        attemptToMatchUsers(io);
-      } catch (error) {
-        console.error('[Matchmaking] Error adding user to queue:', error);
-      }
-    });
+  socket.on('blind_date:cancel_search', () => {
+    const index = matchmakingQueue.findIndex(user => user.socketId === socket.id);
+    if (index !== -1) {
+      const removedUser = matchmakingQueue.splice(index, 1);
+      console.log(`[Matchmaking] ${removedUser[0].name} left queue. Size: ${matchmakingQueue.length}`);
+    }
+  });
 
-    socket.on('blind_date:cancel_search', () => {
-      const index = matchmakingQueue.findIndex(user => user.socketId === socket.id);
-      if (index !== -1) {
-        const removedUser = matchmakingQueue.splice(index, 1);
-        console.log(`[Matchmaking] ${removedUser[0].name} left queue. Size: ${matchmakingQueue.length}`);
-      }
-    });
-
-    socket.on('disconnect', () => {
-      const index = matchmakingQueue.findIndex(user => user.socketId === socket.id);
-      if (index !== -1) {
-        const removedUser = matchmakingQueue.splice(index, 1);
-        console.log(`[Matchmaking] ${removedUser[0].name} disconnected, removed from queue. Size: ${matchmakingQueue.length}`);
-      }
-    });
+  socket.on('disconnect', () => {
+    const index = matchmakingQueue.findIndex(user => user.socketId === socket.id);
+    if (index !== -1) {
+      const removedUser = matchmakingQueue.splice(index, 1);
+      console.log(`[Matchmaking] ${removedUser[0].name} disconnected, removed from queue. Size: ${matchmakingQueue.length}`);
+    }
   });
 };

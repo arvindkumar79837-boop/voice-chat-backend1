@@ -169,7 +169,7 @@ exports.toggleBan = async (req, res) => {
 
     const io = req.app.get('io');
     if (isBanned && io) {
-      io.to(user._id.toString()).emit('force_logout', { message: user.banReason });
+      io.to(`user:${user._id.toString()}`).emit('force_logout', { message: user.banReason });
     }
 
     return res.status(200).json({

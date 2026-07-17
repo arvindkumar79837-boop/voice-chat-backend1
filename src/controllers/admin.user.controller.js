@@ -69,7 +69,7 @@ exports.toggleBanStatus = async (req, res) => {
     // If banned, force disconnect socket if user is online
     const io = req.app.get('io');
     if (isBanned && io) {
-      io.to(user._id.toString()).emit('force_logout', { message: user.banReason });
+      io.to(`user:${user._id.toString()}`).emit('force_logout', { message: user.banReason });
     }
 
     return res.status(200).json({ success: true, message: `User successfully ${isBanned ? 'banned' : 'unbanned'}.`, data: user });
