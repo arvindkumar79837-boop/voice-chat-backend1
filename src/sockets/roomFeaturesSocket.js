@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken');
 const RoomLevel = require('../models/RoomLevel');
 const RoomFollower = require('../models/RoomFollower');
 const Room = require('../models/Room');
@@ -7,6 +8,19 @@ const onlineUsersInRooms = {};
 
 function setupRoomFeaturesSocket(io) {
   const roomFeaturesNamespace = io.of('/room-features');
+
+  roomFeaturesNamespace.use((socket, next) => {
+    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+    if (!token) return next(new Error('Authentication required'));
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      socket.data.userId = decoded.userId || decoded.id || decoded.uid;
+      socket.data.userRole = decoded.role;
+      next();
+    } catch (err) {
+      next(new Error('Invalid or expired token'));
+    }
+  });
 
   roomFeaturesNamespace.on('connection', (socket) => {
     console.log(`[RoomFeaturesSocket] Client connected: ${socket.id}`);

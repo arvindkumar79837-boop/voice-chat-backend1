@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const Event = require('../models/Event');
 const UserEventProgress = require('../models/UserEventProgress');
@@ -13,8 +14,21 @@ class EventSocket {
   static initialize(io) {
     const eventNamespace = io.of('/events');
 
+    eventNamespace.use((socket, next) => {
+      const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+      if (!token) return next(new Error('Authentication required'));
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        socket.data.userId = decoded.userId || decoded.id || decoded.uid;
+        socket.data.userRole = decoded.role;
+        next();
+      } catch (err) {
+        next(new Error('Invalid or expired token'));
+      }
+    });
+
     eventNamespace.on('connection', (socket) => {
-      const userId = socket.handshake.query.userId;
+      const userId = socket.data?.userId;
       console.log(`Event socket connected: ${userId}`);
 
       socket.on('join_event_room', async (eventId) => {

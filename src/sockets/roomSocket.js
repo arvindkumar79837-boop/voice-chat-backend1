@@ -653,6 +653,7 @@ module.exports = (io, socket) => {
     };
 
     io.to(roomId).emit('receive_room_message', messageData);
+    io.to(roomId).emit('room:message', messageData);
   };
   socket.on('send_room_message', handleSendMessage);
   socket.on('room:message', handleSendMessage);

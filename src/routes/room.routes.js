@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('../utils/asyncHandler');
-const roomController = require('../controllers/room.controller');
 const roomProductionController = require('../controllers/room.production.controller');
 const powerMatrixController = require('../controllers/powerMatrixController');
 const { authMiddleware } = require('../middlewares/auth.middleware');

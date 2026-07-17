@@ -1,7 +1,6 @@
 const User = require('../models/User');
 
-function agencySocket(io) {
-  io.on('connection', (socket) => {
+function agencySocket(io, socket) {
     const userId = socket.handshake.query.userId;
     if (!userId) return;
 
@@ -69,7 +68,6 @@ function agencySocket(io) {
         console.error('Leave agency room error:', error);
       }
     });
-  });
 }
 
 module.exports = agencySocket;

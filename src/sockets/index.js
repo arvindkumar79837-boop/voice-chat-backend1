@@ -32,20 +32,11 @@ const socketAuthMiddleware = (socket, next) => {
 };
 
 const initializeSockets = (io) => {
-  // ─── /events namespace — JWT auth required ──────────────────────
-  const eventsNamespace = io.of('/events');
-  eventsNamespace.use(socketAuthMiddleware);
-  eventsNamespace.on('connection', (socket) => {
-    eventSocket.initialize(io, socket);
-  });
+  // ─── /events namespace (self-contained in eventSocket.js, JWT inside) ──
+  eventSocket.initialize(io);
 
-  // ─── /room-features namespace — JWT auth required ──────────────
-  const roomFeaturesNamespace = io.of('/room-features');
-  roomFeaturesNamespace.use(socketAuthMiddleware);
-  roomFeaturesNamespace.on('connection', (socket) => {
-    const roomFeaturesSocket = require('./roomFeaturesSocket');
-    roomFeaturesSocket(io, socket);
-  });
+  // ─── /room-features namespace (self-contained in roomFeaturesSocket.js, JWT inside) ──
+  require('./roomFeaturesSocket').setupRoomFeaturesSocket(io);
 
   // ─── /youtube namespace — JWT auth required ────────────────────
   const youtubeNamespace = io.of('/youtube');
