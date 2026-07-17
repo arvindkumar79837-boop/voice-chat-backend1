@@ -23,7 +23,6 @@ const familyWarSchema = new mongoose.Schema({
   total_viewers: { type: Number, default: 0 }
 }, { timestamps: true });
 
-familyWarSchema.index({ war_id: 1 });
 familyWarSchema.index({ war_type: 1, status: 1 });
 familyWarSchema.index({ start_time: -1 });
 

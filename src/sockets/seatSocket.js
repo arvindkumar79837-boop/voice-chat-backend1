@@ -3,8 +3,9 @@ const Room = require('../models/Room');
 module.exports = (io, socket) => {
 
   // ─── Seat transfer (owner only) ───────────────────────────────
-  socket.on('transfer_seat', async ({ roomId, fromSeatIndex, toUserId, toUserName, toUserAvatar, adminId }) => {
+  socket.on('transfer_seat', async ({ roomId, fromSeatIndex, toUserId, toUserName, toUserAvatar }) => {
     try {
+      const adminId = socket.data.userId;
       const room = await Room.findOne({ roomId });
       if (!room) return;
 
@@ -37,8 +38,9 @@ module.exports = (io, socket) => {
   });
 
   // ─── Seat layout reorder (owner only) ─────────────────────────
-  socket.on('reorder_seats', async ({ roomId, newOrder, adminId }) => {
+  socket.on('reorder_seats', async ({ roomId, newOrder }) => {
     try {
+      const adminId = socket.data.userId;
       const room = await Room.findOne({ roomId });
       if (!room || room.ownerId.toString() !== adminId?.toString()) return;
 

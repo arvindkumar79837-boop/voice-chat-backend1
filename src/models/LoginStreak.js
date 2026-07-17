@@ -43,7 +43,6 @@ const loginStreakSchema = new mongoose.Schema({
   total_rewards_claimed: { type: Number, default: 0 }
 }, { timestamps: true });
 
-loginStreakSchema.index({ userId: 1 });
 loginStreakSchema.index({ last_login_date: -1 });
 
 module.exports = mongoose.model('LoginStreak', loginStreakSchema);

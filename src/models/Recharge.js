@@ -49,7 +49,6 @@ const rechargeSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 rechargeSchema.index({ userId: 1, createdAt: -1 });
-rechargeSchema.index({ gatewayOrderId: 1 });
 rechargeSchema.index({ status: 1 });
 
 module.exports = mongoose.model('Recharge', rechargeSchema);

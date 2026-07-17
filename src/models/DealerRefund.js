@@ -40,7 +40,6 @@ const dealerRefundSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
-dealerRefundSchema.index({ refundId: 1 });
 dealerRefundSchema.index({ dealerUid: 1 });
 dealerRefundSchema.index({ status: 1 });
 dealerRefundSchema.index({ transactionHash: 1 });

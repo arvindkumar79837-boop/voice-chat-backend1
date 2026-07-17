@@ -88,7 +88,6 @@ const rewardConfigSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 rewardConfigSchema.index({ gameType: 1, isActive: 1, startTime: 1, endTime: 1 });
-rewardConfigSchema.index({ configName: 1 }, { unique: true });
 rewardConfigSchema.index({ deployedBy: 1 });
 
 module.exports = mongoose.model('RewardConfig', rewardConfigSchema);

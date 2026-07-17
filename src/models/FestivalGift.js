@@ -29,7 +29,6 @@ const festivalGiftSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 festivalGiftSchema.index({ festival_type: 1, is_active: 1, available_from: 1, available_until: 1 });
-festivalGiftSchema.index({ gift_id: 1 });
 festivalGiftSchema.index({ is_limited: 1 });
 
 module.exports = mongoose.model('FestivalGift', festivalGiftSchema);

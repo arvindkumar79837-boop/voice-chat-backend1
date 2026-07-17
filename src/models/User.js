@@ -158,7 +158,6 @@ const userSchema = new mongoose.Schema({
 
 userSchema.index({ username: 'text', name: 'text' });
 
-userSchema.index({ uid: 1 });
 userSchema.index({ familyId: 1 });
 userSchema.index({ agencyId: 1 });
 userSchema.index({ isVip: -1 });

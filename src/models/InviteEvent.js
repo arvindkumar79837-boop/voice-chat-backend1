@@ -26,7 +26,6 @@ const inviteEventSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 inviteEventSchema.index({ inviter_id: 1, status: 1 });
-inviteEventSchema.index({ invite_code: 1 }, { unique: true });
 inviteEventSchema.index({ invitee_id: 1 });
 inviteEventSchema.index({ expires_at: 1 }, { expireAfterSeconds: 0 });
 

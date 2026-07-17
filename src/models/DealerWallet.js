@@ -41,8 +41,7 @@ const dealerWalletSchema = new mongoose.Schema({
   assignedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 
-dealerWalletSchema.index({ userId: 1 });
-dealerWalletSchema.index({ uid: 1 });
+
 dealerWalletSchema.index({ level: 1 });
 dealerWalletSchema.index({ isFlagged: 1 });
 

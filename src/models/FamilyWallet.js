@@ -25,7 +25,6 @@ const familyWalletSchema = new mongoose.Schema({
   freezeReason: { type: String }
 }, { timestamps: true });
 
-familyWalletSchema.index({ familyId: 1 });
 familyWalletSchema.index({ 'memberContributions.userId': 1 });
 familyWalletSchema.index({ totalCoins: -1 });
 
