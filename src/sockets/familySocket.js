@@ -12,7 +12,7 @@ const staySessionKey = (uid) => `family:stay:${uid}`;
 // Socket.io Family Chat + Stay Reward Middleware
 // ──────────────────────────────────────────────
 function setupFamilySocketHandlers(io, socket) {
-  const uid = socket.user?.uid;
+  const uid = socket.data?.userId;
 
   if (!uid) {
     return socket.emit('error', { message: 'Unauthenticated' });
@@ -20,7 +20,7 @@ function setupFamilySocketHandlers(io, socket) {
 
   socket.on('family:join', async (familyId) => {
     try {
-      const user = await User.findOne({ uid, familyId, isBanned: false });
+      const user = await User.findOne({ _id: uid, familyId, isBanned: false });
       if (!user) {
         return socket.emit('family:error', { message: 'You are not a member of this family.' });
       }
@@ -63,7 +63,7 @@ function setupFamilySocketHandlers(io, socket) {
   socket.on('family:send_message', async (payload) => {
     try {
       const { familyId, message, type = 'text' } = payload;
-      const user = await User.findOne({ uid }).lean();
+      const user = await User.findById(uid).lean();
 
       if (!user || !user.familyId || user.familyId !== familyId) {
         return socket.emit('family:error', { message: 'Not authorized.' });
@@ -99,7 +99,7 @@ function setupFamilySocketHandlers(io, socket) {
     try {
       const { familyId, giftId, giftName, giftValue, receiverUid } = payload;
 
-      const user = await User.findOne({ uid }).lean();
+      const user = await User.findById(uid).lean();
       if (!user || !user.familyId || user.familyId !== familyId) {
         return socket.emit('family:error', { message: 'Not authorized.' });
       }
@@ -127,7 +127,7 @@ function setupFamilySocketHandlers(io, socket) {
     try {
       const { familyId, roomId, seatIndex } = payload;
 
-      const user = await User.findOne({ uid, familyId, isBanned: false });
+      const user = await User.findOne({ _id: uid, familyId, isBanned: false });
       if (!user) {
         return socket.emit('family:stay:error', { message: 'Not a family member.' });
       }
@@ -220,7 +220,7 @@ function setupFamilySocketHandlers(io, socket) {
       session.lastRewardAt = now;
       await session.save();
 
-      const user = await User.findOne({ uid });
+      const user = await User.findById(uid);
       if (user) {
         user.coins = (user.coins || 0) + coinsEarned;
         user.xp = (user.xp || 0) + xpEarned;

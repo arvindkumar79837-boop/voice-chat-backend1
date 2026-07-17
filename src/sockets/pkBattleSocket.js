@@ -8,7 +8,7 @@ module.exports = (io, socket) => {
         return; // Ignore if battle is not live
       }
 
-      const currentUser = socket.user.userId.toString();
+      const currentUser = socket.data.userId.toString();
       const host = battle.hostId.toString();
       const opponent = battle.opponentId.toString();
 

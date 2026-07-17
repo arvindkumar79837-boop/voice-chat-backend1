@@ -1,4 +1,6 @@
 const Room = require('../models/Room');
+const VipSystem = require('../models/VipSystem');
+const CosmeticItem = require('../models/CosmeticItem');
 const crypto = require('crypto');
 const { generateLiveKitToken } = require('../services/livekitService');
 
@@ -82,6 +84,46 @@ module.exports = (io, socket) => {
         room.mutedUsers.some((id) => id.toString() === userId.toString());
       if (isMuted) {
         socket.emit('user_admin_muted', { targetUserId: userId });
+      }
+
+      // VIP entry effect
+      try {
+        const vipData = await VipSystem.findOne({ user_uid: userId });
+        if (vipData && (vipData.vip_level >= 5 || vipData.is_svip)) {
+          const entryEffect = vipData.active_cosmetics.entrance_car_id ?
+            await CosmeticItem.findOne({ item_id: vipData.active_cosmetics.entrance_car_id }).lean() :
+            null;
+
+          io.to(roomId).emit('vip_entry', {
+            user_uid: userId,
+            vip_level: vipData.vip_level,
+            is_svip: vipData.is_svip,
+            svip_level: vipData.svip_level,
+            entrance_effect: entryEffect ? {
+              car_id: entryEffect.item_id,
+              car_name: entryEffect.item_name,
+              animation_url: entryEffect.animation_url || '',
+              animation_duration_ms: entryEffect.animation_duration_ms || 3000,
+              is_animated: entryEffect.is_animated || false
+            } : null,
+            frame_id: vipData.active_cosmetics.frame_id,
+            name_color: vipData.active_cosmetics.name_color,
+            badge_id: vipData.active_cosmetics.badge_id
+          });
+
+          if (vipData.is_svip && vipData.vip_global_alerts_enabled) {
+            io.emit('vip_global_alert', {
+              type: 'svip_entry',
+              user_uid: userId,
+              svip_level: vipData.svip_level,
+              room_id: roomId,
+              message: `👑 The King has entered Room ${roomId}!`,
+              timestamp: new Date()
+            });
+          }
+        }
+      } catch (vipError) {
+        console.error('VIP entry effect error:', vipError);
       }
     } catch (error) {
       console.error('Error joining room:', error);
