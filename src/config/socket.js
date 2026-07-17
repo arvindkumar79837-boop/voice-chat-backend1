@@ -29,7 +29,7 @@ const initializeSocket = (server) => {
 
     // ─── SOCKET AUTHENTICATION MIDDLEWARE ───────────────────────────────
     io.use((socket, next) => {
-        const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
+        const token = socket.handshake.auth?.token || socket.handshake.query?.token || socket.handshake.headers.authorization?.split(' ')[1];
 
         if (!token) {
             return next(new Error('Authentication token required'));
@@ -46,7 +46,7 @@ const initializeSocket = (server) => {
         }
     });
 
-    // ─── CONNECTION LOGGING ───────────────────────────────────────────────
+    // ─── SINGLE CONNECTION HANDLER (user data + VIP effects) ─────────
     io.on('connection', async (socket) => {
         const userId = socket.data.userId;
         console.log(`✅ Socket connected: ${userId} (${socket.id})`);
@@ -66,14 +66,7 @@ const initializeSocket = (server) => {
             setupFamilySocketHandlers(io, socket);
         }
 
-        socket.on('disconnect', () => {
-            console.log(`❌ Socket disconnected: ${userId} (${socket.id})`);
-        });
-    });
-
-    // ─── VIP ENTRY EFFECT HANDLER ───────────────────────────────────────
-    io.on('connection', (socket) => {
-        // Handle user joining a room with VIP entry effect
+        // ─── ROOM & VIP EVENT HANDLERS ────────────────────────────
         socket.on('join_room', async (data) => {
             const { roomId } = data;
             if (!roomId) return;
@@ -81,19 +74,16 @@ const initializeSocket = (server) => {
             socket.join(roomId);
             console.log(`User ${socket.data.userId} joined room ${roomId}`);
 
-            // Check if user has VIP entry effect
             try {
                 const vipData = await VipSystem.findOne({ user_uid: socket.data.userId.toString() });
                 if (!vipData || (vipData.vip_level < 5 && !vipData.is_svip)) {
-                    return; // No entry effect for normal users
+                    return;
                 }
 
-                const user = vipData; // In production, fetch full user data
                 const entryEffect = vipData.active_cosmetics.entrance_car_id ?
                     await CosmeticItem.findOne({ item_id: vipData.active_cosmetics.entrance_car_id }).lean() :
                     null;
 
-                // Emit vip_entry event to all users in the room (including the entering user)
                 io.to(roomId).emit('vip_entry', {
                     user_uid: socket.data.userId.toString(),
                     vip_level: vipData.vip_level,
@@ -111,7 +101,6 @@ const initializeSocket = (server) => {
                     badge_id: vipData.active_cosmetics.badge_id
                 });
 
-                // Global SVIP notification
                 if (vipData.is_svip && vipData.vip_global_alerts_enabled) {
                     io.emit('vip_global_alert', {
                         type: 'svip_entry',
@@ -134,21 +123,21 @@ const initializeSocket = (server) => {
             console.log(`User ${socket.data.userId} left room ${roomId}`);
         });
 
-        // Handle real-time mission progress updates
         socket.on('mission_progress', async (data) => {
             const { mission_id, progress_amount } = data;
-            // This is handled by the REST API, but we can emit notifications here if needed
             console.log(`Mission progress update: ${mission_id} +${progress_amount}`);
         });
 
-        // Handle VIP level up notifications
         socket.on('vip_level_up', (data) => {
-            // Broadcast level up to user's friends
             socket.broadcast.emit('friend_level_up', {
                 user_uid: socket.data.userId.toString(),
                 new_level: data.new_level,
                 is_svip: data.is_svip
             });
+        });
+
+        socket.on('disconnect', () => {
+            console.log(`❌ Socket disconnected: ${userId} (${socket.id})`);
         });
     });
 
