@@ -5,32 +5,25 @@
 
 const admin = require('firebase-admin');
 const path = require('path');
+const fs = require('fs');
 
 // Initialize Firebase Admin SDK
 const initializeFirebaseAdmin = () => {
   try {
-    // Get credentials from environment or use default
-    const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-      path.join(__dirname, '../../firebase-service-account.json');
+    const credentialPath = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-    // Check if using default service account
-    let serviceAccount;
-    try {
-      serviceAccount = require(serviceAccountPath);
-    } catch (e) {
-      console.warn('⚠️ Firebase service account file not found. Using environment variables.');
-      serviceAccount = {
-        type: 'service_account',
-        project_id: process.env.FIREBASE_PROJECT_ID,
-        private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-        private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        client_email: process.env.FIREBASE_CLIENT_EMAIL,
-        client_id: process.env.FIREBASE_CLIENT_ID,
-        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-        token_uri: 'https://oauth2.googleapis.com/token',
-        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-      };
+    if (!credentialPath) {
+      throw new Error("FIREBASE_SERVICE_ACCOUNT path is not defined in .env");
     }
+
+    // Resolve absolute path from root
+    const absolutePath = path.resolve(process.cwd(), credentialPath);
+
+    if (!fs.existsSync(absolutePath)) {
+      throw new Error(`Service account file not found at: ${absolutePath}`);
+    }
+
+    const serviceAccount = require(absolutePath);
 
     // Initialize Firebase Admin
     if (!admin.apps.length) {
@@ -39,12 +32,12 @@ const initializeFirebaseAdmin = () => {
         databaseURL: process.env.FIREBASE_DATABASE_URL,
       });
 
-      console.log('✅ Firebase Admin SDK initialized');
+      console.log("✅ Firebase Admin SDK initialized successfully using JSON file path.");
     }
 
     return admin;
   } catch (error) {
-    console.error('❌ Firebase Admin initialization error:', error);
+    console.error("❌ Firebase Admin initialization error:", error);
     throw error;
   }
 };
