@@ -3,6 +3,7 @@
  */
 
 const redis = require('redis');
+const MonitoringService = require('../services/monitoringService');
 
 let redisClient = null;
 let fallbackRedisClient = null;
@@ -54,14 +55,17 @@ const connectRedis = async () => {
     );
     
     redisClient.on('error', (err) => {
+      MonitoringService.updateRedisStatus(false);
       console.error('❌ Redis Client Error:', err.message);
     });
 
     redisClient.on('connect', () => {
+      MonitoringService.updateRedisStatus(true);
       console.log('🔄 Redis Client Connected');
     });
 
     redisClient.on('ready', () => {
+      MonitoringService.updateRedisStatus(true);
       console.log('✅ Redis Client Ready');
     });
 
@@ -70,6 +74,7 @@ const connectRedis = async () => {
     });
 
     redisClient.on('end', () => {
+      MonitoringService.updateRedisStatus(false);
       console.log('⚠️ Redis Client Disconnected');
     });
 

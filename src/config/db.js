@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const MonitoringService = require('../services/monitoringService');
 
 // Suppress duplicate index warnings
 mongoose.set('strictQuery', false);
@@ -13,6 +14,7 @@ const connectDB = async () => {
       heartbeatFrequencyMS: 10000,
     });
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    MonitoringService.updateDatabaseStatus(true);
     setupConnectionHandlers();
     return true;
   } catch (error) {
@@ -26,22 +28,31 @@ const connectDB = async () => {
 // CONNECTION EVENT HANDLERS
 // ─────────────────────────────────────────────────────────────────────────
 const setupConnectionHandlers = () => {
+  mongoose.connection.on('connected', () => {
+    MonitoringService.updateDatabaseStatus(true);
+  });
+
   mongoose.connection.on('error', (err) => {
+    MonitoringService.updateDatabaseStatus(false);
     console.error(`⚠️ MongoDB Runtime Error: ${err.message}`);
   });
 
   mongoose.connection.on('disconnected', () => {
+    MonitoringService.updateDatabaseStatus(false);
     console.warn('⚠️ MongoDB Disconnected. Attempting reconnect with backoff...');
     reconnectWithBackoff();
   });
 
   mongoose.connection.on('reconnected', () => {
+    MonitoringService.updateDatabaseStatus(true);
     console.log('🔄 MongoDB Reconnected');
   });
 
   mongoose.connection.on('close', () => {
+    MonitoringService.updateDatabaseStatus(false);
     console.log('✅ MongoDB Connection Closed');
   });
+
 
   // Graceful shutdown
   process.on('SIGINT', async () => {

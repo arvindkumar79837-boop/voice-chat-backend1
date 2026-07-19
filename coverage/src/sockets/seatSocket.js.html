@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/48</span>
+                <span class='fraction'>0/52</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/42</span>
+                <span class='fraction'>0/46</span>
             </div>
         
             
@@ -150,7 +150,15 @@
 <a name='L85'></a><a href='#L85'>85</a>
 <a name='L86'></a><a href='#L86'>86</a>
 <a name='L87'></a><a href='#L87'>87</a>
-<a name='L88'></a><a href='#L88'>88</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -221,9 +229,13 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -231,9 +243,13 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -305,23 +321,31 @@
 &nbsp;
   // ─── User sound wave animation trigger ────────────────────────
 <span class="cstat-no" title="statement not covered" >  socket.on('user_start_speaking', <span class="fstat-no" title="function not covered" >({</span> roomId, seatIndex }) =&gt; {</span>
-    const userId = <span class="cstat-no" title="statement not covered" >socket.data.userId;</span>
-<span class="cstat-no" title="statement not covered" >    if (!userId) <span class="cstat-no" title="statement not covered" >return;</span></span>
-<span class="cstat-no" title="statement not covered" >    io.to(roomId).emit('seat_animation', {</span>
-      seatIndex,
-      effect: 'sound_wave_active',
-      userId
-    });
+<span class="cstat-no" title="statement not covered" >    try {</span>
+      const userId = <span class="cstat-no" title="statement not covered" >socket.data.userId;</span>
+<span class="cstat-no" title="statement not covered" >      if (!userId) <span class="cstat-no" title="statement not covered" >return;</span></span>
+<span class="cstat-no" title="statement not covered" >      io.to(roomId).emit('seat_animation', {</span>
+        seatIndex,
+        effect: 'sound_wave_active',
+        userId
+      });
+    } catch (error) {
+<span class="cstat-no" title="statement not covered" >      console.error('[user_start_speaking] error:', error.message);</span>
+    }
   });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  socket.on('user_stop_speaking', <span class="fstat-no" title="function not covered" >({</span> roomId, seatIndex }) =&gt; {</span>
-    const userId = <span class="cstat-no" title="statement not covered" >socket.data.userId;</span>
-<span class="cstat-no" title="statement not covered" >    if (!userId) <span class="cstat-no" title="statement not covered" >return;</span></span>
-<span class="cstat-no" title="statement not covered" >    io.to(roomId).emit('seat_animation', {</span>
-      seatIndex,
-      effect: 'sound_wave_idle',
-      userId
-    });
+<span class="cstat-no" title="statement not covered" >    try {</span>
+      const userId = <span class="cstat-no" title="statement not covered" >socket.data.userId;</span>
+<span class="cstat-no" title="statement not covered" >      if (!userId) <span class="cstat-no" title="statement not covered" >return;</span></span>
+<span class="cstat-no" title="statement not covered" >      io.to(roomId).emit('seat_animation', {</span>
+        seatIndex,
+        effect: 'sound_wave_idle',
+        userId
+      });
+    } catch (error) {
+<span class="cstat-no" title="statement not covered" >      console.error('[user_stop_speaking] error:', error.message);</span>
+    }
   });
 };
 &nbsp;</pre></td></tr></table></pre>
@@ -331,7 +355,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-17T16:25:51.205Z
+                at 2026-07-19T15:39:44.303Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
