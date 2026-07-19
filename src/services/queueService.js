@@ -27,16 +27,12 @@ class QueueService {
       let redisOptions = {};
 
       if (process.env.REDIS_URL) {
-        const url = new URL(process.env.REDIS_URL);
         redisOptions = {
-          host: url.hostname,
-          port: parseInt(url.port),
-          password: url.password || undefined,
-          db: parseInt((url.pathname || '/0').replace('/', '0')),
-          retryStrategy: (times) => Math.min(times * 50, 1000),
+          url: process.env.REDIS_URL,
           maxRetriesPerRequest: null,
           enableReadyCheck: true,
-          lazyConnect: true
+          lazyConnect: true,
+          retryStrategy: (times) => Math.min(times * 50, 1000)
         };
       } else {
         redisOptions = {
