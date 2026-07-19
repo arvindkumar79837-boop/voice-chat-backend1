@@ -33,3 +33,5 @@ firebase-service-account.json
 # Temporary files
 *.tmp
 *.temp
+# Test coverage
+coverage/
