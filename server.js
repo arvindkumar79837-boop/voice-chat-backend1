@@ -352,7 +352,7 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (err) => {
   console.error('❌ UNCAUGHT EXCEPTION:', err.message);
   console.error(err.stack);
-  gracefulShutdown('uncaughtException');
+  console.error('⚠️ Continuing to run after uncaughtException (handler now catches via try/catch)');
 });
 
 // ─── START SERVER ───────────────────────────────────────────────────────────

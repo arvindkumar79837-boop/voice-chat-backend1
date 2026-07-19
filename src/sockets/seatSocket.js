@@ -66,22 +66,30 @@ module.exports = (io, socket) => {
 
   // ─── User sound wave animation trigger ────────────────────────
   socket.on('user_start_speaking', ({ roomId, seatIndex }) => {
-    const userId = socket.data.userId;
-    if (!userId) return;
-    io.to(roomId).emit('seat_animation', {
-      seatIndex,
-      effect: 'sound_wave_active',
-      userId
-    });
+    try {
+      const userId = socket.data.userId;
+      if (!userId) return;
+      io.to(roomId).emit('seat_animation', {
+        seatIndex,
+        effect: 'sound_wave_active',
+        userId
+      });
+    } catch (error) {
+      console.error('[user_start_speaking] error:', error.message);
+    }
   });
 
   socket.on('user_stop_speaking', ({ roomId, seatIndex }) => {
-    const userId = socket.data.userId;
-    if (!userId) return;
-    io.to(roomId).emit('seat_animation', {
-      seatIndex,
-      effect: 'sound_wave_idle',
-      userId
-    });
+    try {
+      const userId = socket.data.userId;
+      if (!userId) return;
+      io.to(roomId).emit('seat_animation', {
+        seatIndex,
+        effect: 'sound_wave_idle',
+        userId
+      });
+    } catch (error) {
+      console.error('[user_stop_speaking] error:', error.message);
+    }
   });
 };

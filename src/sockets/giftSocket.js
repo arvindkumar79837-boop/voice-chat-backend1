@@ -316,21 +316,31 @@ module.exports = (io, socket) => {
 
     // ─── Gift Goal Progress Update ─────────────────────────────
     socket.on('update_gift_goal', async ({ roomId, currentCoins, targetCoins }) => {
-      const progressPercent = targetCoins > 0 ? Math.min((currentCoins / targetCoins) * 100, 100) : 0;
-      io.to(roomId).emit('gift_goal_updated', {
-        currentCoins,
-        targetCoins,
-        progressPercent
-      });
+      try {
+        const progressPercent = targetCoins > 0 ? Math.min((currentCoins / targetCoins) * 100, 100) : 0;
+        io.to(roomId).emit('gift_goal_updated', {
+          currentCoins,
+          targetCoins,
+          progressPercent
+        });
+      } catch (error) {
+        console.error('[update_gift_goal] error:', error.message);
+        socket.emit('error', { message: 'Something went wrong. Please try again.' });
+      }
     });
 
     // ─── Frame/Avatar Gift Effect ──────────────────────────────
     socket.on('send_frame_gift', ({ roomId, receiverId, frameId, frameImageUrl, senderName }) => {
-      io.to(roomId).emit('frame_effect', {
-        receiverId,
-        frameId,
-        frameImageUrl,
-        senderName
-      });
+      try {
+        io.to(roomId).emit('frame_effect', {
+          receiverId,
+          frameId,
+          frameImageUrl,
+          senderName
+        });
+      } catch (error) {
+        console.error('[send_frame_gift] error:', error.message);
+        socket.emit('error', { message: 'Something went wrong. Please try again.' });
+      }
     });
 };

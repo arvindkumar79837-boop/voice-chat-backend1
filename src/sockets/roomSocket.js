@@ -138,61 +138,71 @@ module.exports = (io, socket) => {
 
   // ─── User leaves a voice room ────────────────────────────────
   const handleLeaveRoom = async ({ roomId, userProfile }) => {
-    const userId = authedUserId;
-    socket.leave(roomId);
+    try {
+      const userId = authedUserId;
+      socket.leave(roomId);
 
-    // Decrement active users in the database
-    const room = await Room.findOne({ roomId });
-    if (room) {
-      room.activeUsers = Math.max(0, room.activeUsers - 1);
-      await room.save();
-
-      // Auto-remove user from seat if they were on one
-      const seatIdx = room.seats.findIndex(
-        (s) => s.userId && s.userId.toString() === userId.toString()
-      );
-      if (seatIdx !== -1) {
-        room.seats[seatIdx].userId = null;
-        room.seats[seatIdx].userName = '';
-        room.seats[seatIdx].userAvatar = '';
-        room.seats[seatIdx].isMuted = false;
-        room.seats[seatIdx].isHost = false;
-        room.seats[seatIdx].joinedAt = null;
+      // Decrement active users in the database
+      const room = await Room.findOne({ roomId });
+      if (room) {
+        room.activeUsers = Math.max(0, room.activeUsers - 1);
         await room.save();
 
-        io.to(roomId).emit('seat_vacated', {
-          seatIndex: seatIdx,
-          activeUsers: room.activeUsers,
-        });
-      }
-    }
+        // Auto-remove user from seat if they were on one
+        const seatIdx = room.seats.findIndex(
+          (s) => s.userId && s.userId.toString() === userId.toString()
+        );
+        if (seatIdx !== -1) {
+          room.seats[seatIdx].userId = null;
+          room.seats[seatIdx].userName = '';
+          room.seats[seatIdx].userAvatar = '';
+          room.seats[seatIdx].isMuted = false;
+          room.seats[seatIdx].isHost = false;
+          room.seats[seatIdx].joinedAt = null;
+          await room.save();
 
-    socket.to(roomId).emit('user_left', {
-      userId,
-      userProfile,
-      message: `${userProfile?.name || 'A user'} left the room`,
-      activeUsers: room?.activeUsers || 0,
-    });
-    socket.to(roomId).emit('room:user_left', {
-      userId,
-      userProfile,
-      message: `${userProfile?.name || 'A user'} left the room`,
-      activeUsers: room?.activeUsers || 0,
-    });
+          io.to(roomId).emit('seat_vacated', {
+            seatIndex: seatIdx,
+            activeUsers: room.activeUsers,
+          });
+        }
+      }
+
+      socket.to(roomId).emit('user_left', {
+        userId,
+        userProfile,
+        message: `${userProfile?.name || 'A user'} left the room`,
+        activeUsers: room?.activeUsers || 0,
+      });
+      socket.to(roomId).emit('room:user_left', {
+        userId,
+        userProfile,
+        message: `${userProfile?.name || 'A user'} left the room`,
+        activeUsers: room?.activeUsers || 0,
+      });
+    } catch (error) {
+      console.error('[leave_room] error:', error.message);
+      socket.emit('error', { message: 'Something went wrong. Please try again.' });
+    }
   };
   socket.on('leave_room', handleLeaveRoom);
   socket.on('room:leave', handleLeaveRoom);
 
   // ─── Mic status toggle (mute/unmute) ─────────────────────────
   const handleToggleMic = async ({ roomId, isMuted }) => {
-    const userId = authedUserId;
-    io.to(roomId).emit('mic_status_changed', { userId, isMuted });
+    try {
+      const userId = authedUserId;
+      io.to(roomId).emit('mic_status_changed', { userId, isMuted });
 
-    // Update seat mute state in DB
-    await Room.findOneAndUpdate(
-      { roomId, 'seats.userId': userId },
-      { $set: { 'seats.$.isMuted': isMuted } }
-    );
+      // Update seat mute state in DB
+      await Room.findOneAndUpdate(
+        { roomId, 'seats.userId': userId },
+        { $set: { 'seats.$.isMuted': isMuted } }
+      );
+    } catch (error) {
+      console.error('[toggle_mic] error:', error.message);
+      socket.emit('error', { message: 'Something went wrong. Please try again.' });
+    }
   };
   socket.on('toggle_mic', handleToggleMic);
   socket.on('seat:mute', handleToggleMic);
@@ -704,34 +714,44 @@ module.exports = (io, socket) => {
 
   // ─── Room Send Message ───────────────────────────────────────
   const handleSendMessage = async (data) => {
-    const { roomId, senderName, message, isVip } = data;
-    const senderId = authedUserId;
-    if (!roomId || !senderId || !message) return;
+    try {
+      const { roomId, senderName, message, isVip } = data;
+      const senderId = authedUserId;
+      if (!roomId || !senderId || !message) return;
 
-    const messageData = {
-      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      senderId,
-      senderName: senderName || 'Unknown',
-      message: message.trim(),
-      time: new Date().toISOString(),
-      isVip: isVip || false,
-      timestamp: Date.now(),
-    };
+      const messageData = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        senderId,
+        senderName: senderName || 'Unknown',
+        message: message.trim(),
+        time: new Date().toISOString(),
+        isVip: isVip || false,
+        timestamp: Date.now(),
+      };
 
-    io.to(roomId).emit('receive_room_message', messageData);
-    io.to(roomId).emit('room:message', messageData);
+      io.to(roomId).emit('receive_room_message', messageData);
+      io.to(roomId).emit('room:message', messageData);
+    } catch (error) {
+      console.error('[send_room_message] error:', error.message);
+      socket.emit('error', { message: 'Something went wrong. Please try again.' });
+    }
   };
   socket.on('send_room_message', handleSendMessage);
   socket.on('room:message', handleSendMessage);
 
   // ─── Room: Raise Hand ────────────────────────────────────────
   const handleRaiseHand = async ({ roomId, userName }) => {
-    const userId = authedUserId;
-    socket.to(roomId).emit('raise_hand_notification', {
-      userId,
-      userName: userName || 'Someone',
-      message: `${userName || 'Someone'} wants to speak`,
-    });
+    try {
+      const userId = authedUserId;
+      socket.to(roomId).emit('raise_hand_notification', {
+        userId,
+        userName: userName || 'Someone',
+        message: `${userName || 'Someone'} wants to speak`,
+      });
+    } catch (error) {
+      console.error('[raise_hand] error:', error.message);
+      socket.emit('error', { message: 'Something went wrong. Please try again.' });
+    }
   };
   socket.on('raise_hand', handleRaiseHand);
   socket.on('seat:raise_hand', handleRaiseHand);

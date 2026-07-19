@@ -9,7 +9,11 @@ module.exports = (io, socket) => {
 
     // Backward-compatible alias for Flutter client
     socket.on('heartbeat', (data, callback) => {
-      socket.emit('auth:heartbeat', data, callback);
+      try {
+        socket.emit('auth:heartbeat', data, callback);
+      } catch (error) {
+        console.error('[heartbeat] error:', error.message);
+      }
     });
 
     // ─────────────────────────────────────────────────────────────────────
@@ -117,9 +121,13 @@ module.exports = (io, socket) => {
     // Emits notification:new to a specific user's room
     // ─────────────────────────────────────────────────────────────────────
     socket.on('notification:new', (data) => {
-      const { userId, notification } = data;
-      if (userId && notification) {
-        io.to(`user:${userId}`).emit('notification:new', notification);
+      try {
+        const { userId, notification } = data;
+        if (userId && notification) {
+          io.to(`user:${userId}`).emit('notification:new', notification);
+        }
+      } catch (error) {
+        console.error('[notification:new] error:', error.message);
       }
     });
 

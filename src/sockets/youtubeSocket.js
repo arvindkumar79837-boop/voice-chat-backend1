@@ -52,22 +52,32 @@ function youtubeSocket(io, socket) {
 
   // Host toggles play/pause
   socket.on('youtube:toggle_play', ({ roomId, isPlaying }) => {
-    socket.to(roomId).emit('youtube:sync_update', {
-      isPlaying,
-      position: 0,
-      videoId: null,
-      updatedBy: socket.id,
-    });
+    try {
+      socket.to(roomId).emit('youtube:sync_update', {
+        isPlaying,
+        position: 0,
+        videoId: null,
+        updatedBy: socket.id,
+      });
+    } catch (error) {
+      console.error('[youtube:toggle_play] error:', error.message);
+      socket.emit('error', { message: 'Something went wrong. Please try again.' });
+    }
   });
 
   // Host seeks
   socket.on('youtube:seek', ({ roomId, position }) => {
-    socket.to(roomId).emit('youtube:sync_update', {
-      isPlaying: true,
-      position,
-      videoId: null,
-      updatedBy: socket.id,
-    });
+    try {
+      socket.to(roomId).emit('youtube:sync_update', {
+        isPlaying: true,
+        position,
+        videoId: null,
+        updatedBy: socket.id,
+      });
+    } catch (error) {
+      console.error('[youtube:seek] error:', error.message);
+      socket.emit('error', { message: 'Something went wrong. Please try again.' });
+    }
   });
 
   // Host changes video

@@ -6,7 +6,11 @@ mongoose.set('strictQuery', false);
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/arvind_party', {
-      serverSelectionTimeoutMS: 5000, // 5 second timeout
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      socketTimeoutMS: 45000,
+      heartbeatFrequencyMS: 10000,
     });
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
     setupConnectionHandlers();
@@ -27,7 +31,8 @@ const setupConnectionHandlers = () => {
   });
 
   mongoose.connection.on('disconnected', () => {
-    console.warn('⚠️ MongoDB Disconnected. Attempting reconnect...');
+    console.warn('⚠️ MongoDB Disconnected. Attempting reconnect with backoff...');
+    reconnectWithBackoff();
   });
 
   mongoose.connection.on('reconnected', () => {
@@ -54,6 +59,10 @@ const reconnectWithBackoff = async (retries = 5, delay = 1000) => {
     try {
       const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/arvind_party', {
         serverSelectionTimeoutMS: 5000,
+        maxPoolSize: 10,
+        minPoolSize: 2,
+        socketTimeoutMS: 45000,
+        heartbeatFrequencyMS: 10000,
       });
       console.log(`✅ MongoDB Reconnected: ${conn.connection.host}`);
       return true;

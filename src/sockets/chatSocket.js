@@ -23,22 +23,37 @@ module.exports = (io, socket) => {
 
   // Send an animated emoji or quick reaction
   socket.on('send_reaction', (data) => {
-    io.to(data.roomId).emit('receive_reaction', data);
+    try {
+      io.to(data.roomId).emit('receive_reaction', data);
+    } catch (error) {
+      console.error('[send_reaction] error:', error.message);
+      socket.emit('error', { message: 'Something went wrong. Please try again.' });
+    }
   });
 
   // Typing indicator for Flutter client
   socket.on('chat:typing', (data) => {
-    const { roomId } = data;
-    if (roomId) {
-      socket.to(roomId).emit('chat:typing', data);
+    try {
+      const { roomId } = data;
+      if (roomId) {
+        socket.to(roomId).emit('chat:typing', data);
+      }
+    } catch (error) {
+      console.error('[chat:typing] error:', error.message);
+      socket.emit('error', { message: 'Something went wrong. Please try again.' });
     }
   });
 
   // Private chat message forwarding
   socket.on('chat:private', (data) => {
-    const { receiverId } = data;
-    if (receiverId) {
-      io.to(`user:${receiverId}`).emit('chat:private', data);
+    try {
+      const { receiverId } = data;
+      if (receiverId) {
+        io.to(`user:${receiverId}`).emit('chat:private', data);
+      }
+    } catch (error) {
+      console.error('[chat:private] error:', error.message);
+      socket.emit('error', { message: 'Something went wrong. Please try again.' });
     }
   });
 };

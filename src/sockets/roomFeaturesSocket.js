@@ -76,26 +76,31 @@ function setupRoomFeaturesSocket(io) {
     });
 
     socket.on('leave-room', (data) => {
-      const { roomId, userId } = data || {};
-      if (roomId) {
-        socket.leave(`room:${roomId}`);
-        if (onlineUsersInRooms[roomId]) {
-          onlineUsersInRooms[roomId].delete(userId || socket.id);
-          if (onlineUsersInRooms[roomId].size === 0) {
-            delete onlineUsersInRooms[roomId];
-          } else {
-            const onlineCount = onlineUsersInRooms[roomId].size;
-            roomFeaturesNamespace.to(`room:${roomId}`).emit('online-count-update', { roomId, onlineCount });
+      try {
+        const { roomId, userId } = data || {};
+        if (roomId) {
+          socket.leave(`room:${roomId}`);
+          if (onlineUsersInRooms[roomId]) {
+            onlineUsersInRooms[roomId].delete(userId || socket.id);
+            if (onlineUsersInRooms[roomId].size === 0) {
+              delete onlineUsersInRooms[roomId];
+            } else {
+              const onlineCount = onlineUsersInRooms[roomId].size;
+              roomFeaturesNamespace.to(`room:${roomId}`).emit('online-count-update', { roomId, onlineCount });
+            }
           }
+          roomFeaturesNamespace.to(`room:${roomId}`).emit('user-left', {
+            userId,
+            timestamp: new Date().toISOString()
+          });
         }
-        roomFeaturesNamespace.to(`room:${roomId}`).emit('user-left', {
-          userId,
-          timestamp: new Date().toISOString()
-        });
-      }
-      if (currentRoomId === roomId) {
-        currentRoomId = null;
-        currentUserId = null;
+        if (currentRoomId === roomId) {
+          currentRoomId = null;
+          currentUserId = null;
+        }
+      } catch (error) {
+        console.error('[leave-room] error:', error.message);
+        socket.emit('error', { message: 'Something went wrong. Please try again.' });
       }
     });
 
@@ -212,13 +217,18 @@ function setupRoomFeaturesSocket(io) {
     });
 
     socket.on('privacy-changed', (data) => {
-      roomFeaturesNamespace.to(`room:${data.roomId}`).emit('room-privacy-updated', {
-        roomId: data.roomId,
-        roomType: data.roomType,
-        privacyMode: data.privacyMode,
-        updatedBy: data.updatedBy,
-        timestamp: new Date().toISOString()
-      });
+      try {
+        roomFeaturesNamespace.to(`room:${data.roomId}`).emit('room-privacy-updated', {
+          roomId: data.roomId,
+          roomType: data.roomType,
+          privacyMode: data.privacyMode,
+          updatedBy: data.updatedBy,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('[privacy-changed] error:', error.message);
+        socket.emit('error', { message: 'Something went wrong. Please try again.' });
+      }
     });
 
     socket.on('track-time', async (data) => {
@@ -250,28 +260,36 @@ function setupRoomFeaturesSocket(io) {
     });
 
     socket.on('request-online-count', async (data) => {
-      const { roomId } = data;
-      if (roomId && onlineUsersInRooms[roomId]) {
-        socket.emit('online-count-update', { roomId, onlineCount: onlineUsersInRooms[roomId].size });
+      try {
+        const { roomId } = data;
+        if (roomId && onlineUsersInRooms[roomId]) {
+          socket.emit('online-count-update', { roomId, onlineCount: onlineUsersInRooms[roomId].size });
+        }
+      } catch (error) {
+        console.error('[request-online-count] error:', error.message);
       }
     });
 
     socket.on('disconnect', () => {
-      console.log(`[RoomFeaturesSocket] Client disconnected: ${socket.id}`);
-      if (currentRoomId && currentUserId) {
-        if (onlineUsersInRooms[currentRoomId]) {
-          onlineUsersInRooms[currentRoomId].delete(currentUserId);
-          if (onlineUsersInRooms[currentRoomId].size === 0) {
-            delete onlineUsersInRooms[currentRoomId];
-          } else {
-            const onlineCount = onlineUsersInRooms[currentRoomId].size;
-            roomFeaturesNamespace.to(`room:${currentRoomId}`).emit('online-count-update', { roomId: currentRoomId, onlineCount });
+      try {
+        console.log(`[RoomFeaturesSocket] Client disconnected: ${socket.id}`);
+        if (currentRoomId && currentUserId) {
+          if (onlineUsersInRooms[currentRoomId]) {
+            onlineUsersInRooms[currentRoomId].delete(currentUserId);
+            if (onlineUsersInRooms[currentRoomId].size === 0) {
+              delete onlineUsersInRooms[currentRoomId];
+            } else {
+              const onlineCount = onlineUsersInRooms[currentRoomId].size;
+              roomFeaturesNamespace.to(`room:${currentRoomId}`).emit('online-count-update', { roomId: currentRoomId, onlineCount });
+            }
           }
+          roomFeaturesNamespace.to(`room:${currentRoomId}`).emit('user-left', {
+            userId: currentUserId,
+            timestamp: new Date().toISOString()
+          });
         }
-        roomFeaturesNamespace.to(`room:${currentRoomId}`).emit('user-left', {
-          userId: currentUserId,
-          timestamp: new Date().toISOString()
-        });
+      } catch (error) {
+        console.error('[RoomFeaturesSocket] disconnect error:', error.message);
       }
     });
   });
