@@ -38,12 +38,11 @@ const allowedOrigins = (() => {
 
 const corsConfig = cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.) in development
+    // Allow requests with no origin (mobile apps, curl, server-to-server).
+    // Mobile native HTTP clients (Dio, http package) do NOT send Origin headers,
+    // so rejecting them blocks the entire mobile app in production.
     if (!origin) {
-      if (process.env.NODE_ENV !== 'production') {
-        return callback(null, true);
-      }
-      return callback(new Error('Origin header is required in production'));
+      return callback(null, true);
     }
 
     if (allowedOrigins.indexOf(origin) !== -1) {

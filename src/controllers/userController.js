@@ -123,10 +123,12 @@ exports.getVipStatus = async (req, res) => {
 
 exports.createPaymentOrder = async (req, res) => {
   try {
-    const instance = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID || 'YOUR_RAZORPAY_KEY_ID',
-      key_secret: process.env.RAZORPAY_KEY_SECRET || 'YOUR_RAZORPAY_SECRET',
-    });
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret || keyId === 'YOUR_RAZORPAY_KEY_ID') {
+      return res.status(503).json({ success: false, error: 'Payment gateway not configured' });
+    }
+    const instance = new Razorpay({ key_id: keyId, key_secret: keySecret });
 
     const options = {
       amount: 50000, // Amount is in subunits (e.g., 50000 paise = ₹500)
@@ -150,8 +152,10 @@ exports.verifyPayment = async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
     const userId = req.user.userId;
 
-    // IMPORTANT: Replace this with your actual Razorpay Key Secret from environment variables!
-    const secret = process.env.RAZORPAY_KEY_SECRET || 'YOUR_RAZORPAY_SECRET';
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret || secret === 'YOUR_RAZORPAY_SECRET') {
+      return res.status(503).json({ success: false, error: 'Payment gateway not configured' });
+    }
 
     // Generate the expected signature
     const generated_signature = crypto
@@ -210,8 +214,10 @@ exports.getTransactionHistory = async (req, res) => {
 
 exports.razorpayWebhook = async (req, res) => {
   try {
-    // Make sure to set this in your .env file!
-    const secret = process.env.RAZORPAY_WEBHOOK_SECRET || 'YOUR_WEBHOOK_SECRET';
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!secret) {
+      return res.status(503).json({ success: false, error: 'Webhook secret not configured' });
+    }
     const signature = req.headers['x-razorpay-signature'];
 
     // Use the raw body buffer if available, as JSON.stringify can alter formatting and break signatures!

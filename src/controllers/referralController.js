@@ -9,7 +9,7 @@ exports.getReferralInfo = async (req, res) => {
     const user = await User.findById(userId).select('referralCode referralCount referralRewards');
     res.json({
       success: true,
-      referralLink: `https://arvindparty.com/invite/${user?.referralCode || userId}`,
+      referralLink: `${process.env.APP_BASE_URL || 'http://222.167.207.78:5000'}/invite/${user?.referralCode || userId}`,
       referralCode: user?.referralCode || userId?.toString().slice(-6),
       totalReferrals: user?.referralCount || 0,
       totalRewards: user?.referralRewards || 0,

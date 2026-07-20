@@ -4,10 +4,13 @@ const allowedOrigins = (() => {
   if (process.env.ALLOWED_ORIGINS) {
     return process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim());
   }
-  if (process.env.NODE_ENV === 'production') {
-    return ['https://api.arvindparty.com', 'https://admin.arvindparty.com'];
-  }
-  return ['http://localhost:3000', 'http://localhost:5000', 'http://127.0.0.1:3000'];
+  return [
+    'http://localhost:3000',
+    'http://localhost:5000',
+    'http://localhost:8080',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5000',
+  ];
 })();
 
 /**

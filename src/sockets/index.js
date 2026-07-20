@@ -33,6 +33,12 @@ const socketAuthMiddleware = (socket, next) => {
 
 const initializeSockets = (io) => {
   try {
+    // ─── GLOBAL SOCKET AUTH MIDDLEWARE ────────────────────────────────
+    // Apply JWT auth to ALL connections on the default namespace.
+    // This prevents unauthenticated clients from firing any socket events
+    // (gifts, wallet, rooms, etc.) — a critical security requirement.
+    io.use(socketAuthMiddleware);
+
     // ─── /events namespace (self-contained in eventSocket.js, JWT inside) ──
     eventSocket.initialize(io);
 
