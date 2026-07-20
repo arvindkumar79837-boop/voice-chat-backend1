@@ -148,6 +148,92 @@ exports.loginStaff = async (req, res) => {
 };
 
 /**
+ * POST /api/staff/login-password
+ * Staff Login — loginId + password (Web Panel)
+ */
+exports.loginStaffPassword = async (req, res) => {
+  try {
+    const { loginId, password } = req.body;
+
+    if (!loginId || !password) {
+      return res.status(400).json({ success: false, message: 'Login ID and password required' });
+    }
+
+    const staff = await Staff.findOne({ loginId });
+    if (!staff) {
+      return res.status(404).json({ success: false, message: 'No staff account found for this Login ID' });
+    }
+
+    if (!staff.isActive) {
+      return res.status(403).json({ success: false, message: 'Account disabled. Contact Owner.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, staff.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid password' });
+    }
+
+    staff.lastLoginAt = new Date();
+    staff.loginHistory.push({
+      ip: req.ip || req.connection?.remoteAddress || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+    await staff.save();
+
+    const token = jwt.sign(
+      {
+        id: staff._id,
+        uid: staff.uid,
+        role: staff.role,
+        roleLevel: staff.roleLevel,
+        isStaff: true,
+        permissions: staff.permissions,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    return res.status(200).json({
+      success: true,
+      token,
+      staff: {
+        _id: staff._id,
+        uid: staff.uid,
+        loginId: staff.loginId,
+        name: staff.name,
+        email: staff.email,
+        role: staff.role,
+        roleLevel: staff.roleLevel,
+        permissions: staff.permissions,
+        isActive: staff.isActive,
+        isOwnerLocked: staff.isOwnerLocked,
+        assignedCountry: staff.assignedCountry,
+      },
+    });
+  } catch (error) {
+    console.error('Staff Password Login Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+/**
+ * GET /api/staff/me
+ * Staff: Get own profile
+ */
+exports.getMyProfile = async (req, res) => {
+  try {
+    const staff = await Staff.findOne({ uid: req.user.uid }).select('-password -loginHistory');
+    if (!staff) {
+      return res.status(404).json({ success: false, message: 'Staff profile not found' });
+    }
+    return res.status(200).json({ success: true, data: staff });
+  } catch (error) {
+    console.error('Get My Profile Error:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+/**
  * GET /api/admin/staff/list
  * List all staff accounts
  */
@@ -168,7 +254,7 @@ exports.getStaffList = async (req, res) => {
 exports.updateStaff = async (req, res) => {
   try {
     const { id } = req.params;
-    const { role, permissions, isActive, isOwnerLocked, name, email, phone, assignedCountry, notes, password } = req.body;
+    const { role, permissions, isActive, isOwnerLocked, name, email, phone, assignedCountry, notes, password, bio } = req.body;
 
     const staff = await Staff.findById(id);
     if (!staff) return res.status(404).json({ success: false, message: 'Staff not found' });
@@ -217,6 +303,7 @@ exports.updateStaff = async (req, res) => {
     if (phone !== undefined && (req.user?.permissions || []).includes('staff.edit')) staff.phone = phone;
     if (assignedCountry !== undefined) staff.assignedCountry = assignedCountry;
     if (notes !== undefined) staff.notes = notes;
+    if (bio !== undefined) staff.bio = bio;
     if (permissions !== undefined && (req.user?.permissions || []).includes('staff.edit')) {
       staff.permissions = permissions;
     }
@@ -364,7 +451,7 @@ exports.updateAdminRole = async (req, res) => {
 
 exports.searchUser = async (req, res) => {
   try {
-    const { query } = req.body;
+    const query = req.body?.query || req.query?.query;
     if (!query) return res.status(400).json({ success: false, message: 'Search query required' });
 
     const users = await require('../models/User').find({

@@ -40,7 +40,7 @@ const verifyStaff = async (req, res, next) => {
 // STRICT OWNER ONLY MIDDLEWARE (For Coin Generation & Full App Control)
 const verifyOwner = (req, res, next) => {
   verifyStaff(req, res, () => {
-    if (req.userRole === 'OWNER.WEB') {
+    if (req.userRole === 'OWNER.WEB' || req.userRole === 'owner') {
       return next();
     }
     return res.status(403).json({
@@ -54,7 +54,7 @@ const verifyOwner = (req, res, next) => {
 const requirePermission = (requiredPermission) => {
   return (req, res, next) => {
     verifyStaff(req, res, () => {
-      if (req.userRole === 'OWNER.WEB' || req.permissions.includes(requiredPermission)) {
+      if (req.userRole === 'OWNER.WEB' || req.userRole === 'owner' || req.permissions.includes(requiredPermission)) {
         return next();
       }
       return res.status(403).json({

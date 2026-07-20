@@ -32,6 +32,10 @@ const staffSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  bio: {
+    type: String,
+    default: '',
+  },
   role: {
     type: String,
     required: true,

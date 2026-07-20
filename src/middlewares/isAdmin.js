@@ -5,7 +5,7 @@ module.exports = (req, res, next) => {
   if (req.isAdmin) {
     return next();
   }
-  if (req.userRole && (req.userRole === 'OWNER.WEB' || req.userRole.includes('ADMIN'))) {
+  if (req.userRole && (req.userRole === 'OWNER.WEB' || req.userRole === 'owner' || req.userRole.includes('ADMIN'))) {
     return next();
   }
   if (req.user && req.user.role === 'admin') {
