@@ -157,6 +157,11 @@ exports.sendGift = async (req, res) => {
         agency.earnings = (agency.earnings || 0) + agencyCommission;
         agency.totalGifts = (agency.totalGifts || 0) + totalQuantity;
         await agency.save();
+
+        try {
+          const agencyTargetController = require('./agencyTargetController');
+          await agencyTargetController.updateProgress(receiver.agencyId, totalCost, 'COINS_SPENT');
+        } catch (_) {}
       }
     }
 

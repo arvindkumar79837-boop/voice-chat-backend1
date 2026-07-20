@@ -8,6 +8,7 @@ const Agency = require('../models/Agency');
 const Family = require('../models/Family');
 const IncomeAnalytics = require('../models/IncomeAnalytics');
 const AuditLog = require('../models/AuditLog');
+const RechargePlan = require('../models/RechargePlan');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
@@ -259,9 +260,25 @@ exports.createRazorpayOrder = async (req, res, next) => {
       return res.status(500).json({ success: false, message: 'Payment gateway not available' });
     }
 
+    let coinsToAdd;
+    if (packageId) {
+      const plan = await RechargePlan.findOne({ _id: packageId, isActive: true });
+      if (!plan) {
+        return res.status(400).json({ success: false, message: 'Invalid or inactive recharge plan' });
+      }
+      coinsToAdd = plan.coinsAwarded;
+    } else {
+      const matchedPlan = await RechargePlan.findOne({ priceINR: amount, isActive: true });
+      if (matchedPlan) {
+        coinsToAdd = matchedPlan.coinsAwarded;
+        packageId = matchedPlan._id.toString();
+      } else {
+        const config = await getWalletConfig();
+        coinsToAdd = Math.floor(amount * config.coinPackageRate);
+      }
+    }
+
     const amountInPaise = Math.round(amount * 100);
-    const config = await getWalletConfig();
-    const coinsToAdd = Math.floor(amount * config.coinPackageRate);
 
     const options = {
       amount: amountInPaise,
@@ -335,7 +352,13 @@ exports.verifyPayment = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    const coinsToAdd = Math.floor(amount * config.coinPackageRate);
+    let coinsToAdd;
+    if (packageId && packageId !== 'standard') {
+      const plan = await RechargePlan.findById(packageId);
+      coinsToAdd = plan ? plan.coinsAwarded : Math.floor(amount * config.coinPackageRate);
+    } else {
+      coinsToAdd = Math.floor(amount * config.coinPackageRate);
+    }
     const coinBefore = user.coins || 0;
     await User.findByIdAndUpdate(userId, { $inc: { coins: coinsToAdd } });
     

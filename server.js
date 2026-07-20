@@ -116,6 +116,19 @@ cron.schedule('0 0 1 * *', async () => {
   }
 });
 
+// Agency Target expiry check: runs every 6 hours
+cron.schedule('0 */6 * * *', async () => {
+  try {
+    const agencyTargetController = require('./src/controllers/agencyTargetController');
+    const expiredCount = await agencyTargetController.checkExpiredTargets();
+    if (expiredCount > 0) {
+      console.log(`✅ Agency target expiry check: ${expiredCount} targets updated`);
+    }
+  } catch (error) {
+    console.error('Agency target expiry cron error:', error);
+  }
+});
+
 // ─── INITIALIZE SERVICES ───────────────────────────────────────────────────
 (async function initializeServices() {
   try {

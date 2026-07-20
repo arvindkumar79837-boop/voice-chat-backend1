@@ -77,6 +77,9 @@ const rewardsRoutes = require('./routes/rewardsRoutes');
 const luckyDrawMobileRoutes = require('./routes/luckyDrawMobileRoutes');
 const socialRoutes = require('./routes/socialRoutes');
 const missionRoutes = require('./routes/missionRoutes');
+const rechargePlanRoutes = require('./routes/rechargePlanRoutes');
+const agencyTargetRoutes = require('./routes/agencyTargetRoutes');
+const coinDistributionRoutes = require('./routes/coinDistributionRoutes');
 
 const app = express();
 
@@ -224,6 +227,18 @@ app.use('/api/youtube', youtubeRoutes);              // Shared YouTube Playlist 
 app.use('/api/coin-orders', coinOrderRoutes);        // Mobile Coin Orders / Vault (aliases CoinVault)
 app.use('/api/rewards', rewardsRoutes);              // User rewards (aliases RewardConfig + RewardInjector)
 app.use('/api/lucky-draw', luckyDrawMobileRoutes);   // Mobile aliases for /api/lucky-draws
+
+// ─── RECHARGE PLANS (Owner-controlled pricing) ────────────────────────────
+app.use('/api/recharge-plans', rechargePlanRoutes);
+
+// ─── AGENCY TARGETS (Owner-only) ──────────────────────────────────────────
+app.use('/api/admin/agency-targets', agencyTargetRoutes);
+
+// ─── COIN DISTRIBUTION HIERARCHY (Owner direct-to-user + distribute) ──────
+app.use('/api/admin/wallet', coinDistributionRoutes);
+
+// ─── WEBVIEW GAMES (was imported but unmounted) ────────────────────────────
+app.use('/api/games', webViewGameRoutes);
 
 // ─── 404 HANDLER ───────────────────────────────────────────────────────────
 app.use((req, res) => {
