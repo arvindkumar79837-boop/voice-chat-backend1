@@ -80,6 +80,9 @@ const missionRoutes = require('./routes/missionRoutes');
 const rechargePlanRoutes = require('./routes/rechargePlanRoutes');
 const agencyTargetRoutes = require('./routes/agencyTargetRoutes');
 const coinDistributionRoutes = require('./routes/coinDistributionRoutes');
+const diamondWithdrawalRoutes = require('./routes/diamondWithdrawalRoutes');
+const legalRoutes = require('./routes/legalRoutes');
+const diamondEconomyRoutes = require('./routes/diamondEconomyRoutes');
 
 const app = express();
 
@@ -239,6 +242,15 @@ app.use('/api/admin/wallet', coinDistributionRoutes);
 
 // ─── WEBVIEW GAMES (was imported but unmounted) ────────────────────────────
 app.use('/api/games', webViewGameRoutes);
+
+// ─── DIAMOND WITHDRAWAL (staff requests + admin approval) ──────────────────
+app.use('/api/admin/diamond-withdrawals', diamondWithdrawalRoutes);
+
+// ─── LEGAL COMPLIANCE (privacy, terms, account deletion) ───────────────────
+app.use('/api/legal', legalRoutes);
+
+// ─── DIAMOND ECONOMY (Google Play recharge + wallet) ──────────────────────
+app.use('/api/economy', diamondEconomyRoutes);
 
 // ─── 404 HANDLER ───────────────────────────────────────────────────────────
 app.use((req, res) => {

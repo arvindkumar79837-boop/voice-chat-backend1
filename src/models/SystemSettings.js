@@ -37,6 +37,12 @@ SystemSettings.getDefaults = async () => {
     // --- RATE LIMITS ---
     { key: 'gift_rate_limit_per_min',   value: 10,    description: 'Max gifts per minute per user' },
     { key: 'recharge_daily_limit',      value: 50000, description: 'Max daily recharge (coins)' },
+    // --- DIAMOND WITHDRAWAL ---
+    { key: 'diamond_to_payout_ratio',   value: 1.0,   description: '1 Diamond = X INR on withdrawal' },
+    { key: 'payout_currency_label',     value: 'INR', description: 'Label for payout currency' },
+    { key: 'diamond_withdrawal_min',    value: 50,    description: 'Minimum diamonds to request withdrawal' },
+    { key: 'diamond_withdrawal_daily_limit',  value: 10000, description: 'Max diamonds withdrawn per day' },
+    { key: 'diamond_withdrawal_monthly_limit', value: 100000, description: 'Max diamonds withdrawn per month' },
   ];
   return defaults;
 };

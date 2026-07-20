@@ -11,6 +11,15 @@ const rechargePlanSchema = new mongoose.Schema({
     required: true,
     min: 1,
   },
+  diamondsAwarded: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  googlePlayProductId: {
+    type: String,
+    default: '',
+  },
   isActive: {
     type: Boolean,
     default: true,

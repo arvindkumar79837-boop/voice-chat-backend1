@@ -148,12 +148,16 @@ exports.sendGift = async (req, res) => {
     const totalDiamondValue = Math.floor(gift.diamondValue * totalQuantity * (1 - commissionRate));
     let finalReceiverCoins = totalDiamondValue;
 
+    // Diamond conversion: receiver gets diamonds, not coins
+    const receiverDiamonds = totalDiamondValue;
+    let finalReceiverDiamonds = receiverDiamonds;
+
     // Agency commission split
     if (receiver.agencyId) {
       const agency = await Agency.findById(receiver.agencyId);
       if (agency) {
         const agencyCommission = Math.floor(totalDiamondValue * 0.10);
-        finalReceiverCoins = totalDiamondValue - agencyCommission;
+        finalReceiverDiamonds = totalDiamondValue - agencyCommission;
         agency.earnings = (agency.earnings || 0) + agencyCommission;
         agency.totalGifts = (agency.totalGifts || 0) + totalQuantity;
         await agency.save();
@@ -176,9 +180,9 @@ exports.sendGift = async (req, res) => {
       }
     }
 
-    // Execute transactions
+    // Execute transactions — sender pays coins, receiver earns diamonds
     sender.coins -= totalCost;
-    receiver.coins += finalReceiverCoins;
+    receiver.diamonds = (receiver.diamonds || 0) + finalReceiverDiamonds;
 
     await sender.save();
     await receiver.save();
@@ -201,7 +205,7 @@ exports.sendGift = async (req, res) => {
       diamondValueToReceiver: gift.diamondValue,
       quantity: totalQuantity,
       totalCoinsCost: totalCost,
-      totalDiamondsEarned: finalReceiverCoins,
+      totalDiamondsEarned: finalReceiverDiamonds,
       status: 'COMPLETED'
     });
 

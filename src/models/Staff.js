@@ -60,6 +60,9 @@ const staffSchema = new mongoose.Schema({
       'reports_manager',
       'backup_manager',
       'settings_manager',
+      'official',
+      'super_coin_seller',
+      'normal_coin_seller',
     ],
   },
   roleLevel: {
@@ -242,6 +245,9 @@ staffSchema.statics.DEFAULT_PERMISSIONS = {
   reports_manager: ['report.view', 'report.resolve'],
   backup_manager: ['backup.create', 'backup.restore'],
   settings_manager: ['settings.edit', 'settings.view'],
+  official: ['event.view', 'recharge.view'],
+  super_coin_seller: ['recharge.view', 'treasury.view'],
+  normal_coin_seller: ['recharge.view'],
 };
 
 module.exports = mongoose.model('Staff', staffSchema);

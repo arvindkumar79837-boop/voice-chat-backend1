@@ -177,8 +177,45 @@ const _holdAccount = async (userId, reason) => {
   } catch (_) {}
 };
 
+// ── Device fingerprint + IP pattern (anti referral farming) ─────────────────
+
+const MAX_REFERRALS_PER_IP = 5;
+const MAX_REFERRALS_PER_DEVICE = 3;
+
+/**
+ * Check if IP or device fingerprint has excessive referral registrations.
+ * Call during referral bonus claim.
+ */
+const checkReferralFraud = async ({ userId, uid, ip, deviceFingerprint }) => {
+  const alerts = [];
+
+  if (ip) {
+    const ipCount = await User.countDocuments({ lastLoginIp: ip, createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } });
+    if (ipCount > MAX_REFERRALS_PER_IP) {
+      alerts.push({ type: 'REFERRAL_FARM_IP', description: `${ipCount} accounts from same IP in 24h`, severity: 'HIGH' });
+    }
+  }
+
+  if (deviceFingerprint) {
+    const deviceCount = await User.countDocuments({
+      'registeredDevices.fingerprint': deviceFingerprint,
+      createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    });
+    if (deviceCount > MAX_REFERRALS_PER_DEVICE) {
+      alerts.push({ type: 'REFERRAL_FARM_DEVICE', description: `${deviceCount} accounts from same device in 24h`, severity: 'HIGH' });
+    }
+  }
+
+  for (const a of alerts) {
+    await _createFraudAlert(userId, uid, a.type, a.description, a.severity, 0, { ip, deviceFingerprint });
+  }
+
+  return { flagged: alerts.length > 0, alerts };
+};
+
 module.exports = {
   verifyGooglePlayPurchase,
   evaluateFinancialActivity,
   verifyAndEvaluateRecharge,
+  checkReferralFraud,
 };
