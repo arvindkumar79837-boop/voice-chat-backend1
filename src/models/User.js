@@ -152,6 +152,10 @@ const userSchema = new mongoose.Schema({
     purchasedAt: { type: Date, default: Date.now },
     expiresAt: { type: Date },
   }],
+  activeSubscription: {
+    tierId: { type: mongoose.Schema.Types.ObjectId, ref: 'PremiumSubscription', default: null },
+    expiresAt: { type: Date, default: null },
+  },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 }, { timestamps: true });

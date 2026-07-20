@@ -270,6 +270,71 @@ function setupRoomFeaturesSocket(io) {
       }
     });
 
+    // ─── MUSIC / KARAOKE BROADCAST ──────────────────────────────────────
+    socket.on('music:play', async (data) => {
+      try {
+        const { roomId, title, url, lyricsUrl } = data;
+        const room = await Room.findById(roomId);
+        if (!room) return;
+        const isOwner = room.ownerId.toString() === currentUserId;
+        const isCoHost = (room.coHosts || []).map(id => id.toString()).includes(currentUserId);
+        if (!isOwner && !isCoHost) return socket.emit('error', { message: 'Only host/co-host can play music' });
+
+        room.currentTrack = { title: title || 'Untitled', url, startedAt: new Date(), startedBy: currentUserId, isPlaying: true, lyricsUrl: lyricsUrl || '' };
+        await room.save();
+
+        // Broadcast to all room members with server timestamp for sync
+        roomFeaturesNamespace.to(`room:${roomId}`).emit('music:sync', {
+          action: 'play',
+          track: room.currentTrack,
+          serverTimestamp: Date.now(),
+        });
+      } catch (error) { console.error('[RoomFeaturesSocket] music:play error:', error.message); }
+    });
+
+    socket.on('music:pause', async (data) => {
+      try {
+        const { roomId } = data;
+        const room = await Room.findById(roomId);
+        if (!room) return;
+        room.currentTrack.isPlaying = false;
+        await room.save();
+        roomFeaturesNamespace.to(`room:${roomId}`).emit('music:sync', {
+          action: 'pause',
+          track: room.currentTrack,
+          serverTimestamp: Date.now(),
+        });
+      } catch (error) { console.error('[RoomFeaturesSocket] music:pause error:', error.message); }
+    });
+
+    socket.on('music:stop', async (data) => {
+      try {
+        const { roomId } = data;
+        const room = await Room.findById(roomId);
+        if (!room) return;
+        room.currentTrack = { title: '', url: '', startedAt: null, startedBy: null, isPlaying: false, lyricsUrl: '' };
+        await room.save();
+        roomFeaturesNamespace.to(`room:${roomId}`).emit('music:sync', {
+          action: 'stop',
+          track: room.currentTrack,
+          serverTimestamp: Date.now(),
+        });
+      } catch (error) { console.error('[RoomFeaturesSocket] music:stop error:', error.message); }
+    });
+
+    socket.on('music:request-sync', async (data) => {
+      try {
+        const { roomId } = data;
+        const room = await Room.findById(roomId).select('currentTrack');
+        if (!room) return;
+        socket.emit('music:sync', {
+          action: room.currentTrack?.isPlaying ? 'play' : 'pause',
+          track: room.currentTrack,
+          serverTimestamp: Date.now(),
+        });
+      } catch (error) { console.error('[RoomFeaturesSocket] music:request-sync error:', error.message); }
+    });
+
     socket.on('disconnect', () => {
       try {
         console.log(`[RoomFeaturesSocket] Client disconnected: ${socket.id}`);

@@ -341,7 +341,23 @@ const roomSchema = new mongoose.Schema({
   admins: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }]
+  }],
+  // ─── ROOM LOCK (paid private room) ────────────────────────────────────────
+  isLocked: { type: Boolean, default: false },
+  lockPinHash: { type: String, default: '' },
+  lockExpiresAt: { type: Date, default: null },
+  lockPurchasedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  // ─── MUSIC / KARAOKE BROADCAST ────────────────────────────────────────────
+  currentTrack: {
+    title: { type: String, default: '' },
+    url: { type: String, default: '' },
+    startedAt: { type: Date, default: null },
+    startedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    isPlaying: { type: Boolean, default: false },
+    lyricsUrl: { type: String, default: '' },
+  },
+  // ─── DISCOVERY ────────────────────────────────────────────────────────────
+  country: { type: String, default: '' },
 }, {
   timestamps: true
 });

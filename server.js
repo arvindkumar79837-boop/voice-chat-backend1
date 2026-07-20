@@ -129,6 +129,19 @@ cron.schedule('0 */6 * * *', async () => {
   }
 });
 
+// Subscription expiry check: runs daily at midnight
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const premiumSubscriptionController = require('./src/controllers/premiumSubscriptionController');
+    const deactivated = await premiumSubscriptionController.deactivateExpiredSubscriptions();
+    if (deactivated > 0) {
+      console.log(`✅ Subscription expiry cron: ${deactivated} subscriptions deactivated`);
+    }
+  } catch (error) {
+    console.error('Subscription expiry cron error:', error);
+  }
+});
+
 // ─── INITIALIZE SERVICES ───────────────────────────────────────────────────
 (async function initializeServices() {
   try {

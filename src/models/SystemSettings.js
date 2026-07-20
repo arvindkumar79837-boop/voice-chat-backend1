@@ -43,6 +43,11 @@ SystemSettings.getDefaults = async () => {
     { key: 'diamond_withdrawal_min',    value: 50,    description: 'Minimum diamonds to request withdrawal' },
     { key: 'diamond_withdrawal_daily_limit',  value: 10000, description: 'Max diamonds withdrawn per day' },
     { key: 'diamond_withdrawal_monthly_limit', value: 100000, description: 'Max diamonds withdrawn per month' },
+    // --- ROOM LOCK ---
+    { key: 'room_lock_cost', value: 50, description: 'Coins required to lock a room (hours configurable)' },
+    { key: 'room_lock_duration_hours', value: 6, description: 'Default lock duration in hours' },
+    // --- PREMIUM SUBSCRIPTION ---
+    { key: 'premium_monthly_coins_multiplier', value: 1.0, description: 'Extra multiplier on top of tier monthly coins' },
   ];
   return defaults;
 };

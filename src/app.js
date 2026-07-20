@@ -83,6 +83,7 @@ const coinDistributionRoutes = require('./routes/coinDistributionRoutes');
 const diamondWithdrawalRoutes = require('./routes/diamondWithdrawalRoutes');
 const legalRoutes = require('./routes/legalRoutes');
 const diamondEconomyRoutes = require('./routes/diamondEconomyRoutes');
+const premiumSubscriptionRoutes = require('./routes/premiumSubscriptionRoutes');
 
 const app = express();
 
@@ -251,6 +252,12 @@ app.use('/api/legal', legalRoutes);
 
 // ─── DIAMOND ECONOMY (Google Play recharge + wallet) ──────────────────────
 app.use('/api/economy', diamondEconomyRoutes);
+
+// ─── PREMIUM SUBSCRIPTIONS (Silver/Gold/Royal tiers) ─────────────────────
+app.use('/api/subscriptions', premiumSubscriptionRoutes);
+
+// ─── ROOM LUXURY (lock, discovery, music broadcast) ──────────────────────
+app.use('/api/luxury', require('./routes/roomLuxuryRoutes'));
 
 // ─── 404 HANDLER ───────────────────────────────────────────────────────────
 app.use((req, res) => {
