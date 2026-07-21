@@ -1,6 +1,5 @@
 name: Node.js Backend Tests
 
-# Jab bhi aap GitHub par code push karoge, ye script automatically chalegi
 on:
   push:
     branches: [ main, master ]
@@ -12,30 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. GitHub se aapka code checkout (fetch) karega
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    # 2. Server par Node.js 18 environment set karega
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
-        cache: 'npm'
+        node-version: '20'
 
-    # 3. Environment variables dummy file setup karega testing ke liye
-    - name: Create Test .env
-      run: |
-        echo "PORT=5000" >> .env
-        echo "NODE_ENV=test" >> .env
-        echo "JWT_SECRET=test_secret_key_12345" >> .env
-        echo "MONGO_URI=mongodb://127.0.0.1:27017/arvind_party_test" >> .env
-
-    # 4. Dependencies install karega
     - name: Install Dependencies
-      run: npm ci
+      run: npm install
 
-    # 5. Aapke tests run karega
     - name: Run Tests
       run: npm test
       
