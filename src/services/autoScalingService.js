@@ -217,12 +217,16 @@ class AutoScalingService {
   }
 
   async triggerRenderScale(instanceCount) {
-    const render = require('render-api-client');
-    await render.updateService({
-      serviceId: process.env.RENDER_SERVICE_ID,
-      plan: instanceCount > 1 ? 'starter' : 'free'
-    });
-    Logger.info('Render service scaled', { instanceCount });
+    try {
+      const render = require('render-api-client');
+      await render.updateService({
+        serviceId: process.env.RENDER_SERVICE_ID,
+        plan: instanceCount > 1 ? 'starter' : 'free'
+      });
+      Logger.info('Render service scaled', { instanceCount });
+    } catch (e) {
+      Logger.warn('render-api-client not available, skipping Render scaling');
+    }
   }
 
   async triggerDockerSwarmScale(instanceCount) {
