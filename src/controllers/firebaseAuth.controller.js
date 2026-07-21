@@ -57,13 +57,13 @@ exports.verifyFirebaseToken = async (req, res, next) => {
 
     const firebaseUid = decodedToken.uid;
     const firebaseEmail = decodedToken.email || null;
-    const firebasePhone = decodedToken.phone_number || null;
+    const firebasePhone = decodedToken.phone_number || null; // Already E.164 format (e.g. +919876543210, +971501234567)
 
     let user = await User.findOne({
       $or: [
         { firebaseUid: firebaseUid },
         { email: firebaseEmail },
-        { phone: firebasePhone?.replace('+91', '') },
+        { phone: firebasePhone }, // Exact E.164 match — no stripping
       ],
     });
 
@@ -81,7 +81,7 @@ exports.verifyFirebaseToken = async (req, res, next) => {
         uid,
         firebaseUid: firebaseUid,
         email: firebaseEmail,
-        phone: firebasePhone?.replace('+91', '') || null,
+        phone: firebasePhone || null, // Store full E.164 (e.g. +919876543210) — no country-code stripping
         username: username,
         displayName: decodedToken.name || firebaseEmail?.split('@')[0] || 'User',
         name: decodedToken.name || firebaseEmail?.split('@')[0] || 'User',
@@ -103,7 +103,7 @@ exports.verifyFirebaseToken = async (req, res, next) => {
     } else {
       user.firebaseUid = firebaseUid;
       if (firebaseEmail && !user.email) user.email = firebaseEmail;
-      if (firebasePhone && !user.phone) user.phone = firebasePhone.replace('+91', '');
+      if (firebasePhone && !user.phone) user.phone = firebasePhone; // Store full E.164
       if (decodedToken.picture && !user.avatar) user.avatar = decodedToken.picture;
       if (decodedToken.name && !user.displayName) {
         user.displayName = decodedToken.name;
@@ -232,7 +232,7 @@ exports.linkFirebaseAccount = async (req, res, next) => {
     user.firebaseUid = decodedToken.uid;
     if (decodedToken.email && !user.email) user.email = decodedToken.email;
     if (decodedToken.phone_number && !user.phone) {
-      user.phone = decodedToken.phone_number.replace('+91', '');
+      user.phone = decodedToken.phone_number; // Store full E.164
     }
     if (decodedToken.picture && !user.avatar) user.avatar = decodedToken.picture;
     if (decodedToken.name && !user.displayName) {

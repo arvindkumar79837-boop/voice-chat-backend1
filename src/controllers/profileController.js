@@ -29,16 +29,11 @@ function calculateXpForLevel(level) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// HELPER: Mask phone number for privacy (show first 2 and last 4 digits)
+// HELPER: Mask phone number for privacy
+// Uses phoneUtils.maskPhone — handles E.164 format globally
 // ═══════════════════════════════════════════════════════════════════════════
 
-function maskPhone(phone) {
-  if (!phone) return null;
-  if (phone.length >= 10) {
-    return phone.slice(0, 2) + '****' + phone.slice(-4);
-  }
-  return '****' + phone.slice(-4);
-}
+const { maskPhone } = require('../utils/phoneUtils');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GET FULL PROFILE (with level, XP bar, badges, VIP info)
