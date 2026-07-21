@@ -187,7 +187,7 @@ const roomSchema = new mongoose.Schema({
   },
   roomType: {
     type: String,
-    enum: ['PUBLIC', 'PRIVATE', 'PASSWORD', 'THEME', 'KARAOKE', 'GAME', 'FAMILY', 'AGENCY'],
+    enum: ['PUBLIC', 'PRIVATE', 'PASSWORD', 'THEME', 'KARAOKE', 'GAME', 'FAMILY', 'AGENCY', 'SINGING'],
     default: 'PUBLIC'
   },
   roomPassword: {
@@ -356,6 +356,13 @@ const roomSchema = new mongoose.Schema({
     isPlaying: { type: Boolean, default: false },
     lyricsUrl: { type: String, default: '' },
   },
+  // ─── SINGING ROOM ───────────────────────────────────────────────────────
+  currentPerformerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  currentSongId: { type: mongoose.Schema.Types.ObjectId, ref: 'Song', default: null },
+  performanceStartedAt: { type: Date, default: null },
+  micQueue: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  micQueueSongs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
+  singingLikeCount: { type: Number, default: 0 },
   // ─── DISCOVERY ────────────────────────────────────────────────────────────
   country: { type: String, default: '' },
 }, {

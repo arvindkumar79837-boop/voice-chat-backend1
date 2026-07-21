@@ -335,6 +335,123 @@ function setupRoomFeaturesSocket(io) {
       } catch (error) { console.error('[RoomFeaturesSocket] music:request-sync error:', error.message); }
     });
 
+    // ─── SINGING ROOM ──────────────────────────────────────────────
+    socket.on('singing:join-queue', async (data) => {
+      try {
+        const { roomId, songId } = data;
+        const room = await Room.findById(roomId);
+        if (!room || room.roomType !== 'SINGING') return;
+        if (room.micQueue.map(id => id.toString()).includes(currentUserId)) return socket.emit('error', { message: 'Already in queue' });
+        room.micQueue.push(currentUserId);
+        room.micQueueSongs.push(songId);
+        await room.save();
+        socket.emit('singing:queue-joined', { position: room.micQueue.indexOf(currentUserId) + 1, queueLength: room.micQueue.length });
+        roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:queue-updated', { queueLength: room.micQueue.length });
+      } catch (e) { console.error('[SingingSocket] join-queue error:', e.message); }
+    });
+
+    socket.on('singing:leave-queue', async (data) => {
+      try {
+        const { roomId } = data;
+        const room = await Room.findById(roomId);
+        if (!room) return;
+        const idx = room.micQueue.findIndex(id => id.toString() === currentUserId);
+        if (idx === -1) return;
+        room.micQueue.splice(idx, 1);
+        room.micQueueSongs.splice(idx, 1);
+        await room.save();
+        roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:queue-updated', { queueLength: room.micQueue.length });
+      } catch (e) { console.error('[SingingSocket] leave-queue error:', e.message); }
+    });
+
+    socket.on('singing:start', async (data) => {
+      try {
+        const { roomId } = data;
+        const room = await Room.findById(roomId);
+        if (!room) return;
+        const isOwner = room.ownerId.toString() === currentUserId;
+        const isCoHost = (room.coHosts || []).map(id => id.toString()).includes(currentUserId);
+        if (!isOwner && !isCoHost) return socket.emit('error', { message: 'Only host can start' });
+        if (room.micQueue.length === 0) return socket.emit('error', { message: 'Queue is empty' });
+        const performerId = room.micQueue.shift();
+        const songId = room.micQueueSongs.shift();
+        room.currentPerformerId = performerId;
+        room.currentSongId = songId;
+        room.performanceStartedAt = new Date();
+        room.singingLikeCount = 0;
+        await room.save();
+        const Song = require('../models/Song');
+        const song = await Song.findById(songId).select('title artist audioUrl lyricsUrl durationSeconds coverImageUrl');
+        await Song.findByIdAndUpdate(songId, { $inc: { totalPlays: 1 } });
+        roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:next-performer', {
+          performerId, song, startedAt: room.performanceStartedAt, serverTimestamp: Date.now(), queueLength: room.micQueue.length
+        });
+      } catch (e) { console.error('[SingingSocket] start error:', e.message); }
+    });
+
+    socket.on('singing:end', async (data) => {
+      try {
+        const { roomId } = data;
+        const room = await Room.findById(roomId);
+        if (!room) return;
+        const isOwner = room.ownerId.toString() === currentUserId;
+        const isCoHost = (room.coHosts || []).map(id => id.toString()).includes(currentUserId);
+        const isPerformer = room.currentPerformerId?.toString() === currentUserId;
+        if (!isOwner && !isCoHost && !isPerformer) return;
+        const endedPerformerId = room.currentPerformerId;
+        const totalLikes = room.singingLikeCount;
+        room.currentPerformerId = null;
+        room.currentSongId = null;
+        room.performanceStartedAt = null;
+        room.singingLikeCount = 0;
+        await room.save();
+        roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:performance-ended', { endedPerformerId, totalLikes, queueLength: room.micQueue.length });
+      } catch (e) { console.error('[SingingSocket] end error:', e.message); }
+    });
+
+    socket.on('singing:like', async (data) => {
+      try {
+        const { roomId } = data;
+        const room = await Room.findById(roomId);
+        if (!room || !room.currentPerformerId) return;
+        room.singingLikeCount = (room.singingLikeCount || 0) + 1;
+        await room.save();
+        roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:like-count', { likeCount: room.singingLikeCount, fromUserId: currentUserId });
+      } catch (e) { console.error('[SingingSocket] like error:', e.message); }
+    });
+
+    socket.on('singing:sync', async (data) => {
+      try {
+        const { roomId } = data;
+        const room = await Room.findById(roomId).select('currentPerformerId currentSongId performanceStartedAt micQueue');
+        if (!room) return;
+        socket.emit('singing:sync-response', {
+          performerId: room.currentPerformerId,
+          songId: room.currentSongId,
+          startedAt: room.performanceStartedAt,
+          serverTimestamp: Date.now(),
+          queueLength: room.micQueue.length,
+        });
+      } catch (e) { console.error('[SingingSocket] sync error:', e.message); }
+    });
+
+    socket.on('singing:remove-from-queue', async (data) => {
+      try {
+        const { roomId, targetUserId } = data;
+        const room = await Room.findById(roomId);
+        if (!room) return;
+        const isOwner = room.ownerId.toString() === currentUserId;
+        const isCoHost = (room.coHosts || []).map(id => id.toString()).includes(currentUserId);
+        if (!isOwner && !isCoHost) return;
+        const idx = room.micQueue.findIndex(id => id.toString() === targetUserId);
+        if (idx === -1) return;
+        room.micQueue.splice(idx, 1);
+        room.micQueueSongs.splice(idx, 1);
+        await room.save();
+        roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:queue-updated', { queueLength: room.micQueue.length, removedUserId: targetUserId });
+      } catch (e) { console.error('[SingingSocket] remove-from-queue error:', e.message); }
+    });
+
     socket.on('disconnect', () => {
       try {
         console.log(`[RoomFeaturesSocket] Client disconnected: ${socket.id}`);

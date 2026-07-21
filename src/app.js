@@ -43,6 +43,7 @@ const rankingRoutes = require('./routes/rankingRoutes');
 const vipRoutes = require('./routes/vipRoutes');
 const vipSystemRoutes = require('./routes/vipSystemRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const singingRoutes = require('./routes/singingRoutes');
 const livekitRoutes = require('./routes/livekit.routes');
 const appUserRoutes = require('./routes/appUserRoutes');
 const levelRoutes = require('./routes/level.routes');
@@ -187,6 +188,7 @@ app.use('/api/rankings', rankingRoutes);        // Wealth & Charm Rankings
 app.use('/api/vip', vipRoutes);                 // VIP Plans & Purchase
 app.use('/api/vip-system', vipSystemRoutes);    // VIP 1-15, SVIP, Premium, Cosmetics, Missions
 app.use('/api/chat', chatRoutes);               // Chat Message History
+app.use('/api/singing', singingRoutes);          // Singing Room: songs, queue, performance
 app.use('/api/app-users', appUserRoutes);       // App User Actions (Agency, Withdrawal)
 app.use('/api/analytics', analyticsRoutes);     // App-wide Analytics & Revenue Dashboard
 

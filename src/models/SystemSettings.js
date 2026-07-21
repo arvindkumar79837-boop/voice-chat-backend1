@@ -52,6 +52,9 @@ SystemSettings.getDefaults = async () => {
     { key: 'freeBlindDatesPerDay', value: 3, description: 'Free blind dates per user per day' },
     { key: 'blindDateCoinCost', value: 0, description: 'Coins charged per blind date match (0 = free)' },
     { key: 'blindDateMaxDurationSeconds', value: 120, description: 'Max call duration before reveal phase' },
+    // --- SINGING ROOM ---
+    { key: 'singing_max_queue_size', value: 20, description: 'Max users in Sing Next queue' },
+    { key: 'singing_max_performance_seconds', value: 300, description: 'Max performance duration (5 min)' },
   ];
   return defaults;
 };
