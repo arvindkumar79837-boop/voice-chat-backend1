@@ -61,6 +61,47 @@ const verifyGooglePlayPurchase = async ({ packageName, productId, purchaseToken 
 };
 
 /**
+ * Verify a Google Play subscription token server-to-server.
+ * Uses purchases.subscriptions endpoint (different from one-time products).
+ */
+const verifyGooglePlaySubscription = async ({ packageName, productId, purchaseToken }) => {
+  if (!GOOGLE_PLAY_SERVICE_ACCOUNT) {
+    // Dev mode: trust subscription tokens for any product (no real verification possible)
+    return { valid: true, expiryTimeMillis: Date.now() + 30 * 86400000, paymentState: 0, isTrial: false };
+  }
+
+  try {
+    const { OAuth2Client } = require('google-auth-library');
+    const client = new OAuth2Client();
+    const credentials = JSON.parse(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON || '{}');
+    await client.setCredentials(credentials);
+    const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName || GOOGLE_PLAY_PACKAGE_NAME}/purchases/subscriptions/${productId}/tokens/${purchaseToken}`;
+    const res = await axios.get(url, { headers: { Authorization: `Bearer ${(await client.getAccessToken()).token}` } });
+    const data = res.data;
+    // paymentState: 0=payment pending, 1=payment received, 2=free trial, 3=pending deferred upgrade/downgrade
+    if (data.paymentState !== 1 && data.paymentState !== 2) {
+      return { valid: false, reason: `Subscription payment state is ${data.paymentState} (not paid)` };
+    }
+    // Check expiry
+    const expiryMillis = parseInt(data.expiryTimeMillis);
+    if (expiryMillis && expiryMillis < Date.now()) {
+      return { valid: false, reason: 'Subscription has expired on Google Play' };
+    }
+    return {
+      valid: true,
+      expiryTimeMillis: expiryMillis,
+      paymentState: data.paymentState,
+      isTrial: data.paymentState === 2,
+      startTimeMillis: data.startTimeMillis,
+      cancelReason: data.cancelReason || null,
+    };
+  } catch (err) {
+    console.error('Google Play subscription verification failed:', err.response?.data || err.message);
+    return { valid: false, reason: err.response?.data?.error?.message || err.message };
+  }
+};
+
+/**
  * Evaluate wallet/coin activity for anomaly patterns.
  * Called AFTER a successful recharge or gift event.
  */
@@ -221,6 +262,7 @@ const checkReferralFraud = async ({ userId, uid, ip, deviceFingerprint }) => {
 
 module.exports = {
   verifyGooglePlayPurchase,
+  verifyGooglePlaySubscription,
   evaluateFinancialActivity,
   verifyAndEvaluateRecharge,
   checkReferralFraud,

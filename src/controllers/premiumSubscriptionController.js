@@ -3,6 +3,8 @@ const User = require('../models/User');
 const Staff = require('../models/Staff');
 const AuditLog = require('../models/AuditLog');
 const SystemSettings = require('../models/SystemSettings');
+const SubscriptionPurchaseLog = require('../models/SubscriptionPurchaseLog');
+const fraudService = require('../services/fraudDetection.service');
 
 // ─── ADMIN/OWNER: CRUD ────────────────────────────────────────────
 
@@ -67,16 +69,31 @@ exports.verifyPlaySubscription = async (req, res) => {
     const tier = await PremiumSubscription.findById(tierId);
     if (!tier) return res.status(404).json({ success: false, message: 'Subscription tier not found' });
 
-    // TODO: Verify receipt with Google Play Developer API
-    // const { status, expiryTimeMillis } = await verifyGooglePlayReceipt(purchaseToken, productId);
-    // if (status !== 'ACTIVE') return res.status(400).json({ success: false, message: 'Subscription not active on Google Play' });
+    // ─── DUPLICATE TOKEN CHECK ──────────────────────────────────────────
+    const existingLog = await SubscriptionPurchaseLog.findOne({ purchaseToken });
+    if (existingLog) {
+      return res.status(400).json({ success: false, message: 'This purchase has already been processed' });
+    }
 
-    // For now: trust the client receipt — replace with server-side verification in production
-    const expiresAt = new Date(Date.now() + tier.durationDays * 86400000);
+    // ─── SERVER-SIDE GOOGLE PLAY VERIFICATION ───────────────────────────
+    const verification = await fraudService.verifyGooglePlaySubscription({
+      packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
+      productId,
+      purchaseToken,
+    });
 
+    if (!verification.valid) {
+      return res.status(400).json({ success: false, message: `Subscription verification failed: ${verification.reason}` });
+    }
+
+    // Use Google Play expiry if available, otherwise fallback to calculated expiry
+    const expiresAt = verification.expiryTimeMillis
+      ? new Date(verification.expiryTimeMillis)
+      : new Date(Date.now() + tier.durationDays * 86400000);
+
+    // ─── ACTIVATE SUBSCRIPTION ──────────────────────────────────────────
     const targetUser = await User.findById(userId);
     if (!targetUser) {
-      // Try Staff model
       const staff = await Staff.findById(userId);
       if (staff) {
         staff.activeSubscription = { tierId: tier._id, expiresAt };
@@ -89,17 +106,28 @@ exports.verifyPlaySubscription = async (req, res) => {
       await targetUser.save();
     }
 
+    // ─── LOG PURCHASE FOR DUPLICATE PREVENTION ──────────────────────────
+    await SubscriptionPurchaseLog.create({
+      userId,
+      purchaseToken,
+      productId,
+      tierId: tier._id,
+      expiresAt,
+      status: 'ACTIVE',
+      verificationResponse: verification,
+    });
+
     await AuditLog.create({
       action: 'SUBSCRIPTION_ACTIVATED',
       executorId: userId,
-      reason: `${tier.tierName} subscription activated via Google Play`,
-      metadata: { tierId: tier._id, tierName: tier.tierName, expiresAt, productId },
+      reason: `${tier.tierName} subscription activated via Google Play (verified server-side)`,
+      metadata: { tierId: tier._id, tierName: tier.tierName, expiresAt, productId, isTrial: verification.isTrial },
     });
 
     return res.json({
       success: true,
       message: `${tier.tierName} subscription activated`,
-      data: { tierName: tier.tierName, expiresAt, perks: tier.perks },
+      data: { tierName: tier.tierName, expiresAt, perks: tier.perks, isTrial: verification.isTrial },
     });
   } catch (err) { return res.status(500).json({ success: false, message: err.message }); }
 };
@@ -131,12 +159,16 @@ exports.claimMonthlyCoins = async (req, res) => {
       }
     }
 
-    user.coins = (user.coins || 0) + tier.perks.monthlyCoins;
+    // ─── ATOMIC COIN CREDIT ───
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $inc: { coins: tier.perks.monthlyCoins } },
+      { new: true }
+    );
     tier.monthlyCoinsLastClaimedAt = now;
-    await user.save();
     await tier.save();
 
-    return res.json({ success: true, message: `+${tier.perks.monthlyCoins} coins credited`, data: { coins: user.coins } });
+    return res.json({ success: true, message: `+${tier.perks.monthlyCoins} coins credited`, data: { coins: updatedUser.coins } });
   } catch (err) { return res.status(500).json({ success: false, message: err.message }); }
 };
 
