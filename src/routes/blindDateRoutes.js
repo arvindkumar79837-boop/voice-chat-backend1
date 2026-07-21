@@ -1,13 +1,27 @@
 const express = require('express');
 const router = express.Router();
-const matchmakingController = require('../controllers/matchmaking.controller');
-const { authMiddleware } = require('../middlewares/auth.middleware');
+const ctrl = require('../controllers/blindDateController');
+const { authMiddleware, verifyStaff } = require('../middlewares/adminMiddleware');
 
-// Alias routes for mobile app compatibility
-// Mobile expects: /api/blind-date/match and /api/blind-date/stop
-// Backend canonical: /api/matchmaking/search and /api/matchmaking/stop
+// Profile
+router.get('/profile', authMiddleware, ctrl.getProfile);
+router.put('/profile', authMiddleware, ctrl.updateProfile);
 
-router.post('/match', authMiddleware, matchmakingController.searchMatch);
-router.post('/stop', authMiddleware, matchmakingController.stopSearch);
+// Queue
+router.post('/join-queue', authMiddleware, ctrl.joinQueue);
+router.post('/leave-queue', authMiddleware, ctrl.leaveQueue);
+
+// Session
+router.get('/session/:sessionId', authMiddleware, ctrl.getSession);
+router.post('/:sessionId/decide', authMiddleware, ctrl.decide);
+router.post('/:sessionId/report', authMiddleware, ctrl.reportSession);
+
+// Owner: Icebreaker prompts
+router.get('/prompts', ctrl.listPrompts);
+router.post('/prompts', authMiddleware, verifyStaff, ctrl.createPrompt);
+router.delete('/prompts/:promptId', authMiddleware, verifyStaff, ctrl.deletePrompt);
+
+// Admin: sessions
+router.get('/admin/sessions', authMiddleware, verifyStaff, ctrl.getAllSessions);
 
 module.exports = router;

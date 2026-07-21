@@ -16,7 +16,7 @@ const contentReportSchema = new mongoose.Schema({
   contentType: {
     type: String,
     required: true,
-    enum: ['PROFILE_PHOTO', 'CHAT_MESSAGE', 'ROOM_THUMBNAIL', 'MOMENT_POST', 'OTHER'],
+    enum: ['PROFILE_PHOTO', 'CHAT_MESSAGE', 'ROOM_THUMBNAIL', 'MOMENT_POST', 'BLIND_DATE_SESSION', 'OTHER'],
   },
   reason: {
     type: String,

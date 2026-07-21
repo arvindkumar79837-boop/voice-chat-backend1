@@ -142,6 +142,16 @@ cron.schedule('0 0 * * *', async () => {
   }
 });
 
+// Blind Date queue processor: runs every 3 seconds
+cron.schedule('*/3 * * * * *', async () => {
+  try {
+    const blindDateController = require('./src/controllers/blindDateController');
+    await blindDateController.processQueue();
+  } catch (error) {
+    // Silent — errors logged inside processQueue
+  }
+});
+
 // ─── INITIALIZE SERVICES ───────────────────────────────────────────────────
 (async function initializeServices() {
   try {

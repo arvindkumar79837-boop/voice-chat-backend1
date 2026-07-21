@@ -48,6 +48,10 @@ SystemSettings.getDefaults = async () => {
     { key: 'room_lock_duration_hours', value: 6, description: 'Default lock duration in hours' },
     // --- PREMIUM SUBSCRIPTION ---
     { key: 'premium_monthly_coins_multiplier', value: 1.0, description: 'Extra multiplier on top of tier monthly coins' },
+    // --- BLIND DATE ---
+    { key: 'freeBlindDatesPerDay', value: 3, description: 'Free blind dates per user per day' },
+    { key: 'blindDateCoinCost', value: 0, description: 'Coins charged per blind date match (0 = free)' },
+    { key: 'blindDateMaxDurationSeconds', value: 120, description: 'Max call duration before reveal phase' },
   ];
   return defaults;
 };
