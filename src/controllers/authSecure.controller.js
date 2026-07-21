@@ -10,6 +10,7 @@ const speakeasy = require('speakeasy');
 const crypto = require('crypto');
 const { captureDeviceFingerprint } = require('../middlewares/deviceFingerprint');
 const { emitToUser } = require('../config/socket');
+const admin = require('firebase-admin');
 
 const generateSessionToken = () => crypto.randomBytes(64).toString('hex');
 
@@ -326,28 +327,44 @@ exports.acceptTerms = async (req, res, next) => {
 
 exports.socialLogin = async (req, res, next) => {
   try {
-    const { provider, providerToken, providerUid, email, displayName, photoUrl, deviceInfo } = req.body;
+    const { provider, idToken, deviceInfo } = req.body;
 
     // ─── STRICT VALIDATION ───────────────────────────────────────────────
-    if (!provider || !providerUid) {
-      return res.status(400).json({ success: false, message: 'Provider and providerUid are required' });
+    if (!provider || !idToken) {
+      return res.status(400).json({ success: false, message: 'Provider and idToken (Firebase ID Token) are required' });
     }
 
     if (!['google', 'apple', 'facebook', 'snapchat', 'instagram'].includes(provider)) {
       return res.status(400).json({ success: false, message: 'Invalid social provider' });
     }
 
-    // Trim and sanitise strings
-    const sanitisedEmail = (email || '').trim();
-    const sanitisedDisplayName = (displayName || '').trim();
-    const sanitisedPhotoUrl = (photoUrl || '').trim();
+    // ─── VERIFY FIREBASE ID TOKEN SERVER-SIDE (REAL VERIFICATION) ────────
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (err) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired authentication token' });
+    }
 
-    // ─── LOOKUP BY PROVIDER —— existing user ─────────────────────────────
+    // Extract verified data from Firebase token (NOT from client)
+    const providerUid = decodedToken.uid;
+    const email = decodedToken.email || '';
+    const displayName = decodedToken.name || '';
+    const photoUrl = decodedToken.picture || '';
+
+    // Confirm this token came from the claimed provider
+    const firebaseProvider = decodedToken.firebase?.sign_in_provider || '';
+    const providerMap = { google: 'google.com', facebook: 'facebook.com', apple: 'apple.com' };
+    if (providerMap[provider] && firebaseProvider !== providerMap[provider]) {
+      return res.status(400).json({ success: false, message: `Provider mismatch: token is from ${firebaseProvider}, expected ${providerMap[provider]}` });
+    }
+
+    // ─── LOOKUP BY PROVIDER — existing user ─────────────────────────────
     let user = await User.findOne({ 'socialProviders.provider': provider, 'socialProviders.providerUid': providerUid });
 
     if (!user) {
       // ─── NEW USER — assign a guaranteed-unique username ────────────────
-      const baseName = sanitisedDisplayName || `${provider}_user`;
+      const baseName = displayName || `${provider}_user`;
       const safeBase = baseName.replace(/[^a-zA-Z0-9_]/g, '').substring(0, 12) || `${provider}`;
       let username = `${safeBase}_${Date.now().toString(36)}${crypto.randomBytes(2).toString('hex')}`;
       username = username.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
@@ -357,9 +374,9 @@ exports.socialLogin = async (req, res, next) => {
       user = new User({
         uid,
         username,
-        name: sanitisedDisplayName || username,
-        email: sanitisedEmail || '',
-        avatar: sanitisedPhotoUrl || '',
+        name: displayName || username,
+        email: email || '',
+        avatar: photoUrl || '',
         provider: provider,
         isProfileComplete: false,
         role: 'user',
@@ -369,9 +386,9 @@ exports.socialLogin = async (req, res, next) => {
         socialProviders: [{
           provider,
           providerUid,
-          email: sanitisedEmail,
-          displayName: sanitisedDisplayName,
-          photoUrl: sanitisedPhotoUrl,
+          email,
+          displayName,
+          photoUrl,
         }],
       });
 
@@ -399,10 +416,34 @@ exports.socialLogin = async (req, res, next) => {
 exports.linkSocialAccount = async (req, res, next) => {
   try {
     const userId = req.user?.id || req.user?.userId;
-    const { provider, providerToken, providerUid, email, displayName, photoUrl } = req.body;
+    const { provider, idToken } = req.body;
+
+    if (!provider || !idToken) {
+      return res.status(400).json({ success: false, message: 'Provider and idToken (Firebase ID Token) are required' });
+    }
 
     if (!['google', 'apple', 'facebook', 'snapchat', 'instagram'].includes(provider)) {
       return res.status(400).json({ success: false, message: 'Invalid social provider' });
+    }
+
+    // ─── VERIFY FIREBASE ID TOKEN SERVER-SIDE ────────────────────────────
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (err) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired authentication token' });
+    }
+
+    const providerUid = decodedToken.uid;
+    const email = decodedToken.email || '';
+    const displayName = decodedToken.name || '';
+    const photoUrl = decodedToken.picture || '';
+
+    // Confirm provider match
+    const firebaseProvider = decodedToken.firebase?.sign_in_provider || '';
+    const providerMap = { google: 'google.com', facebook: 'facebook.com', apple: 'apple.com' };
+    if (providerMap[provider] && firebaseProvider !== providerMap[provider]) {
+      return res.status(400).json({ success: false, message: `Provider mismatch` });
     }
 
     const user = await User.findById(userId);
