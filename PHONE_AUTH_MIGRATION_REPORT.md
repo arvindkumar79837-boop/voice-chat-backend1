@@ -1,0 +1,130 @@
+# 📱 Phone Auth Migration Report — MASTER PROMPT #20
+
+**Date:** 2026-07-21
+**Status:** ✅ COMPLETE — Twilio → Firebase Phone Auth
+
+---
+
+## Migration Summary
+
+Phone authentication has been migrated from **Twilio SMS OTP** to **Firebase Phone Auth**. All three login providers (Google, Apple, Phone) now use the same verification pattern:
+
+```
+App → Firebase SDK (signInWithCredential) → idToken → Backend → admin.auth().verifyIdToken() → JWT
+```
+
+---
+
+## What Changed
+
+### Backend (`repo2`)
+
+1. **`authSecure.controller.js` — `socialLogin` function:**
+   - Added `phone` to allowed providers list: `['google', 'apple', 'facebook', 'snapchat', 'instagram', 'phone']`
+   - Added `phoneNumber` extraction from `decodedToken.phone_number`
+   - Added `phone: 'phone'` to `providerMap` for provider confirmation
+   - New users with `provider: 'phone'` get `phone` field populated from Firebase-verified `phone_number`
+   - Same change applied to `linkSocialAccount`
+
+2. **`auth.routes.js` — Deprecated Twilio OTP routes:**
+   - `/send-otp`, `/otp-verify`, `/resend-otp` marked as `@deprecated`
+   - `/phone-login`, `/verify-otp` aliases marked as `@deprecated`
+   - Comments direct developers to use `POST /api/auth/social-login { provider: 'phone', idToken: '...' }`
+
+3. **`otp.service.js` — Deprecated:**
+   - Added deprecation header explaining migration to Firebase Phone Auth
+   - File kept as fallback only, will be removed in v2.0
+
+4. **`package.json` — Removed `twilio` dependency:**
+   - `npm uninstall twilio` equivalent — removed from dependencies
+
+5. **`.env.example` — Marked TWILIO_* as deprecated:**
+   - Added deprecation comment explaining Firebase Phone Auth migration
+
+### App (`repo1`)
+
+1. **`main.dart` — Registered `FirebaseAuthService`:**
+   - Added import for `FirebaseAuthService`
+   - Added `Get.put<FirebaseAuthService>(FirebaseAuthService(), permanent: true)` after Firebase initialization
+
+2. **`app_pages.dart` — Route updated:**
+   - `/phone-auth` now routes to `FirebasePhoneAuthScreen` instead of `PhoneAuthScreen`
+   - Added import for `FirebasePhoneAuthScreen`
+
+3. **`firebase_phone_auth_screen.dart` — Updated auth flow:**
+   - Uses `Get.offAllNamed(AppRoutes.home)` instead of `Get.offAll(() => const HomeScreen())`
+   - Proper error handling with snackbar messages
+   - Session saved via `AuthSessionManager`
+
+4. **`firebase_auth_service.dart` — Enhanced session management:**
+   - Added `AuthSessionManager` integration for proper auth state
+   - `_completeFirebaseLogin` now calls `_session.saveSession()` with user data
+   - `signOut` calls `_session.clearSession()` for proper cleanup
+
+---
+
+## Authentication Flow Comparison
+
+### Before (Twilio)
+```
+App → POST /api/auth/send-otp { phone } → Twilio SMS → OTP
+App → POST /api/auth/otp-verify { phone, otp } → Backend verifies OTP → JWT
+```
+- Backend trusted OTP verification (Twilio-dependent)
+- Separate endpoints for send/verify
+- No Firebase involvement
+
+### After (Firebase Phone Auth)
+```
+App → FirebaseAuth.instance.verifyPhoneNumber('+91...') → Firebase SMS
+App → PhoneAuthProvider.credential(verificationId, smsCode)
+App → FirebaseAuth.instance.signInWithCredential(credential)
+App → user.getIdToken() → Firebase ID Token
+App → POST /api/auth/social-login { provider: 'phone', idToken: '...' }
+Backend → admin.auth().verifyIdToken(idToken) → verified phone_number → JWT
+```
+- Server-side verification via Firebase Admin SDK
+- Unified endpoint with Google/Apple/Facebook
+- Phone number cryptographically verified by Firebase
+
+---
+
+## Provider Consistency
+
+| Provider | App sends | Backend verifies | Endpoint |
+|----------|-----------|-----------------|----------|
+| Google | `idToken` | `admin.auth().verifyIdToken()` | `/api/auth/social-login` |
+| Apple | `idToken` | `admin.auth().verifyIdToken()` | `/api/auth/social-login` |
+| Phone | `idToken` | `admin.auth().verifyIdToken()` | `/api/auth/social-login` |
+
+All three providers use the same pattern — no provider-specific backend code needed.
+
+---
+
+## Testing Steps
+
+1. **Phone Login:**
+   - Open app → Login → Tap "Phone" → Enter phone number → Tap "Send OTP"
+   - Firebase sends SMS with 6-digit code
+   - Enter OTP → Auto-verify → Navigate to Home screen
+   - Backend creates user with `provider: 'phone'` and verified `phone_number`
+
+2. **Firebase Console Test Numbers:**
+   - Go to Firebase Console → Authentication → Sign-in method → Phone
+   - Add test phone numbers (e.g., `+1 555-555-1234` with code `123456`)
+   - Test without real SMS delivery
+
+3. **Verify Backend User:**
+   - Check MongoDB: user should have `provider: 'phone'` and `socialProviders` entry with `provider: 'phone'`
+   - `phone` field should be populated from Firebase-verified `phone_number`
+
+---
+
+## Commits
+
+- **Backend:** `Firebase Phone Auth: extend socialLogin for provider: 'phone', deprecate Twilio` (pending)
+- **App:** `Firebase Phone Auth: route /phone-auth to FirebasePhoneAuthScreen` (pending)
+
+---
+
+*Report generated by MASTER PROMPT #20*

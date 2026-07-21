@@ -25,28 +25,30 @@ const authLimiter = rateLimit({
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-// PUBLIC ROUTES
+// PUBLIC ROUTES — FIREBASE PHONE AUTH (PRIMARY)
+// Phone login now uses Firebase Phone Auth via the unified social-login endpoint:
+//   POST /api/auth/social-login { provider: 'phone', idToken: '<Firebase ID Token>' }
+// The app calls FirebaseAuth.instance.verifyPhoneNumber() → signInWithCredential() → getIdToken()
+// ─────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────
+// ⚠️ DEPRECATED: LEGACY TWILIO OTP ROUTES (will be removed in v2.0)
+// These routes are kept for backward compatibility only.
+// NEW CLIENTS SHOULD USE: POST /api/auth/social-login { provider: 'phone', idToken: '...' }
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * POST /api/auth/send-otp
- * Body: { phone: "9876543210" }
- * Sends a 6-digit OTP via SMS (or logs it in dev mode).
+ * @deprecated Use POST /api/auth/social-login { provider: 'phone', idToken: '...' } instead
  */
 router.post('/send-otp', authLimiter, validatePhone(), sendOtp);
 
 /**
- * POST /api/auth/otp-verify
- * Body: { phone: "9876543210", otp: "123456" }
- * Verifies OTP → auto-creates user if new → returns JWT + refreshToken.
- * This is the SINGLE entry point for both new and returning users.
+ * @deprecated Use POST /api/auth/social-login { provider: 'phone', idToken: '...' } instead
  */
 router.post('/otp-verify', authLimiter, validatePhone(), validateOTP(), verifyOtp);
 
 /**
- * POST /api/auth/resend-otp
- * Body: { phone: "9876543210" }
- * Resends a fresh OTP (resets the 5-minute TTL).
+ * @deprecated Use POST /api/auth/social-login { provider: 'phone', idToken: '...' } instead
  */
 router.post('/resend-otp', authLimiter, validatePhone(), resendOtp);
 
@@ -143,7 +145,15 @@ router.get('/admin/verify', async (req, res) => {
 // ─── MOBILE APP ALIASES ──────────────────────────────────────────────────────
 router.post('/login', authLimiter, validatePhone(), login);
 router.post('/signup', authLimiter, validatePhone(), register);
+
+/**
+ * @deprecated Use POST /api/auth/social-login { provider: 'phone', idToken: '...' } instead
+ */
 router.post('/phone-login', authLimiter, validatePhone(), sendOtp);
+
+/**
+ * @deprecated Use POST /api/auth/social-login { provider: 'phone', idToken: '...' } instead
+ */
 router.post('/verify-otp', authLimiter, validatePhone(), validateOTP(), verifyOtp);
 
 module.exports = router;

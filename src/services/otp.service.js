@@ -1,3 +1,14 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// FILE: src/services/otp.service.js
+// ARVIND PARTY - OTP SERVICE (DEPRECATED - Use Firebase Phone Auth)
+// ═══════════════════════════════════════════════════════════════════════════
+// ⚠️ DEPRECATED: This service uses Twilio for OTP delivery.
+// Phone login has been migrated to Firebase Phone Auth:
+//   App: FirebaseAuth.instance.verifyPhoneNumber() → signInWithCredential()
+//   Backend: POST /api/auth/social-login { provider: 'phone', idToken: '<Firebase ID Token>' }
+// This file is kept as fallback only. It will be removed in v2.0.
+// ═══════════════════════════════════════════════════════════════════════════
+
 const redis = require('redis');
 const twilio = require('twilio');
 

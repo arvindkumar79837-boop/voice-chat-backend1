@@ -334,7 +334,7 @@ exports.socialLogin = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Provider and idToken (Firebase ID Token) are required' });
     }
 
-    if (!['google', 'apple', 'facebook', 'snapchat', 'instagram'].includes(provider)) {
+    if (!['google', 'apple', 'facebook', 'snapchat', 'instagram', 'phone'].includes(provider)) {
       return res.status(400).json({ success: false, message: 'Invalid social provider' });
     }
 
@@ -351,10 +351,11 @@ exports.socialLogin = async (req, res, next) => {
     const email = decodedToken.email || '';
     const displayName = decodedToken.name || '';
     const photoUrl = decodedToken.picture || '';
+    const phoneNumber = decodedToken.phone_number || '';
 
     // Confirm this token came from the claimed provider
     const firebaseProvider = decodedToken.firebase?.sign_in_provider || '';
-    const providerMap = { google: 'google.com', facebook: 'facebook.com', apple: 'apple.com' };
+    const providerMap = { google: 'google.com', facebook: 'facebook.com', apple: 'apple.com', phone: 'phone' };
     if (providerMap[provider] && firebaseProvider !== providerMap[provider]) {
       return res.status(400).json({ success: false, message: `Provider mismatch: token is from ${firebaseProvider}, expected ${providerMap[provider]}` });
     }
@@ -364,7 +365,7 @@ exports.socialLogin = async (req, res, next) => {
 
     if (!user) {
       // ─── NEW USER — assign a guaranteed-unique username ────────────────
-      const baseName = displayName || `${provider}_user`;
+      const baseName = displayName || (provider === 'phone' ? phoneNumber : `${provider}_user`);
       const safeBase = baseName.replace(/[^a-zA-Z0-9_]/g, '').substring(0, 12) || `${provider}`;
       let username = `${safeBase}_${Date.now().toString(36)}${crypto.randomBytes(2).toString('hex')}`;
       username = username.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
@@ -376,6 +377,7 @@ exports.socialLogin = async (req, res, next) => {
         username,
         name: displayName || username,
         email: email || '',
+        phone: provider === 'phone' ? phoneNumber : '',
         avatar: photoUrl || '',
         provider: provider,
         isProfileComplete: false,
@@ -389,6 +391,7 @@ exports.socialLogin = async (req, res, next) => {
           email,
           displayName,
           photoUrl,
+          phoneNumber,
         }],
       });
 
@@ -422,7 +425,7 @@ exports.linkSocialAccount = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Provider and idToken (Firebase ID Token) are required' });
     }
 
-    if (!['google', 'apple', 'facebook', 'snapchat', 'instagram'].includes(provider)) {
+    if (!['google', 'apple', 'facebook', 'snapchat', 'instagram', 'phone'].includes(provider)) {
       return res.status(400).json({ success: false, message: 'Invalid social provider' });
     }
 
@@ -438,10 +441,11 @@ exports.linkSocialAccount = async (req, res, next) => {
     const email = decodedToken.email || '';
     const displayName = decodedToken.name || '';
     const photoUrl = decodedToken.picture || '';
+    const phoneNumber = decodedToken.phone_number || '';
 
     // Confirm provider match
     const firebaseProvider = decodedToken.firebase?.sign_in_provider || '';
-    const providerMap = { google: 'google.com', facebook: 'facebook.com', apple: 'apple.com' };
+    const providerMap = { google: 'google.com', facebook: 'facebook.com', apple: 'apple.com', phone: 'phone' };
     if (providerMap[provider] && firebaseProvider !== providerMap[provider]) {
       return res.status(400).json({ success: false, message: `Provider mismatch` });
     }
@@ -452,7 +456,8 @@ exports.linkSocialAccount = async (req, res, next) => {
     const exists = user.socialProviders.find(sp => sp.provider === provider);
     if (exists) return res.status(400).json({ success: false, message: `${provider} account already linked` });
 
-    user.socialProviders.push({ provider, providerUid, email, displayName, photoUrl });
+    user.socialProviders.push({ provider, providerUid, email, displayName, photoUrl, phoneNumber });
+    if (provider === 'phone' && phoneNumber) user.phone = phoneNumber;
     await user.save();
 
     res.status(200).json({ success: true, message: `${provider} account linked successfully` });
