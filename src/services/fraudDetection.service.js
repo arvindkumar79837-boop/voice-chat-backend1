@@ -13,6 +13,7 @@ const WalletTransaction = require('../models/WalletTransaction');
 const FraudAlert = require('../models/FraudAlert');
 const AuditLog = require('../models/AuditLog');
 const Recharge = require('../models/Recharge');
+const RechargePlan = require('../models/RechargePlan');
 
 // ── Configurable thresholds ────────────────────────────────────────────────
 const MAX_COIN_TRANSFER_PER_MINUTE = 50000; // coins
@@ -27,10 +28,15 @@ const GOOGLE_PLAY_SERVICE_ACCOUNT = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT || n
  */
 const verifyGooglePlayPurchase = async ({ packageName, productId, purchaseToken }) => {
   if (!GOOGLE_PLAY_SERVICE_ACCOUNT) {
-    // In development without service account, simulate success for allowed products
-    const devAllowed = ['coins_100', 'coins_500', 'coins_1000'];
-    if (devAllowed.includes(productId)) {
-      return { valid: true, consumed: false, purchaseTime: Date.now() };
+    // In development without service account, simulate success for active RechargePlan products
+    try {
+      const plans = await RechargePlan.find({ isActive: true }).select('googlePlayProductId').lean();
+      const devAllowed = plans.map(p => p.googlePlayProductId).filter(Boolean);
+      if (devAllowed.includes(productId)) {
+        return { valid: true, consumed: false, purchaseTime: Date.now() };
+      }
+    } catch (_) {
+      // Fallback if DB query fails
     }
     return { valid: false, reason: 'Google Play verification skipped in dev mode for unknown product.' };
   }
