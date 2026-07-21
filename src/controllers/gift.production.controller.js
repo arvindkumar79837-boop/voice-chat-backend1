@@ -129,43 +129,23 @@ exports.sendGift = async (req, res) => {
     const totalQuantity = parseInt(quantity) * parseInt(comboMultiplier);
     const totalCost = gift.coinPrice * totalQuantity;
 
-    // Check sender balance
-    if (sender.coins < totalCost) {
-      return res.status(400).json({
-        success: false,
-        message: `Insufficient coins. You need ${totalCost} coins but have ${sender.coins}.`
-      });
-    }
-
-    const receiver = await User.findById(receiverId);
-    if (!receiver) {
-      return res.status(404).json({ success: false, message: 'Receiver not found.' });
-    }
-
     // Get commission settings
     const settings = await GlobalSetting.findOne() || {};
     const commissionRate = (settings.giftCommission || 30) / 100;
     const totalDiamondValue = Math.floor(gift.diamondValue * totalQuantity * (1 - commissionRate));
-    let finalReceiverCoins = totalDiamondValue;
 
     // Diamond conversion: receiver gets diamonds, not coins
-    const receiverDiamonds = totalDiamondValue;
-    let finalReceiverDiamonds = receiverDiamonds;
+    let finalReceiverDiamonds = totalDiamondValue;
 
-    // Agency commission split
+    // Agency commission split (read-only first, apply after atomic ops)
+    let agencyCommission = 0;
+    let agencyId = null;
     if (receiver.agencyId) {
       const agency = await Agency.findById(receiver.agencyId);
       if (agency) {
-        const agencyCommission = Math.floor(totalDiamondValue * 0.10);
+        agencyCommission = Math.floor(totalDiamondValue * 0.10);
         finalReceiverDiamonds = totalDiamondValue - agencyCommission;
-        agency.earnings = (agency.earnings || 0) + agencyCommission;
-        agency.totalGifts = (agency.totalGifts || 0) + totalQuantity;
-        await agency.save();
-
-        try {
-          const agencyTargetController = require('./agencyTargetController');
-          await agencyTargetController.updateProgress(receiver.agencyId, totalCost, 'COINS_SPENT');
-        } catch (_) {}
+        agencyId = receiver.agencyId;
       }
     }
 
@@ -175,17 +155,35 @@ exports.sendGift = async (req, res) => {
     if (gift.isLucky && gift.luckyMultiplier && gift.luckyMultiplier.length > 0) {
       luckyMultiplier = gift.luckyMultiplier[Math.floor(Math.random() * gift.luckyMultiplier.length)];
       luckyWinAmount = gift.coinPrice * totalQuantity * luckyMultiplier;
-      if (luckyMultiplier > 1) {
-        sender.coins += luckyWinAmount; // Lucky winnings added back
-      }
     }
 
-    // Execute transactions — sender pays coins, receiver earns diamonds
-    sender.coins -= totalCost;
-    receiver.diamonds = (receiver.diamonds || 0) + finalReceiverDiamonds;
+    // ─── ATOMIC SENDER DEDUCTION (prevents double-spend race condition) ───
+    const senderUpdate = { $inc: { coins: -totalCost } };
+    if (luckyMultiplier > 1) {
+      senderUpdate.$inc.coins += luckyWinAmount; // Lucky winnings net offset
+    }
+    const updatedSender = await User.findOneAndUpdate(
+      { _id: senderId, coins: { $gte: totalCost } },
+      senderUpdate,
+      { new: true }
+    );
+    if (!updatedSender) {
+      return res.status(400).json({ success: false, message: `Insufficient coins. You need ${totalCost} coins.` });
+    }
 
-    await sender.save();
-    await receiver.save();
+    // ─── ATOMIC RECEIVER DIAMOND CREDIT ───
+    await User.findByIdAndUpdate(receiverId, { $inc: { diamonds: finalReceiverDiamonds } });
+
+    // ─── ATOMIC AGENCY COMMISSION ───
+    if (agencyId && agencyCommission > 0) {
+      await Agency.findByIdAndUpdate(agencyId, {
+        $inc: { earnings: agencyCommission, totalGifts: totalQuantity }
+      });
+      try {
+        const agencyTargetController = require('./agencyTargetController');
+        await agencyTargetController.updateProgress(agencyId, totalCost, 'COINS_SPENT');
+      } catch (_) {}
+    }
 
     // Build gift event key
     const eventKey = idempotencyKey || `GFT_${senderId}_${giftId}_${Date.now()}`;
@@ -196,8 +194,8 @@ exports.sendGift = async (req, res) => {
       idempotencyKey: eventKey,
       giftId: gift._id,
       giftName: gift.giftName,
-      senderId: sender._id,
-      senderUid: sender.uid || sender._id.toString(),
+      senderId: updatedSender._id,
+      senderUid: updatedSender.uid || updatedSender._id.toString(),
       receiverId: receiver._id,
       receiverUid: receiver.uid || receiver._id.toString(),
       roomId: roomId || null,
@@ -209,18 +207,22 @@ exports.sendGift = async (req, res) => {
       status: 'COMPLETED'
     });
 
-    // Update room gift points if roomId provided
+    // ─── ATOMIC ROOM POINTS ───
     if (roomId) {
-      const room = await Room.findOne({ roomId });
-      if (room) {
-        room.totalGiftPoints += totalCost;
-        room.lootBoxPoints += Math.floor(totalCost * 0.1);
-        room.rankPoints += Math.floor(totalCost * 0.5);
-        if (room.lootBoxPoints >= room.lootBoxLevel * 100) {
-          room.lootBoxLevel += 1;
-          room.lootBoxPoints = 0;
+      await Room.findOneAndUpdate(
+        { roomId },
+        {
+          $inc: {
+            totalGiftPoints: totalCost,
+            lootBoxPoints: Math.floor(totalCost * 0.1),
+            rankPoints: Math.floor(totalCost * 0.5),
+          }
         }
-        await room.save();
+      );
+      // Level-up check (rare edge case, safe to do read-check after atomic inc)
+      const room = await Room.findOne({ roomId }).select('lootBoxPoints lootBoxLevel');
+      if (room && room.lootBoxPoints >= room.lootBoxLevel * 100) {
+        await Room.findOneAndUpdate({ roomId }, { $inc: { lootBoxLevel: 1 }, $set: { lootBoxPoints: 0 } });
       }
     }
 
@@ -232,9 +234,9 @@ exports.sendGift = async (req, res) => {
       giftName: gift.giftName,
       giftType: gift.giftType,
       category: gift.category,
-      senderId: sender._id.toString(),
-      senderName: sender.name || sender.username || 'User',
-      senderAvatar: sender.avatar || '',
+      senderId: updatedSender._id.toString(),
+      senderName: updatedSender.name || updatedSender.username || 'User',
+      senderAvatar: updatedSender.avatar || '',
       receiverId: receiver._id.toString(),
       receiverName: receiver.name || receiver.username || 'User',
       receiverAvatar: receiver.avatar || '',
@@ -275,7 +277,7 @@ exports.sendGift = async (req, res) => {
       if (gift.comboEnabled && parseInt(comboMultiplier) > 1) {
         io.to(roomId).emit('combo_counter_update', {
           senderId: sender._id.toString(),
-          senderName: sender.name || sender.username || 'User',
+          senderName: updatedSender.name || updatedSender.username || 'User',
           comboMultiplier: parseInt(comboMultiplier),
           totalQuantity: totalQuantity,
           giftName: gift.giftName,
@@ -291,28 +293,28 @@ exports.sendGift = async (req, res) => {
           poolCoins: gift.treasurePoolCoins,
           durationSeconds: gift.treasureDurationSeconds,
           maxClaimers: gift.treasureMaxClaimers,
-          spawnerId: sender._id.toString(),
-          spawnerName: sender.name || sender.username || 'User'
+          spawnerId: updatedSender._id.toString(),
+          spawnerName: updatedSender.name || updatedSender.username || 'User'
         });
       }
 
       // Castle/Vehicle spawn
       if (gift.giftType === 'CASTLE' && gift.castleModelUrl) {
         io.to(roomId).emit('castle_spawned', {
-          senderName: sender.name || sender.username || 'User',
+          senderName: updatedSender.name || updatedSender.username || 'User',
           castleModelUrl: gift.castleModelUrl,
           displayDurationSeconds: gift.displayDurationSeconds || 10
         });
       }
       if (gift.giftType === 'VEHICLE' && gift.vehicleModelUrl) {
         io.to(roomId).emit('vehicle_spawned', {
-          senderName: sender.name || sender.username || 'User',
+          senderName: updatedSender.name || updatedSender.username || 'User',
           vehicleModelUrl: gift.vehicleModelUrl,
           displayDurationSeconds: gift.displayDurationSeconds || 8
         });
       }
     } else {
-      io.to(sender._id.toString()).emit('live_gift_effect', giftPayload);
+      io.to(updatedSender._id.toString()).emit('live_gift_effect', giftPayload);
       io.to(receiver._id.toString()).emit('live_gift_effect', giftPayload);
     }
 
@@ -321,7 +323,7 @@ exports.sendGift = async (req, res) => {
       message: gift.isLucky && luckyMultiplier > 1
         ? `Lucky win! You got ${luckyMultiplier}x multiplier and won ${luckyWinAmount} coins!`
         : `Gift sent successfully!`,
-      balance: sender.coins,
+      balance: updatedSender.coins,
       luckyMultiplier: luckyMultiplier > 1 ? luckyMultiplier : null,
       luckyWinAmount: luckyWinAmount > 0 ? luckyWinAmount : null,
       event: giftEvent
@@ -379,20 +381,46 @@ exports.claimTreasure = async (req, res) => {
       return res.status(400).json({ success: false, message: 'This is not a treasure gift event.' });
     }
 
+    // Idempotency: prevent double-claim on same event by same user
+    const claimKey = `TREASURE_${giftEventId}_${userId}`;
+    const existingClaim = await GiftEvent.findOne({ idempotencyKey: claimKey });
+    if (existingClaim) {
+      return res.status(200).json({ success: true, message: 'Already claimed.', claimedCoins: 0 });
+    }
+
     // Random claim amount from pool
     const claimAmount = Math.floor(Math.random() * Math.min(gift.treasurePoolCoins, 500)) + 10;
-    const user = await User.findById(userId);
-    if (!user) {
+
+    // ─── ATOMIC COIN CREDIT (prevents double-claim race condition) ───
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $inc: { coins: claimAmount } },
+      { new: true }
+    );
+    if (!updatedUser) {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
-    user.coins += claimAmount;
-    await user.save();
+    // Record claim for idempotency
+    await GiftEvent.create({
+      eventId: `TRS-${Date.now().toString(36).toUpperCase()}`,
+      idempotencyKey: claimKey,
+      giftId: gift._id,
+      giftName: `Treasure Claim: ${gift.giftName}`,
+      senderId: giftEvent.senderId,
+      receiverId: userId,
+      coinCostToSender: 0,
+      diamondValueToReceiver: 0,
+      quantity: 1,
+      totalCoinsCost: 0,
+      totalDiamondsEarned: 0,
+      status: 'COMPLETED'
+    });
 
     return res.status(200).json({
       success: true,
       claimedCoins: claimAmount,
-      balance: user.coins
+      balance: updatedUser.coins
     });
   } catch (error) {
     console.error('Claim Treasure Error:', error);

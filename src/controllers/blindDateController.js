@@ -119,13 +119,20 @@ async function createMatch(userA, userB, redis) {
   for (const e of entries) { const p = JSON.parse(e); if ([userA.userId, userB.userId].includes(p.userId)) await redis.zrem(QUEUE_KEY, e); }
   const coinCost = await SystemSettings.getValue('blindDateCoinCost') || 0;
   let coinsCharged = 0;
-  if (coinCost > 0) {
-    const uA = await User.findById(userA.userId).select('coins');
-    const uB = await User.findById(userB.userId).select('coins');
-    if ((uA?.coins || 0) < coinCost || (uB?.coins || 0) < coinCost) return;
-    uA.coins -= coinCost; uB.coins -= coinCost; await uA.save(); await uB.save();
-    coinsCharged = coinCost;
-  }
+    if (coinCost > 0) {
+      const uA = await User.findOneAndUpdate(
+        { _id: userA.userId, coins: { $gte: coinCost } },
+        { $inc: { coins: -coinCost } },
+        { new: true }
+      );
+      const uB = await User.findOneAndUpdate(
+        { _id: userB.userId, coins: { $gte: coinCost } },
+        { $inc: { coins: -coinCost } },
+        { new: true }
+      );
+      if (!uA || !uB) return;
+      coinsCharged = coinCost;
+    }
   const prompt = await IcebreakerPrompt.aggregate([{ $match: { isActive: true } }, { $sample: { size: 1 } }]);
   const promptId = prompt.length > 0 ? prompt[0]._id : null;
   const session = await BlindDateSession.create({ userA: userA.userId, userB: userB.userId, status: 'ACTIVE', revealTimerSeconds: 120, icebreakerPromptId: promptId, coinsCharged });

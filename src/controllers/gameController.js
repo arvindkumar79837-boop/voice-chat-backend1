@@ -20,8 +20,13 @@ exports.playLuckyWheel = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Insufficient coins to play' });
     }
 
-    // Deduct bet amount
-    user.coins -= betAmount;
+    // ─── ATOMIC BET DEDUCTION ───
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: userId, coins: { $gte: betAmount } },
+      { $inc: { coins: -betAmount } },
+      { new: true }
+    );
+    if (!updatedUser) return res.status(400).json({ success: false, error: 'Insufficient coins to play' });
 
     // Define Wheel Rewards & Probabilities
     const rewards = [
@@ -44,10 +49,9 @@ exports.playLuckyWheel = async (req, res) => {
       }
     }
 
-    // Credit the won amount securely
-    if (selectedReward.type === 'COINS') user.coins += selectedReward.amount;
-    if (selectedReward.type === 'DIAMONDS') user.diamonds = (user.diamonds || 0) + selectedReward.amount;
-    await user.save();
+    // ─── ATOMIC REWARD CREDIT ───
+    if (selectedReward.type === 'COINS') await User.findByIdAndUpdate(userId, { $inc: { coins: selectedReward.amount } });
+    if (selectedReward.type === 'DIAMONDS') await User.findByIdAndUpdate(userId, { $inc: { diamonds: selectedReward.amount } });
 
     // Log the transaction
     await GameRecord.create({
@@ -91,16 +95,21 @@ exports.playScratchCard = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Insufficient coins to play' });
     }
 
-    // Deduct bet amount
-    user.coins -= betAmount;
+    // ─── ATOMIC BET DEDUCTION ───
+    const updatedScratchUser = await User.findOneAndUpdate(
+      { _id: userId, coins: { $gte: betAmount } },
+      { $inc: { coins: -betAmount } },
+      { new: true }
+    );
+    if (!updatedScratchUser) return res.status(400).json({ success: false, error: 'Insufficient coins to play' });
 
     // Define Scratch Card Rewards & Probabilities
     const rewards = [
       { type: 'NOTHING', amount: 0, probability: 45 },
-      { type: 'COINS', amount: 20, probability: 30 }, // Break even
-      { type: 'COINS', amount: 50, probability: 15 }, // Small win
-      { type: 'COINS', amount: 200, probability: 8 }, // Big win
-      { type: 'DIAMONDS', amount: 5, probability: 2 } // Jackpot
+      { type: 'COINS', amount: 20, probability: 30 },
+      { type: 'COINS', amount: 50, probability: 15 },
+      { type: 'COINS', amount: 200, probability: 8 },
+      { type: 'DIAMONDS', amount: 5, probability: 2 }
     ];
 
     // Random pick based on cumulative probability
@@ -115,10 +124,9 @@ exports.playScratchCard = async (req, res) => {
       }
     }
 
-    // Credit the won amount securely
-    if (selectedReward.type === 'COINS') user.coins += selectedReward.amount;
-    if (selectedReward.type === 'DIAMONDS') user.diamonds = (user.diamonds || 0) + selectedReward.amount;
-    await user.save();
+    // ─── ATOMIC REWARD CREDIT ───
+    if (selectedReward.type === 'COINS') await User.findByIdAndUpdate(userId, { $inc: { coins: selectedReward.amount } });
+    if (selectedReward.type === 'DIAMONDS') await User.findByIdAndUpdate(userId, { $inc: { diamonds: selectedReward.amount } });
 
     // Log the transaction
     await GameRecord.create({ user: userId, gameType: 'SCRATCH_CARD', betAmount, winAmount: selectedReward.amount, rewardType: selectedReward.type });

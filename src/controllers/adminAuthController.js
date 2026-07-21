@@ -47,16 +47,24 @@ exports.login = async (req, res) => {
       }
 
       // Check if 2FA is required for this role
-      const highPrivilegeRoles = ['ownerWeb', 'superAdminUid', 'globalManagerWeb']; // As per blueprint
-      if (highPrivilegeRoles.includes(staff.role) && staff.twoFactorEnabled) {
-        // 2FA is required. Do not issue tokens yet.
-        // Send a response indicating that the next step is 2FA verification.
-        // In a real scenario, you might send an OTP to the staff's registered phone here.
-        // For now, we just signal the frontend.
+      const highPrivilegeRoles = ['ownerWeb', 'superAdminUid', 'globalManagerWeb'];
+      if (highPrivilegeRoles.includes(staff.role)) {
+        // HIGH-PRIVILEGE: 2FA MUST be set up — block login if not configured
+        if (!staff.twoFactorEnabled) {
+          return res.status(200).json({
+            success: true,
+            twoFactorSetupRequired: true,
+            message: `Welcome, ${staff.name}. Two-factor authentication must be set up before you can access your account.`,
+            staffId: staff._id,
+            uid: staff.uid,
+          });
+        }
+        // 2FA is enabled — require verification before issuing tokens
         return res.status(200).json({
           success: true,
           twoFactorRequired: true,
-          message: `Welcome, ${staff.name}. Please complete the two-factor authentication step.`
+          message: `Welcome, ${staff.name}. Please complete the two-factor authentication step.`,
+          uid: staff.uid,
         });
       }
 

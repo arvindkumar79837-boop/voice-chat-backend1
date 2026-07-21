@@ -108,11 +108,15 @@ exports.createFamily = async (req, res) => {
 
     await newFamily.save();
 
-    user.coins -= creationCost;
-    user.familyId = familyId;
-    user.familyRole = 'Patriarch';
-    user.family = newFamily._id;
-    await user.save();
+    // ─── ATOMIC DEDUCTION ───
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: userId, coins: { $gte: creationCost } },
+      { $inc: { coins: -creationCost }, $set: { familyId, familyRole: 'Patriarch', family: newFamily._id } },
+      { new: true }
+    );
+    if (!updatedUser) {
+      return res.status(400).json({ success: false, message: 'Insufficient coins for family creation' });
+    }
 
     redisRankingIntegration.onFamilyActivity(familyId, 1, userId).catch(err => console.error('Redis family init failed:', err.message));
 

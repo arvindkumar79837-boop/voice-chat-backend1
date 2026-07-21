@@ -31,11 +31,15 @@ exports.spinLuckyWheel = async (req, res) => {
 
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     
-    // 1. Check and deduct balance
-    if (user.coins < SPIN_COST_COINS) {
+    // 1. Check and deduct balance — ATOMIC
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: userId, coins: { $gte: SPIN_COST_COINS } },
+      { $inc: { coins: -SPIN_COST_COINS } },
+      { new: true }
+    );
+    if (!updatedUser) {
       return res.status(400).json({ success: false, message: `Not enough coins. Need ${SPIN_COST_COINS} coins to spin.` });
     }
-    user.coins -= SPIN_COST_COINS;
 
     // 2. Fetch Rewards
     const rewards = await LuckyDrawReward.find({ isActive: true }).lean();
@@ -56,15 +60,12 @@ exports.spinLuckyWheel = async (req, res) => {
       }
     }
 
-    // 4. Grant the reward (Core Inventory/Economy Integration)
+    // 4. Grant the reward — ATOMIC
     if (selectedReward.type === 'coin') {
-      user.coins += selectedReward.value;
+      await User.findByIdAndUpdate(userId, { $inc: { coins: selectedReward.value } });
     } else if (selectedReward.type === 'diamond') {
-      user.diamonds += selectedReward.value;
+      await User.findByIdAndUpdate(userId, { $inc: { diamonds: selectedReward.value } });
     }
-    // Note: Future logic for 'frame', 'car', 'badge' can insert into an Inventory collection here.
-
-    await user.save();
 
     // 5. Respond with result
     return res.status(200).json({

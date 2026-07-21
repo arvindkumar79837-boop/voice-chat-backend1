@@ -282,7 +282,7 @@ class EventController {
       const rewards = event.reward_details;
 
       if (rewards.coins > 0) {
-        user.coins += rewards.coins;
+        await User.findByIdAndUpdate(userId, { $inc: { coins: rewards.coins } });
         await WalletTransaction.create({
           userId,
           type: 'event_reward',
@@ -294,11 +294,11 @@ class EventController {
       }
 
       if (rewards.diamonds > 0) {
-        user.diamonds += rewards.diamonds;
+        await User.findByIdAndUpdate(userId, { $inc: { diamonds: rewards.diamonds } });
       }
 
       if (rewards.xp > 0) {
-        user.xp += rewards.xp;
+        await User.findByIdAndUpdate(userId, { $inc: { xp: rewards.xp } });
       }
 
       if (rewards.badges && rewards.badges.length > 0) {

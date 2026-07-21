@@ -38,11 +38,15 @@ exports.requestWithdrawal = async (req, res) => {
     // Conversion Logic: 1000 Coins = 1 USD (Example)
     const amountUSD = coins / 1000;
 
-    // Instant deduction to prevent double-spending
-    user.coins -= coins;
-    await user.save();
+    // ─── ATOMIC DEDUCTION (prevents double-spend race condition) ───
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: user._id, coins: { $gte: coins } },
+      { $inc: { coins: -coins } },
+      { new: true }
+    );
+    if (!updatedUser) return res.status(400).json({ success: false, message: 'Insufficient coins balance' });
 
-    const withdrawal = new Withdrawal({ userId: user._id, amountUSD, coinsDeducted: coins, paymentDetails });
+    const withdrawal = new Withdrawal({ userId: updatedUser._id, amountUSD, coinsDeducted: coins, paymentDetails });
     await withdrawal.save();
 
     return res.status(200).json({ success: true, message: 'Cash-out request submitted successfully' });

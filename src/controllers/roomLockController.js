@@ -31,8 +31,13 @@ exports.lockRoom = async (req, res) => {
       return res.status(400).json({ success: false, message: `Insufficient coins. Need ${cost}, have ${user.coins || 0}` });
     }
 
-    user.coins -= cost;
-    await user.save();
+    // ─── ATOMIC DEDUCTION ───
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: userId, coins: { $gte: cost } },
+      { $inc: { coins: -cost } },
+      { new: true }
+    );
+    if (!updatedUser) return res.status(400).json({ success: false, message: 'Insufficient coins' });
 
     const pinHash = await bcrypt.hash(pin, 10);
     const expiresAt = new Date(Date.now() + hours * 3600000);
