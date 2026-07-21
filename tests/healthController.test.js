@@ -5,8 +5,26 @@
 
 const mongoose = require('mongoose');
 
-// Mock dependencies
-jest.mock('mongoose');
+// Mock Mongoose with a realistic connection object structure
+jest.mock('mongoose', () => {
+  const actualMongoose = jest.requireActual('mongoose');
+  return {
+    ...actualMongoose,
+    connection: {
+      readyState: 1,
+      host: 'localhost',
+      name: 'test_db',
+      collections: { users: {}, gifts: {} },
+      db: {
+        admin: () => ({
+          ping: jest.fn().mockResolvedValue(true)
+        })
+      }
+    }
+  };
+});
+
+// Mock services
 jest.mock('../src/services/queueService');
 jest.mock('../src/services/monitoringService');
 
@@ -25,6 +43,12 @@ describe('HealthController', () => {
       json: jest.fn()
     };
     jest.clearAllMocks();
+    
+    // Reset connection mock state before each test
+    mongoose.connection.readyState = 1;
+    mongoose.connection.host = 'localhost';
+    mongoose.connection.name = 'test_db';
+    mongoose.connection.collections = { users: {}, gifts: {} };
   });
 
   describe('getSimpleHealth', () => {
@@ -95,9 +119,6 @@ describe('HealthController', () => {
   describe('checkDatabase', () => {
     it('should pass when database is connected', async () => {
       mongoose.connection.readyState = 1;
-      mongoose.connection.host = 'localhost';
-      mongoose.connection.name = 'test_db';
-      mongoose.connection.collections = { users: {}, gifts: {} };
 
       const health = { services: {}, checks: [] };
       await HealthController.checkDatabase(health);
@@ -216,6 +237,10 @@ describe('HealthController', () => {
         used: 13107,
         free: 3277
       });
+      MonitoringService.getCPUUsage = jest.fn().mockReturnValue({
+        usage: 45,
+        cores: 8
+      });
 
       const health = { services: {}, checks: [], status: 'healthy' };
       await HealthController.checkSystemResources(health);
@@ -229,12 +254,47 @@ describe('HealthController', () => {
       });
     });
   });
+
+  describe('checkQueueService', () => {
+    it('should pass when queue service is healthy', async () => {
+      QueueService.isHealthy = jest.fn().mockResolvedValue(true);
+      QueueService.getConnectedQueues = jest.fn().mockReturnValue(['gift-processing', 'notification']);
+
+      const health = { services: {}, checks: [] };
+      await HealthController.checkQueueService(health);
+
+      expect(health.services.queue.healthy).toBe(true);
+      expect(health.services.queue.count).toBe(2);
+      expect(health.checks).toContainEqual({
+        name: 'queue',
+        status: 'pass',
+        message: '2 queues active',
+        timestamp: expect.any(String)
+      });
+    });
+
+    it('should show warning when queue service is degraded', async () => {
+      QueueService.isHealthy = jest.fn().mockResolvedValue(false);
+      QueueService.getConnectedQueues = jest.fn().mockReturnValue([]);
+
+      const health = { services: {}, checks: [] };
+      await HealthController.checkQueueService(health);
+
+      expect(health.services.queue.healthy).toBe(false);
+      expect(health.checks).toContainEqual({
+        name: 'queue',
+        status: 'warning',
+        message: 'Queue service degraded',
+        timestamp: expect.any(String)
+      });
+    });
+  });
 });
 
 describe('HealthController Integration', () => {
   it('getDetailedHealth should aggregate all checks', async () => {
-    mockReq = {};
-    mockRes = {
+    const mockReq = {};
+    const mockRes = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
     };
@@ -267,5 +327,63 @@ describe('HealthController Integration', () => {
     expect(responseArg.services).toHaveProperty('redis');
     expect(responseArg.services).toHaveProperty('system');
     expect(responseArg.checks.length).toBeGreaterThan(0);
+  });
+
+  it('getDetailedHealth should return degraded status with warnings', async () => {
+    const mockReq = {};
+    const mockRes = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn()
+    };
+
+    mongoose.connection.readyState = 1;
+    QueueService.isHealthy = jest.fn().mockResolvedValue(true);
+    QueueService.getConnectedQueues = jest.fn().mockReturnValue(['gift-processing']);
+
+    MonitoringService.getMemoryUsage = jest.fn().mockReturnValue({
+      percentage: 80,
+      total: 16384,
+      used: 13107,
+      free: 3277
+    });
+    MonitoringService.getCPUUsage = jest.fn().mockReturnValue({
+      usage: 45,
+      cores: 8
+    });
+
+    await HealthController.getDetailedHealth(mockReq, mockRes);
+
+    expect(mockRes.status).toHaveBeenCalledWith(200);
+    const responseArg = mockRes.json.mock.calls[0][0];
+    expect(responseArg.status).toBe('degraded');
+  });
+
+  it('getDetailedHealth should return unhealthy status with failures', async () => {
+    const mockReq = {};
+    const mockRes = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn()
+    };
+
+    mongoose.connection.readyState = 0;
+    QueueService.isHealthy = jest.fn().mockResolvedValue(true);
+    QueueService.getConnectedQueues = jest.fn().mockReturnValue([]);
+
+    MonitoringService.getMemoryUsage = jest.fn().mockReturnValue({
+      percentage: 50,
+      total: 16384,
+      used: 8192,
+      free: 8192
+    });
+    MonitoringService.getCPUUsage = jest.fn().mockReturnValue({
+      usage: 45,
+      cores: 8
+    });
+
+    await HealthController.getDetailedHealth(mockReq, mockRes);
+
+    expect(mockRes.status).toHaveBeenCalledWith(503);
+    const responseArg = mockRes.json.mock.calls[0][0];
+    expect(responseArg.status).toBe('unhealthy');
   });
 });
