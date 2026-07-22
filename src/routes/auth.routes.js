@@ -6,8 +6,8 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-const { login, logout, sendOtp, verifyOtp, resendOtp, register, refreshToken } = require('../controllers/auth.controller');
-const { validatePhone, validateOTP } = require('../middlewares/validation.middleware');
+const { login, logout, register, refreshToken } = require('../controllers/auth.controller');
+const { validatePhone } = require('../middlewares/validation.middleware');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -23,34 +23,6 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
-// ─────────────────────────────────────────────────────────────────────────
-// PUBLIC ROUTES — FIREBASE PHONE AUTH (PRIMARY)
-// Phone login now uses Firebase Phone Auth via the unified social-login endpoint:
-//   POST /api/auth/social-login { provider: 'phone', idToken: '<Firebase ID Token>' }
-// The app calls FirebaseAuth.instance.verifyPhoneNumber() → signInWithCredential() → getIdToken()
-// ─────────────────────────────────────────────────────────────────────────
-
-// ─────────────────────────────────────────────────────────────────────────
-// ⚠️ DEPRECATED: LEGACY TWILIO OTP ROUTES (will be removed in v2.0)
-// These routes are kept for backward compatibility only.
-// NEW CLIENTS SHOULD USE: POST /api/auth/social-login { provider: 'phone', idToken: '...' }
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * @deprecated Use POST /api/auth/social-login { provider: 'phone', idToken: '...' } instead
- */
-router.post('/send-otp', authLimiter, validatePhone(), sendOtp);
-
-/**
- * @deprecated Use POST /api/auth/social-login { provider: 'phone', idToken: '...' } instead
- */
-router.post('/otp-verify', authLimiter, validatePhone(), validateOTP(), verifyOtp);
-
-/**
- * @deprecated Use POST /api/auth/social-login { provider: 'phone', idToken: '...' } instead
- */
-router.post('/resend-otp', authLimiter, validatePhone(), resendOtp);
 
 /**
  * POST /api/auth/register
@@ -145,15 +117,5 @@ router.get('/admin/verify', async (req, res) => {
 // ─── MOBILE APP ALIASES ──────────────────────────────────────────────────────
 router.post('/login', authLimiter, validatePhone(), login);
 router.post('/signup', authLimiter, validatePhone(), register);
-
-/**
- * @deprecated Use POST /api/auth/social-login { provider: 'phone', idToken: '...' } instead
- */
-router.post('/phone-login', authLimiter, validatePhone(), sendOtp);
-
-/**
- * @deprecated Use POST /api/auth/social-login { provider: 'phone', idToken: '...' } instead
- */
-router.post('/verify-otp', authLimiter, validatePhone(), validateOTP(), verifyOtp);
 
 module.exports = router;

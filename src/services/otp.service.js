@@ -1,23 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/services/otp.service.js
-// ARVIND PARTY - OTP SERVICE (DEPRECATED - Use Firebase Phone Auth)
-// ═══════════════════════════════════════════════════════════════════════════
-// ⚠️ DEPRECATED: This service uses Twilio for OTP delivery.
-// Phone login has been migrated to Firebase Phone Auth:
-//   App: FirebaseAuth.instance.verifyPhoneNumber() → signInWithCredential()
-//   Backend: POST /api/auth/social-login { provider: 'phone', idToken: '<Firebase ID Token>' }
-// This file is kept as fallback only. It will be removed in v2.0.
+// ARVIND PARTY - OTP SERVICE (REDIS/MEMORY FALLBACK)
+// Firebase Phone Auth is the primary auth method.
 // ═══════════════════════════════════════════════════════════════════════════
 
 const redis = require('redis');
-
-// Lazy-load twilio (optional — only needed when TWILIO_ENABLED=true)
-let twilio = null;
-try {
-  twilio = require('twilio');
-} catch (e) {
-  console.warn('⚠️ Twilio not installed — OTP fallback via SMS disabled. Using Firebase Phone Auth only.');
-}
 
 // Redis Client for OTP Storage
 let redisClient = null;
@@ -77,38 +64,6 @@ const otpMemoryStore = new Map();
 // Generate OTP
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-};
-
-// Send OTP via Twilio SMS
-const sendOTPViaSMS = async (phone, otp) => {
-  try {
-    if (process.env.TWILIO_ENABLED !== 'true' || !process.env.TWILIO_ACCOUNT_SID) {
-      console.log(`[DEV MODE] OTP for ${phone}: ${otp}`);
-      return true;
-    }
-
-    if (!twilio) {
-      console.warn(`⚠️ Twilio SDK not available — cannot send SMS to ${phone}. OTP: ${otp}`);
-      return false;
-    }
-
-    const twilioClient = twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
-
-    const message = await twilioClient.messages.create({
-      body: `Your Arvind Party OTP is: ${otp}. Valid for 5 minutes.`,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: `+91${phone}` // India country code
-    });
-
-    console.log(`✅ SMS sent to ${phone}: ${message.sid}`);
-    return true;
-  } catch (error) {
-    console.error('❌ SMS send failed:', error.message);
-    return false;
-  }
 };
 
 // Store OTP
@@ -175,26 +130,21 @@ const verifyOTP = async (phone, otp) => {
 // Send OTP (main function)
 const sendOTP = async (phone) => {
   try {
-    // Validate phone
     if (!phone || !/^[0-9]{10}$/.test(phone)) {
       return { success: false, message: 'Invalid phone number' };
     }
 
     const otp = generateOTP();
 
-    // Store OTP
     const stored = await storeOTP(phone, otp);
     if (!stored) {
       return { success: false, message: 'Failed to generate OTP' };
     }
 
-    // Send OTP
-    const sent = await sendOTPViaSMS(phone, otp);
-
     return {
       success: true,
       message: 'OTP sent successfully',
-      ...(process.env.NODE_ENV === 'development' && { otp }) // Show OTP in dev
+      ...(process.env.NODE_ENV === 'development' && { otp })
     };
   } catch (error) {
     console.error('❌ Error in sendOTP:', error);

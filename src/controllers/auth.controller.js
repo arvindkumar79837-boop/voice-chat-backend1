@@ -1,169 +1,23 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/controllers/auth.controller.js
 // ARVIND PARTY - PRODUCTION-READY AUTHENTICATION
-// Flow: Phone → OTP Service → Backend → JWT Token → Mobile App
 // ═══════════════════════════════════════════════════════════════════════════
 
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { sendOTP, verifyOTP } = require('../services/otp.service');
+const { verifyOTP } = require('../services/otp.service');
 
-// ─── HELPER: Generate a unique username from phone or random ────────────────
 const generateUsername = (prefix = 'user') => {
   const suffix = Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
   return `${prefix}_${suffix}`.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
 };
 
-// ─── HELPER: Generate a unique uid ───────────────────────────────────────────
 const generateUid = (prefix = 'UID') => {
   return `${prefix}_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
 };
-
 // ═══════════════════════════════════════════════════════════════════════════
-// SEND OTP
-// ═══════════════════════════════════════════════════════════════════════════
-
-exports.sendOtp = async (req, res, next) => {
-  try {
-    const { phone } = req.body;
-
-    // Validation
-    if (!phone || !/^[0-9]{10}$/.test(phone.replace(/\D/g, ''))) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid phone number format. Expected 10 digits.'
-      });
-    }
-
-    // Send OTP using OTP service
-    const result = await sendOTP(phone);
-
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        message: result.message || 'Failed to send OTP'
-      });
-    }
-
-    // In development mode, return OTP for testing
-    const responseData = {
-      success: true,
-      message: 'OTP sent successfully',
-      phone: phone
-    };
-
-    res.status(200).json(responseData);
-  } catch (error) {
-    console.error('❌ Send OTP Error:', error);
-    next(error);
-  }
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// VERIFY OTP
-// ═══════════════════════════════════════════════════════════════════════════
-
-exports.verifyOtp = async (req, res, next) => {
-  try {
-    const { phone, otp } = req.body;
-
-    // Validation
-    if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: 'Phone number is required'
-      });
-    }
-
-    if (!otp || !/^\d{4,6}$/.test(otp)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid OTP format'
-      });
-    }
-
-    // Verify OTP using OTP service
-    const verification = await verifyOTP(phone, otp);
-
-    if (!verification.valid) {
-      return res.status(401).json({
-        success: false,
-        message: verification.message || 'Invalid OTP'
-      });
-    }
-
-    // Find or create user
-    let user = await User.findOne({ phone });
-    const isNewUser = !user;
-
-    if (isNewUser) {
-      // Create new user
-      const arvindId = `ARV-${Date.now().toString().slice(-8)}`;
-      const phoneSuffix = phone.slice(-4);
-      const username = generateUsername(`user${phoneSuffix}`);
-      const uid = generateUid('PH');
-      user = await User.create({
-        phone,
-        uid,
-        username,
-        arvindId,
-        provider: 'phone',
-        isProfileComplete: false,
-        coins: 0,
-        diamonds: 0,
-        level: 1,
-        xp: 0
-      });
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      {
-        id: user._id.toString(),
-        role: user.role,
-        uid: user.uid,
-        phone: user.phone,
-        provider: user.provider
-      },
-       process.env.JWT_SECRET,
-       { expiresIn: '15m' } // Short-lived access token
-     );
- 
-     // Generate refresh token
-     const refreshToken = jwt.sign(
-       { id: user._id.toString(), role: user.role, uid: user.uid },
-       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: '90d' } // Long-lived refresh token
-    );
-
-    res.status(200).json({
-      success: true,
-      message: 'OTP verified successfully',
-      data: {
-        token,
-        refreshToken,
-        user: {
-          _id: user._id,
-          userId: user._id.toString(),
-          phone: user.phone,
-          name: user.name || `User ${phone.slice(-4)}`,
-          avatar: user.avatar || null,
-          arvindId: user.arvindId,
-          level: user.level || 1,
-          isProfileComplete: user.isProfileComplete,
-          isNewUser
-        }
-      }
-    });
-  } catch (error) {
-    console.error('❌ Verify OTP Error:', error);
-    next(error);
-  }
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// LOGIN (Alternative - if user already exists)
+// LOGIN
 // ═══════════════════════════════════════════════════════════════════════════
 
 exports.login = async (req, res, next) => {
@@ -386,40 +240,6 @@ exports.logout = async (req, res, next) => {
     });
   } catch (error) {
     console.error('❌ Logout Error:', error);
-    next(error);
-  }
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// RESEND OTP
-// ═══════════════════════════════════════════════════════════════════════════
-
-exports.resendOtp = async (req, res, next) => {
-  try {
-    const { phone } = req.body;
-
-    if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: 'Phone number is required'
-      });
-    }
-
-    const result = await sendOTP(phone);
-
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        message: result.message || 'Failed to resend OTP'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'OTP resent successfully'
-    });
-  } catch (error) {
-    console.error('❌ Resend OTP Error:', error);
     next(error);
   }
 };
