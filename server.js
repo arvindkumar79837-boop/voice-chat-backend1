@@ -394,31 +394,37 @@ process.on('uncaughtException', (err) => {
 });
 
 // ─── START SERVER ───────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || 5000, 10);
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-try {
-  server.listen(PORT, () => {
-    console.log('');
-    console.log('═══════════════════════════════════════════════════════');
-    console.log(`  🦁 ARVIND PARTY BACKEND`);
-    console.log(`  🌍 Environment : ${NODE_ENV}`);
-    console.log(`  🚀 Port        : ${PORT}`);
-    console.log(`  📡 Socket.IO   : enabled`);
-    console.log(`  🌐 URL         : http://localhost:${PORT}`);
-    console.log(`  ❤️  Health      : http://localhost:${PORT}/health`);
-    console.log('═══════════════════════════════════════════════════════');
-    console.log('');
-  });
+const startServer = (port) => {
+  try {
+    server.listen(port, () => {
+      console.log('');
+      console.log('═══════════════════════════════════════════════════════');
+      console.log(`  🦁 ARVIND PARTY BACKEND`);
+      console.log(`  🌍 Environment : ${NODE_ENV}`);
+      console.log(`  🚀 Port        : ${port}`);
+      console.log(`  📡 Socket.IO   : enabled`);
+      console.log(`  🌐 URL         : http://localhost:${port}`);
+      console.log(`  ❤️  Health      : http://localhost:${port}/health`);
+      console.log('═══════════════════════════════════════════════════════');
+      console.log('');
+    });
 
-  server.on('error', (error) => {
-    if (error.code === 'EADDRINUSE') {
-      console.error(`❌ FATAL: Port ${PORT} is already in use`);
-      process.exit(1);
-    }
-    console.error('❌ Server error:', error);
-  });
-} catch (error) {
-  console.error('❌ FATAL: Failed to start server:', error.message);
-  process.exit(1);
-}
+    server.on('error', (error) => {
+      if (error.code === 'EADDRINUSE') {
+        const fallbackPort = port + 1;
+        console.warn(`⚠️ Port ${port} is already in use. Trying ${fallbackPort}...`);
+        server.close(() => startServer(fallbackPort));
+      } else {
+        console.error('❌ Server error:', error);
+      }
+    });
+  } catch (error) {
+    console.error('❌ FATAL: Failed to start server:', error.message);
+    process.exit(1);
+  }
+};
+
+startServer(PORT);

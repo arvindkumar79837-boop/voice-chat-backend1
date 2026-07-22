@@ -3,6 +3,7 @@
 // Admin token alag se generate hota hai ya special role hota hai
 
 const { verifyAccessToken, isTokenBlacklisted } = require('../utils/jwt');
+const { authMiddleware } = require('./auth.middleware');
 
 // General Admin/Staff verification
 const verifyStaff = async (req, res, next) => {
@@ -66,6 +67,7 @@ const requirePermission = (requiredPermission) => {
 };
 
 module.exports = {
+  authMiddleware,
   verifyStaff,
   verifyOwner,
   requirePermission
