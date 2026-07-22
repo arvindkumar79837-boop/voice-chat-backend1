@@ -6,7 +6,9 @@ const adminAuth = require('../middlewares/isAdmin');
 
 // ─── PUBLIC ROUTES ────────────────────────────────────────────────────
 router.get('/active', authMiddleware, luckyDrawController.getActiveLuckyDraws);
+router.get('/rewards', authMiddleware, luckyDrawController.getActiveLuckyDraws);
 router.get('/:id', authMiddleware, luckyDrawController.getLuckyDrawById);
+router.post('/spin', authMiddleware, luckyDrawController.spinWheel);
 router.post('/:drawId/spin', authMiddleware, luckyDrawController.spinWheel);
 
 // ─── ADMIN ROUTES ─────────────────────────────────────────────────────
