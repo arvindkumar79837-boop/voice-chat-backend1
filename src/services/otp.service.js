@@ -10,7 +10,14 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 const redis = require('redis');
-const twilio = require('twilio');
+
+// Lazy-load twilio (optional — only needed when TWILIO_ENABLED=true)
+let twilio = null;
+try {
+  twilio = require('twilio');
+} catch (e) {
+  console.warn('⚠️ Twilio not installed — OTP fallback via SMS disabled. Using Firebase Phone Auth only.');
+}
 
 // Redis Client for OTP Storage
 let redisClient = null;
@@ -78,6 +85,11 @@ const sendOTPViaSMS = async (phone, otp) => {
     if (process.env.TWILIO_ENABLED !== 'true' || !process.env.TWILIO_ACCOUNT_SID) {
       console.log(`[DEV MODE] OTP for ${phone}: ${otp}`);
       return true;
+    }
+
+    if (!twilio) {
+      console.warn(`⚠️ Twilio SDK not available — cannot send SMS to ${phone}. OTP: ${otp}`);
+      return false;
     }
 
     const twilioClient = twilio(
