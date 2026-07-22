@@ -44,7 +44,8 @@ class HealthController {
     }
 
     try {
-      await this.checkSocketIO(health);
+      const io = req.app.get('io');
+      await this.checkSocketIO(health, io);
     } catch (error) {
       this.addCheck(health, 'websocket', 'error', error.message);
     }
@@ -234,9 +235,8 @@ class HealthController {
   /**
    * Check Socket.IO health
    */
-  static async checkSocketIO(health) {
+  static async checkSocketIO(health, io) {
     try {
-      const io = req.app.get('io');
       
       if (!io) {
         this.addCheck(health, 'websocket', 'error', 'Socket.IO not initialized');

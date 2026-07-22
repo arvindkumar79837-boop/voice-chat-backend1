@@ -23,7 +23,7 @@ const socketAuthMiddleware = (socket, next) => {
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    socket.data.userId = decoded.userId || decoded.id || decoded.uid;
+    socket.data.userId = decoded.id || decoded.userId || decoded.uid;
     socket.data.userRole = decoded.role;
     next();
   } catch (err) {

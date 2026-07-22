@@ -54,7 +54,7 @@ module.exports = (err, req, res, next) => {
     statusCode,
     errorCode,
     message,
-    userId: req.user?.userId,
+    userId: req.user?.id || req.user?._id,
     ip: req.ip
   });
 

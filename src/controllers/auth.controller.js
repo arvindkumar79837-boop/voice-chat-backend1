@@ -121,6 +121,8 @@ exports.verifyOtp = async (req, res, next) => {
     const token = jwt.sign(
       {
         id: user._id.toString(),
+        role: user.role,
+        uid: user.uid,
         phone: user.phone,
         provider: user.provider
       },
@@ -130,7 +132,7 @@ exports.verifyOtp = async (req, res, next) => {
  
      // Generate refresh token
      const refreshToken = jwt.sign(
-       { id: user._id.toString() },
+       { id: user._id.toString(), role: user.role, uid: user.uid },
        process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: '90d' } // Long-lived refresh token
     );
@@ -198,13 +200,13 @@ exports.login = async (req, res, next) => {
 
     // Generate tokens
     const token = jwt.sign(
-      { id: user._id.toString(), phone: user.phone },
+      { id: user._id.toString(), role: user.role, uid: user.uid, phone: user.phone },
       process.env.JWT_SECRET,
       { expiresIn: '15m' }
      );
  
      const refreshToken = jwt.sign(
-      { id: user._id.toString() },
+      { id: user._id.toString(), role: user.role, uid: user.uid },
       process.env.REFRESH_TOKEN_SECRET,
      { expiresIn: '90d' }
     );
@@ -280,13 +282,13 @@ exports.register = async (req, res, next) => {
 
     // Generate tokens
     const token = jwt.sign(
-      { id: user._id.toString(), phone: user.phone },
+      { id: user._id.toString(), role: user.role, uid: user.uid, phone: user.phone },
        process.env.JWT_SECRET,
        { expiresIn: '15m' }
      );
  
      const refreshToken = jwt.sign(
-       { id: user._id.toString() },
+       { id: user._id.toString(), role: user.role, uid: user.uid },
        process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: '90d' }
     );
@@ -342,7 +344,7 @@ exports.refreshToken = async (req, res, next) => {
 
       // Generate new token
       const newToken = jwt.sign(
-        { id: user._id.toString(), phone: user.phone },
+        { id: user._id.toString(), role: user.role, uid: user.uid, phone: user.phone },
         process.env.JWT_SECRET,
         { expiresIn: '15m' }
       );
