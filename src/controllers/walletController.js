@@ -1343,7 +1343,7 @@ exports.adjustUserWallet = async (req, res, next) => {
 
     const update = {};
     if (coins !== undefined) {
-      if (walletType === 'diamond' || !walletType) update.diamonds = (user.diamonds || 0) + Number(coins);
+      if (walletType === 'diamond') update.diamonds = (user.diamonds || 0) + Number(coins);
       else update.coins = (user.coins || 0) + Number(coins);
     }
     if (diamonds !== undefined) update.diamonds = (user.diamonds || 0) + Number(diamonds);
