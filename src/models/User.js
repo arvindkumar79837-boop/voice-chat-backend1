@@ -167,5 +167,6 @@ userSchema.index({ agencyId: 1 });
 userSchema.index({ isVip: -1 });
 userSchema.index({ familyRole: 1 });
 userSchema.index({ familyContribution: -1 });
+userSchema.index({ phone: 1 }, { sparse: true });
 
 module.exports = mongoose.model('User', userSchema);

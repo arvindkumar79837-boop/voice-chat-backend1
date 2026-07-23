@@ -168,6 +168,7 @@ giftSchema.index({ giftType: 1, isAvailable: 1 });
 giftSchema.index({ category: 1, sortOrder: 1 });
 giftSchema.index({ isLucky: 1 });
 giftSchema.index({ isTreasure: 1 });
+giftSchema.index({ isActive: 1 });
 
 // Static method to get gifts by type for store display
 giftSchema.statics.getStoreGifts = function() {

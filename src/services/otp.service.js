@@ -4,57 +4,17 @@
 // Firebase Phone Auth is the primary auth method.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const redis = require('redis');
+const { getRedisClient } = require('../config/redis');
 
-// Redis Client for OTP Storage
-let redisClient = null;
 let isRedisConnected = false;
 
 const initRedis = async () => {
-  try {
-    const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
-    
-    redisClient = redis.createClient({
-      url: redisUrl,
-      password: process.env.REDIS_PASSWORD || undefined,
-      socket: {
-        reconnectStrategy: (retries) => {
-          if (retries > 5) {
-            console.warn('⚠️ Redis: Max reconnection attempts reached');
-            return new Error('Max reconnection attempts');
-          }
-          return Math.min(retries * 200, 3000);
-        }
-      }
-    });
-
-    redisClient.on('error', (err) => {
-      console.error('❌ Redis Error:', err.message);
-      isRedisConnected = false;
-    });
-
-    redisClient.on('connect', () => {
-      console.log('✅ Redis Connected');
-      isRedisConnected = true;
-    });
-
-    redisClient.on('ready', () => {
-      isRedisConnected = true;
-    });
-
-    redisClient.on('end', () => {
-      isRedisConnected = false;
-    });
-
-    // Add timeout to prevent hanging when Redis is not available
-    const connectPromise = redisClient.connect();
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('OTP Redis connection timeout after 5s')), 5000)
-    );
-    await Promise.race([connectPromise, timeoutPromise]);
-  } catch (error) {
-    console.warn('⚠️ Redis connection failed, using in-memory storage:', error.message);
-    isRedisConnected = false;
+  const client = getRedisClient();
+  isRedisConnected = client !== null && client.isOpen;
+  if (isRedisConnected) {
+    console.log('✅ OTP service using shared Redis client');
+  } else {
+    console.log('⚠️ Shared Redis not available, OTP will use in-memory storage');
   }
 };
 
@@ -69,10 +29,12 @@ const generateOTP = () => {
 // Store OTP
 const storeOTP = async (phone, otp, expiryMinutes = 5) => {
   try {
-    if (isRedisConnected && redisClient) {
+    const client = getRedisClient();
+    if (client && client.isOpen) {
+      isRedisConnected = true;
       const key = `otp:${phone}`;
       const expirySeconds = expiryMinutes * 60;
-      await redisClient.setex(key, expirySeconds, otp);
+      await client.setEx(key, expirySeconds, otp);
       console.log(`✅ OTP stored in Redis for ${phone}`);
     } else {
       // Fallback to memory
@@ -94,9 +56,11 @@ const verifyOTP = async (phone, otp) => {
   try {
     let storedOtp = null;
 
-    if (isRedisConnected && redisClient) {
+    const client = getRedisClient();
+    if (client && client.isOpen) {
+      isRedisConnected = true;
       const key = `otp:${phone}`;
-      storedOtp = await redisClient.get(key);
+      storedOtp = await client.get(key);
     } else {
       // Fallback to memory
       const entry = otpMemoryStore.get(phone);
@@ -114,8 +78,9 @@ const verifyOTP = async (phone, otp) => {
     }
 
     // Delete OTP after successful verification
-    if (isRedisConnected && redisClient) {
-      await redisClient.del(`otp:${phone}`);
+    const client = getRedisClient();
+    if (client && client.isOpen) {
+      await client.del(`otp:${phone}`);
     } else {
       otpMemoryStore.delete(phone);
     }

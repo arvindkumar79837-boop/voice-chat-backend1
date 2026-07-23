@@ -1,10 +1,19 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const asyncHandler = require('../utils/asyncHandler');
 const giftProductionController = require('../controllers/gift.production.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const Gift = require('../models/Gift');
 const GiftEvent = require('../models/GiftEvent');
+
+const giftRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: process.env.NODE_ENV === 'development' ? 100 : 30,
+  message: { success: false, message: 'Too many gift requests. Please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // ─── Gift Store & Discovery ────────────────────────────────────
 router.get('/store', asyncHandler(giftProductionController.getStoreGifts));
@@ -37,7 +46,7 @@ router.get('/events', authMiddleware, asyncHandler(async (req, res) => {
 }));
 
 // ─── Send Gifts (All Types) ────────────────────────────────────
-router.post('/send', authMiddleware, asyncHandler(giftProductionController.sendGift));
+router.post('/send', authMiddleware, giftRateLimit, asyncHandler(giftProductionController.sendGift));
 router.post('/combo', authMiddleware, asyncHandler(giftProductionController.sendComboGift));
 router.post('/treasure/claim', authMiddleware, asyncHandler(giftProductionController.claimTreasure));
 

@@ -303,7 +303,7 @@ exports.searchFamilies = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Search query is required' });
     }
 
-    const searchRegex = new RegExp(query, 'i');
+    const searchRegex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     const families = await Family.find({
       $and: [
         { is_active: true, is_banned: false },
@@ -337,7 +337,7 @@ exports.searchUsersByUid = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Search query is required' });
     }
 
-    const searchRegex = new RegExp(query, 'i');
+    const searchRegex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     const users = await User.find({
       isActive: true,
       isBanned: false,
@@ -369,7 +369,7 @@ exports.searchUsersToInvite = async (req, res) => {
 
     const { query = '', page = 1, limit = 20 } = req.query;
 
-    const searchRegex = new RegExp(query, 'i');
+    const searchRegex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     const users = await User.find({
       isActive: true,
       isBanned: false,

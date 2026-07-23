@@ -6,15 +6,12 @@
 
 const jwt = require('jsonwebtoken');
 
-let _redisClient = null;
+const { getRedisClient } = require('../config/redis');
+
 const _getRedisClient = async () => {
-  if (_redisClient && _redisClient.isOpen) return _redisClient;
-  const redis = require('redis');
-  const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
-  _redisClient = redis.createClient({ url: redisUrl, password: process.env.REDIS_PASSWORD || undefined });
-  _redisClient.on('error', (err) => console.error('Redis client error:', err));
-  await _redisClient.connect();
-  return _redisClient;
+  const client = getRedisClient();
+  if (!client || !client.isOpen) throw new Error('Redis not available for token blacklisting');
+  return client;
 };
 
 const ACCESS_TOKEN_EXPIRY  = '15m';

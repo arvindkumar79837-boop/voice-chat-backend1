@@ -22,7 +22,7 @@ const buildReportQuery = (req) => {
   if (roomId) query.roomId = roomId;
 
   if (search) {
-    const regex = new RegExp(search, 'i');
+    const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     query.$or = [
       { reason: regex },
       { details: regex },

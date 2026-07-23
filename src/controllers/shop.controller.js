@@ -19,23 +19,21 @@ exports.purchaseItem = async (req, res) => {
     const item = await ShopItem.findById(itemId);
     if (!item) return res.status(404).json({ message: 'Item not found' });
 
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    if (user.diamonds < item.priceDiamonds) {
-      return res.status(400).json({ message: 'Insufficient diamonds' });
-    }
-
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + item.durationDays);
 
-    user.diamonds -= item.priceDiamonds;
-    user.inventory.push({
-      itemId: item._id,
-      purchasedAt: new Date(),
-      expiresAt,
-    });
-    await user.save();
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: userId, diamonds: { $gte: item.priceDiamonds } },
+      {
+        $inc: { diamonds: -item.priceDiamonds },
+        $push: { inventory: { itemId: item._id, purchasedAt: new Date(), expiresAt } }
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(400).json({ message: 'Insufficient diamonds' });
+    }
 
     res.status(200).json({ message: 'Item purchased successfully', expiresAt });
   } catch (error) {

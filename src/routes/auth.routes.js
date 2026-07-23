@@ -36,7 +36,7 @@ router.post('/register', authLimiter, validatePhone(), register);
  * Body: { refreshToken: "..." }
  * Issues a new access token without re-login.
  */
-router.post('/refresh-token', refreshToken);
+router.post('/refresh-token', authLimiter, refreshToken);
 
 // ─────────────────────────────────────────────────────────────────────────
 // PROTECTED ROUTES

@@ -55,6 +55,7 @@ familySchema.index({ creator_uid: 1 });
 familySchema.index({ current_level: -1, total_xp: -1 });
 familySchema.index({ is_active: 1, createdAt: -1 });
 familySchema.index({ 'war_stats.total_war_points': -1 });
+familySchema.index({ family_name: 'text' });
 
 familySchema.virtual('maxAdminSlots').get(function() {
   const levelSlotMap = {

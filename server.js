@@ -155,21 +155,22 @@ cron.schedule('*/3 * * * * *', async () => {
 // ─── INITIALIZE SERVICES ───────────────────────────────────────────────────
 (async function initializeServices() {
   try {
-    // Connect to MongoDB
+    // Connect to MongoDB (exits on failure)
     try {
       await connectDB();
     } catch (error) {
-      console.log('⚠️ MongoDB Connection Error - Server running without DB');
+      console.log('⚠️ MongoDB Connection Error - Server cannot start without database');
+      process.exit(1);
     }
 
-  // Initialize Redis for OTP storage
+  // Initialize Redis for OTP storage (uses shared client from config/redis.js)
   try {
     await initRedis();
   } catch (error) {
     console.log('⚠️ Redis Connection Error - Using in-memory OTP storage');
   }
 
-  // Initialize Redis for ranking service
+  // Initialize Redis for ranking service (shared client already connected above)
   try {
     await connectRedis();
   } catch (error) {
@@ -367,10 +368,7 @@ const gracefulShutdown = async (signal) => {
 
   // Disconnect Redis
   try {
-    const { connectRedis } = require('./src/config/redis');
-    if (connectRedis && typeof connectRedis.quit === 'function') {
-      await connectRedis.quit();
-    }
+    await disconnectRedis();
   } catch (_) {}
 
   // Force exit after timeout

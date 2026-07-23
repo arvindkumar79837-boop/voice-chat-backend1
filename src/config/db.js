@@ -19,8 +19,8 @@ const connectDB = async () => {
     return true;
   } catch (error) {
     console.error(`⚠️ MongoDB Connection Error: ${error.message}`);
-    console.log('⚠️ Server will continue running without database (using fallback data)');
-    return false;
+    console.error('❌ Database connection failed. Exiting to prevent data corruption.');
+    process.exit(1);
   }
 };
 

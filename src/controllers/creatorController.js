@@ -39,10 +39,5 @@ exports.getAnalytics = async (req, res) => {
 
 // POST /api/creator/withdraw
 exports.withdrawEarnings = async (req, res) => {
-  try {
-    const { amount } = req.body;
-    res.json({ success: true, message: 'Withdrawal request submitted' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+  res.status(501).json({ success: false, message: 'Withdrawal not yet implemented' });
 };

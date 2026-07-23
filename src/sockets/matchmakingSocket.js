@@ -5,6 +5,7 @@
 
 const User = require('../models/User');
 const Room = require('../models/Room');
+const crypto = require('crypto');
 
 // In-memory queue for users searching for a match.
 // For production, this should be moved to a more scalable store like Redis.
@@ -21,6 +22,7 @@ const attemptToMatchUsers = async (io) => {
     try {
       // 1. Create a new private room for the matched pair
       const newRoom = new Room({
+        roomId: `ROOM_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
         title: `Blind Date: ${user1.name} & ${user2.name}`,
         roomType: 'PRIVATE',
         roomCategory: 'blind_date',

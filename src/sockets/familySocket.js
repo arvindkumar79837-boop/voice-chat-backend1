@@ -1,9 +1,13 @@
 const Family = require('../models/Family');
 const User = require('../models/User');
 const FamilyStayReward = require('../models/FamilyStayReward');
-const Redis = require('ioredis');
+const { getRedisClient } = require('../config/redis');
 
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const getRedis = () => {
+  const client = getRedisClient();
+  if (!client || !client.isOpen) throw new Error('Redis not available');
+  return client;
+};
 const chatHistoryKey = (familyId) => `family:chat:${familyId}`;
 const onlineFamilyKey = (familyId) => `family:online:${familyId}`;
 const staySessionKey = (uid) => `family:stay:${uid}`;
@@ -33,10 +37,10 @@ function setupFamilySocketHandlers(io, socket) {
       socket.join(`family:${familyId}`);
       socket.data.familyId = familyId;
 
-      await redis.sAdd(onlineFamilyKey(familyId), uid);
-      await redis.sAdd('families:all', familyId);
+      await getRedis().sAdd(onlineFamilyKey(familyId), uid);
+      await getRedis().sAdd('families:all', familyId);
 
-      const onlineCount = await redis.sCard(onlineFamilyKey(familyId));
+      const onlineCount = await getRedis().sCard(onlineFamilyKey(familyId));
       io.to(`family:${familyId}`).emit('family:online_count', { familyId, count: onlineCount });
 
       socket.emit('family:joined', { familyId, family_name: family.family_name });
@@ -49,9 +53,9 @@ function setupFamilySocketHandlers(io, socket) {
   socket.on('family:leave', async (familyId) => {
     try {
       socket.leave(`family:${familyId}`);
-      await redis.sRem(onlineFamilyKey(familyId), uid);
+      await getRedis().sRem(onlineFamilyKey(familyId), uid);
 
-      const onlineCount = await redis.sCard(onlineFamilyKey(familyId));
+      const onlineCount = await getRedis().sCard(onlineFamilyKey(familyId));
       io.to(`family:${familyId}`).emit('family:online_count', { familyId, count: onlineCount });
 
       socket.data.familyId = null;
@@ -84,9 +88,9 @@ function setupFamilySocketHandlers(io, socket) {
         messageId: `${Date.now()}_${user.uid}`,
       };
 
-      await redis.lPush(chatHistoryKey(familyId), JSON.stringify(chatMessage));
-      await redis.lTrim(chatHistoryKey(familyId), 0, 99);
-      await redis.publish('family:chat', JSON.stringify({ familyId, message: chatMessage }));
+      await getRedis().lPush(chatHistoryKey(familyId), JSON.stringify(chatMessage));
+      await getRedis().lTrim(chatHistoryKey(familyId), 0, 99);
+      await getRedis().publish('family:chat', JSON.stringify({ familyId, message: chatMessage }));
 
       io.to(`family:${familyId}`).emit('family:new_message', chatMessage);
     } catch (error) {
@@ -159,7 +163,7 @@ function setupFamilySocketHandlers(io, socket) {
       });
 
       await session.save();
-      await redis.set(staySessionKey(uid), session._id.toString(), 'EX', 86400);
+        await getRedis().set(staySessionKey(uid), session._id.toString(), { EX: 86400 });
 
       io.to(`family:${familyId}`).emit('family:stay:started', {
         uid: user.uid,
@@ -214,30 +218,32 @@ function setupFamilySocketHandlers(io, socket) {
       const coinsEarned = coinsPerInterval * intervalsEarned;
       const xpEarned = xpPerInterval * intervalsEarned;
 
-      session.coinsEarned += coinsEarned;
-      session.xpEarned += xpEarned;
-      session.durationMinutes += session.rewardInterval * intervalsEarned;
-      session.lastRewardAt = now;
-      await session.save();
+      const updatedSession = await FamilyStayReward.findOneAndUpdate(
+        { _id: session._id, isActive: true },
+        {
+          $inc: { coinsEarned: coinsEarned, xpEarned: xpEarned, durationMinutes: session.rewardInterval * intervalsEarned },
+          $set: { lastRewardAt: now }
+        },
+        { new: true }
+      );
 
-      const user = await User.findById(uid);
-      if (user) {
-        user.coins = (user.coins || 0) + coinsEarned;
-        user.xp = (user.xp || 0) + xpEarned;
-        user.familyContribution = (user.familyContribution || 0) + coinsEarned;
-        await user.save();
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: uid },
+        { $inc: { coins: coinsEarned, xp: xpEarned, familyContribution: coinsEarned } },
+        { new: true }
+      );
 
-        family.total_xp = (family.total_xp || 0) + xpEarned;
-        family.totalWealth = (family.totalWealth || 0) + coinsEarned;
-        await family.save();
-      }
+      await Family.findOneAndUpdate(
+        { familyId: family.familyId },
+        { $inc: { total_xp: xpEarned, totalWealth: coinsEarned } }
+      );
 
       socket.emit('family:stay:reward', {
         coinsEarned,
         xpEarned,
-        totalDurationMinutes: session.durationMinutes,
-        totalCoinsEarned: session.coinsEarned,
-        totalXpEarned: session.xpEarned,
+        totalDurationMinutes: updatedSession?.durationMinutes || 0,
+        totalCoinsEarned: updatedSession?.coinsEarned || 0,
+        totalXpEarned: updatedSession?.xpEarned || 0,
         canRedeem: false,
         nextRewardAt: new Date(now.getTime() + session.rewardInterval * 60000)
       });
@@ -270,7 +276,7 @@ function setupFamilySocketHandlers(io, socket) {
         const totalMinutes = (session.sessionEnd.getTime() - session.sessionStart.getTime()) / 60000;
         session.durationMinutes = Math.round(totalMinutes);
         await session.save();
-        await redis.del(staySessionKey(uid));
+        await getRedis().del(staySessionKey(uid));
       }
 
       socket.emit('family:stay:ended', {
@@ -324,8 +330,8 @@ function setupFamilySocketHandlers(io, socket) {
     try {
       const familyId = socket.data?.familyId;
       if (familyId) {
-        await redis.sRem(onlineFamilyKey(familyId), uid);
-        const onlineCount = await redis.sCard(onlineFamilyKey(familyId));
+        await getRedis().sRem(onlineFamilyKey(familyId), uid);
+        const onlineCount = await getRedis().sCard(onlineFamilyKey(familyId));
         io.to(`family:${familyId}`).emit('family:online_count', { familyId, count: onlineCount });
       }
 
@@ -338,7 +344,7 @@ function setupFamilySocketHandlers(io, socket) {
         session.isActive = false;
         session.sessionEnd = new Date();
         await session.save();
-        await redis.del(staySessionKey(uid));
+        await getRedis().del(staySessionKey(uid));
       }
     } catch (error) {
       console.error('Family Disconnect Error:', error);

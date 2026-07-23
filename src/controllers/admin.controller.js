@@ -80,10 +80,11 @@ exports.getUsers = async (req, res) => {
 
     const query = {};
     if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { uid: { $regex: search, $options: 'i' } },
-        { name: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } }
+        { uid: { $regex: escapedSearch, $options: 'i' } },
+        { name: { $regex: escapedSearch, $options: 'i' } },
+        { phone: { $regex: escapedSearch, $options: 'i' } }
       ];
     }
     if (role) {
@@ -133,7 +134,13 @@ exports.updateUser = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    const user = await User.findByIdAndUpdate(id, { $set: updates }, { new: true }).select('-password');
+    const allowedFields = ['name', 'email', 'phone', 'avatar', 'bio', 'level', 'xp', 'coins', 'diamonds', 'role', 'isBanned', 'isActive', 'isVip', 'vipLevel', 'kyc.status'];
+    const safeUpdates = {};
+    for (const field of allowedFields) {
+      if (updates[field] !== undefined) safeUpdates[field] = updates[field];
+    }
+
+    const user = await User.findByIdAndUpdate(id, { $set: safeUpdates }, { new: true }).select('-password');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -195,9 +202,10 @@ exports.getWallets = async (req, res) => {
 
     const query = {};
     if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { uid: { $regex: search, $options: 'i' } },
-        { name: { $regex: search, $options: 'i' } }
+        { uid: { $regex: escapedSearch, $options: 'i' } },
+        { name: { $regex: escapedSearch, $options: 'i' } }
       ];
     }
 

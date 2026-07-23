@@ -1,4 +1,3 @@
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const Event = require('../models/Event');
 const UserEventProgress = require('../models/UserEventProgress');
@@ -18,8 +17,9 @@ class EventSocket {
       const token = socket.handshake.auth?.token || socket.handshake.query?.token || socket.handshake.headers.authorization?.split(' ')[1];
       if (!token) return next(new Error('Authentication required'));
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        socket.data.userId = decoded.userId || decoded.id || decoded.uid;
+        const { verifyAccessToken } = require('../utils/jwt');
+        const decoded = verifyAccessToken(token);
+        socket.data.userId = decoded.id || decoded.uid;
         socket.data.userRole = decoded.role;
         next();
       } catch (err) {

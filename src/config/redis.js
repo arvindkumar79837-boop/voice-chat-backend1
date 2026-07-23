@@ -97,9 +97,4 @@ const disconnectRedis = async () => {
   }
 };
 
-process.on('SIGINT', async () => {
-  await disconnectRedis();
-  process.exit(0);
-});
-
 module.exports = { connectRedis, getRedisClient, disconnectRedis };

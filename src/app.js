@@ -88,6 +88,8 @@ const premiumSubscriptionRoutes = require('./routes/premiumSubscriptionRoutes');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // ─── REQUEST ID FOR TRACING ────────────────────────────────────────────────
 const crypto = require('crypto');
 app.use((req, res, next) => {
