@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const errorHandler = require('./middlewares/errorHandler.middleware');
 const corsConfig = require('./config/cors');
 const requestLoggerMiddleware = require('./middlewares/request-logger.middleware');
+const queryValidation = require('./middlewares/queryValidation');
 const Logger = require('./utils/logger');
 
 // ─── IMPORTING ALL PRODUCTION ROUTES ───────────────────────────────────────
@@ -124,10 +125,10 @@ const authLimiter = rateLimit({
 });
 
 const otpLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: process.env.NODE_ENV === 'development' ? 1000 : 3,
+  windowMs: 5 * 60 * 1000, // 5 minutes (was 1 min — too aggressive)
+  max: process.env.NODE_ENV === 'development' ? 1000 : 5,
   skipSuccessfulRequests: process.env.NODE_ENV === 'development',
-  message: { success: false, message: 'Too many OTP verification attempts. Please try again in 1 minute.' }
+  message: { success: false, message: 'Too many OTP verification attempts. Please try again in 5 minutes.' }
 });
 
 // ─── WELCOME & HEALTH CHECK ROUTES ─────────────────────────────────────────
@@ -159,14 +160,14 @@ app.use('/api/auth', authLimiter, require('./routes/authSecure.routes'));
 app.use('/api/auth/social', require('./routes/googleAuthRoutes')); // Google + Apple OAuth
 app.use('/api/auth/social', socialAuthRoutes); // Social Login (Google, Apple, Facebook, Snapchat, Instagram, Guest)
 app.use('/api/auth', authLimiter, firebaseAuthRoutes); // Firebase ID Token + Apple Sign-In
-app.use('/api/users', userRoutes);
+app.use('/api/users', queryValidation, userRoutes);
 app.use('/api/admin', adminRoutes);         // Dashboard, Coin Control, Ban, Withdrawals
 app.use('/api/admin/auth', adminAuthRoutes); // Admin Authentication
 app.use('/api/admin/modules', moduleManagerRoutes); // Specialized Manager Modules
 app.use('/api/localization', localizationRoutes); // Multi-Language & Translation Management
 app.use('/api/staff', staffRoutes);         // Staff Management (Owner Only)
 app.use('/api/security', securityRoutes);   // Security Dashboard (Fraud, Devices, IPs, Audit)
-app.use('/api/rooms', roomRoutes);          // Live Rooms
+app.use('/api/rooms', queryValidation, roomRoutes);          // Live Rooms
 app.use('/api/gifts', giftRoutes);          // Gift Sending
 app.use('/api/wallet', walletRoutes);       // Recharges, Transactions
 app.use('/api/agency', agencyRoutes);       // Agency Panel
@@ -178,7 +179,7 @@ app.use('/api/agency', bonusRoutes);        // Agency Bonuses
 app.use('/api/agency', reportsRoutes);      // Agency Reports & Analytics
 app.use('/api/dealer', dealerRoutes);       // Dealer / Coin Seller Wallet System
 app.use('/api/pk-battles', pkBattleRoutes); // Realtime PK Battles
-app.use('/api/families', familyRoutes);     // Family/Guild System
+app.use('/api/families', queryValidation, familyRoutes);     // Family/Guild System
 app.use('/api/family-chat', require('./routes/familyChatRoutes')); // Family Chat
 app.use('/api/shop', shopRoutes);           // Frames, Mounts, Badges
 app.use('/api/games', gameRoutes);          // Lucky Wheel, Scratch Card
@@ -192,13 +193,13 @@ app.use('/api/vip-system', vipSystemRoutes);    // VIP 1-15, SVIP, Premium, Cosm
 app.use('/api/chat', chatRoutes);               // Chat Message History
 app.use('/api/singing', singingRoutes);          // Singing Room: songs, queue, performance
 app.use('/api/app-users', appUserRoutes);       // App User Actions (Agency, Withdrawal)
-app.use('/api/analytics', analyticsRoutes);     // App-wide Analytics & Revenue Dashboard
+app.use('/api/analytics', queryValidation, analyticsRoutes);     // App-wide Analytics & Revenue Dashboard
 
 // ─── NEW ROUTES ────────────────────────────────────────────────────────────
 app.use('/api/level', levelRoutes);             // User Levels & XP
 app.use('/api/inventory', inventoryRoutes);     // User Inventory
 app.use('/api/creator', creatorRoutes);         // Creator Economy
-app.use('/api/support', supportRoutes);         // Support & Tickets
+app.use('/api/support', queryValidation, supportRoutes);         // Support & Tickets
 app.use('/api/moderation', moderationRoutes);   // Reports & Moderation
 app.use('/api/referral', referralRoutes);       // Referral System
 app.use('/api/room', livekitRoutes);              // LiveKit token generation
@@ -207,8 +208,8 @@ app.use('/api/room', agoraRoutes);              // Agora token & seat management
 app.use('/api/moments', momentRoutes);          // Moments / Posts Feed
 app.use('/api/notifications', notificationRoutes); // Notifications
 app.use('/api/agency/invitations', agencyInvitationRoutes); // Agency Invitations & Inbox
-app.use('/api/events', eventRoutes);            // Events
-app.use('/api/tournaments', tournamentRoutes);  // Tournaments & Championships
+app.use('/api/events', queryValidation, eventRoutes);            // Events
+app.use('/api/tournaments', queryValidation, tournamentRoutes);  // Tournaments & Championships
 app.use('/api/treasure-hunts', treasureHuntRoutes); // Treasure Hunts
 app.use('/api/targets', targetRoutes);          // Streamer Targets & 50-50 Split
 

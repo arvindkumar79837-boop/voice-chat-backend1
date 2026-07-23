@@ -71,8 +71,22 @@ const initializeSockets = (io) => {
       powerMatrixSocket(io, socket);
       matchmakingSocket(io, socket);
 
-      socket.on('disconnect', () => {
-        console.log('A user disconnected');
+      socket.on('disconnect', (reason) => {
+        console.log(`User disconnected: ${socket.data.userId || 'unknown'} (reason: ${reason})`);
+
+        // Cleanup: leave all rooms this socket was in
+        if (socket.rooms && socket.rooms.size > 0) {
+          for (const room of socket.rooms) {
+            if (room !== socket.id) {
+              socket.leave(room);
+            }
+          }
+        }
+
+        // Cleanup: notify room sockets of user departure
+        if (socket.data.userId) {
+          io.emit('room:user_left', { userId: socket.data.userId, reason });
+        }
       });
     });
   } catch (err) {

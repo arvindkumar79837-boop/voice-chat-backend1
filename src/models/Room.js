@@ -375,6 +375,11 @@ roomSchema.index({ isLive: 1, status: 1 });
 roomSchema.index({ rankPoints: -1 });
 roomSchema.index({ totalGiftPoints: -1 });
 roomSchema.index({ ownerId: 1 });
+// Compound index for live room listing (status + isActive + isLive + activeUsers)
+roomSchema.index({ status: 1, isActive: 1, isLive: -1, activeUsers: -1 });
+// Index for family/agency room lookups
+roomSchema.index({ familyId: 1, status: 1 });
+roomSchema.index({ agencyId: 1, status: 1 });
 
 // Pre-save hook to sync isActive with status
 roomSchema.pre('save', function(next) {
