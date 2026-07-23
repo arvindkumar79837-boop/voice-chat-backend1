@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Agency = require('../models/Agency');
@@ -41,7 +42,7 @@ exports.addAgent = async (req, res) => {
 
     res.status(201).json({ success: true, agent, message: 'Agent added successfully' });
   } catch (error) {
-    console.error('Add Agent Error:', error);
+    Logger.error('Add Agent Error:', error);
     res.status(500).json({ success: false, message: 'Failed to add agent' });
   }
 };
@@ -62,7 +63,7 @@ exports.listAgents = async (req, res) => {
 
     res.status(200).json({ success: true, data: agents, count: agents.length });
   } catch (error) {
-    console.error('List Agents Error:', error);
+    Logger.error('List Agents Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch agents' });
   }
 };
@@ -92,7 +93,7 @@ exports.updateAgent = async (req, res) => {
 
     res.status(200).json({ success: true, agent, message: 'Agent updated' });
   } catch (error) {
-    console.error('Update Agent Error:', error);
+    Logger.error('Update Agent Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update agent' });
   }
 };
@@ -117,7 +118,7 @@ exports.deleteAgent = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Agent removed successfully' });
   } catch (error) {
-    console.error('Delete Agent Error:', error);
+    Logger.error('Delete Agent Error:', error);
     res.status(500).json({ success: false, message: 'Failed to remove agent' });
   }
 };
@@ -149,7 +150,7 @@ exports.getAgentPerformance = async (req, res) => {
 
     res.status(200).json({ success: true, data: performance });
   } catch (error) {
-    console.error('Agent Performance Error:', error);
+    Logger.error('Agent Performance Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch agent performance' });
   }
 };

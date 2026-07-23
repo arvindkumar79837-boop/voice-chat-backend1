@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 const ShopItem = require('../models/ShopItem');
 
@@ -6,7 +7,7 @@ exports.getItems = async (req, res) => {
     const items = await ShopItem.find({ isActive: true }).sort({ displayOrder: 1 });
     res.status(200).json({ items });
   } catch (error) {
-    console.error('Get Shop Items Error:', error);
+    Logger.error('Get Shop Items Error:', error);
     res.status(500).json({ message: 'Failed to fetch items' });
   }
 };
@@ -37,7 +38,7 @@ exports.purchaseItem = async (req, res) => {
 
     res.status(200).json({ message: 'Item purchased successfully', expiresAt });
   } catch (error) {
-    console.error('Purchase Error:', error);
+    Logger.error('Purchase Error:', error);
     res.status(500).json({ message: 'Failed to process purchase transaction' });
   }
 };

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // CONTROLLER: RewardInjectorController — Direct UID-targeted asset injection
 // VIP avatar frames, entry effects, mounts, badges for specific users
@@ -80,7 +81,7 @@ exports.injectReward = async (req, res) => {
       data: injector,
     });
   } catch (error) {
-    console.error('injectReward Error:', error);
+    Logger.error('injectReward Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -115,7 +116,7 @@ exports.getRewardHistory = async (req, res) => {
       pagination: { total, page: pageNum, pages: Math.ceil(total / limitNum) },
     });
   } catch (error) {
-    console.error('getRewardHistory Error:', error);
+    Logger.error('getRewardHistory Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -143,7 +144,7 @@ exports.revokeReward = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Reward injection revoked', data: injector });
   } catch (error) {
-    console.error('revokeReward Error:', error);
+    Logger.error('revokeReward Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -175,7 +176,7 @@ exports.getUserRewards = async (req, res) => {
 
     return res.status(200).json({ success: true, data: allAssets });
   } catch (error) {
-    console.error('getUserRewards Error:', error);
+    Logger.error('getUserRewards Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

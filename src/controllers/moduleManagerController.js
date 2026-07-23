@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // CONTROLLER: ModuleManagerController — Unified controller for all specialized managers
 // Handles User, Agency, Family, Finance, Event, Content, Banner, Ad, Gift, VIP, Audit, Reports, Backup, Settings managers
@@ -37,7 +38,7 @@ exports.getBanners = async (req, res) => {
     const banners = await require('../models/Announcement').find({}).sort({ createdAt: -1 });
     return res.status(200).json({ success: true, data: banners });
   } catch (error) {
-    console.error('Get Banners Error:', error);
+    Logger.error('Get Banners Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -77,7 +78,7 @@ exports.createBanner = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'Banner created successfully', data: banner });
   } catch (error) {
-    console.error('Create Banner Error:', error);
+    Logger.error('Create Banner Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -108,7 +109,7 @@ exports.updateBanner = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Banner updated', data: banner });
   } catch (error) {
-    console.error('Update Banner Error:', error);
+    Logger.error('Update Banner Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -137,7 +138,7 @@ exports.deleteBanner = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Banner deleted' });
   } catch (error) {
-    console.error('Delete Banner Error:', error);
+    Logger.error('Delete Banner Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -157,7 +158,7 @@ exports.getAdvertisements = async (req, res) => {
     });
     return res.status(200).json({ success: true, data: ads });
   } catch (error) {
-    console.error('Get Ads Error:', error);
+    Logger.error('Get Ads Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -204,7 +205,7 @@ exports.createAdvertisement = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'Advertisement created', data: ad });
   } catch (error) {
-    console.error('Create Ad Error:', error);
+    Logger.error('Create Ad Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -235,7 +236,7 @@ exports.updateAdvertisement = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Advertisement updated', data: ad });
   } catch (error) {
-    console.error('Update Ad Error:', error);
+    Logger.error('Update Ad Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -264,7 +265,7 @@ exports.deleteAdvertisement = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Advertisement deleted' });
   } catch (error) {
-    console.error('Delete Ad Error:', error);
+    Logger.error('Delete Ad Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -282,7 +283,7 @@ exports.getGifts = async (req, res) => {
     const gifts = await Gift.find({}).sort({ createdAt: -1 });
     return res.status(200).json({ success: true, data: gifts });
   } catch (error) {
-    console.error('Get Gifts Error:', error);
+    Logger.error('Get Gifts Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -325,7 +326,7 @@ exports.createGift = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'Gift created', data: gift });
   } catch (error) {
-    console.error('Create Gift Error:', error);
+    Logger.error('Create Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -356,7 +357,7 @@ exports.updateGift = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Gift updated', data: gift });
   } catch (error) {
-    console.error('Update Gift Error:', error);
+    Logger.error('Update Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -385,7 +386,7 @@ exports.deleteGift = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Gift deleted' });
   } catch (error) {
-    console.error('Delete Gift Error:', error);
+    Logger.error('Delete Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -403,7 +404,7 @@ exports.getVipPlans = async (req, res) => {
     const plans = await VipPlan.find({}).sort({ level: 1 });
     return res.status(200).json({ success: true, data: plans });
   } catch (error) {
-    console.error('Get VIP Plans Error:', error);
+    Logger.error('Get VIP Plans Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -445,7 +446,7 @@ exports.createVipPlan = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'VIP plan created', data: plan });
   } catch (error) {
-    console.error('Create VIP Plan Error:', error);
+    Logger.error('Create VIP Plan Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -476,7 +477,7 @@ exports.updateVipPlan = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'VIP plan updated', data: plan });
   } catch (error) {
-    console.error('Update VIP Plan Error:', error);
+    Logger.error('Update VIP Plan Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -505,7 +506,7 @@ exports.deleteVipPlan = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'VIP plan deleted' });
   } catch (error) {
-    console.error('Delete VIP Plan Error:', error);
+    Logger.error('Delete VIP Plan Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -527,7 +528,7 @@ exports.getSettings = async (req, res) => {
     });
     return res.status(200).json({ success: true, data: settingsObj });
   } catch (error) {
-    console.error('Get Settings Error:', error);
+    Logger.error('Get Settings Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -562,7 +563,7 @@ exports.updateSettings = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Settings updated', data: results });
   } catch (error) {
-    console.error('Update Settings Error:', error);
+    Logger.error('Update Settings Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -604,7 +605,7 @@ exports.getAuditLogs = async (req, res) => {
       pagination: { total, page, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
-    console.error('Get Audit Logs Error:', error);
+    Logger.error('Get Audit Logs Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -645,7 +646,7 @@ exports.exportAuditLogs = async (req, res) => {
 
     return res.status(200).json({ success: true, data: logs });
   } catch (error) {
-    console.error('Export Audit Logs Error:', error);
+    Logger.error('Export Audit Logs Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -682,7 +683,7 @@ exports.getReports = async (req, res) => {
       pagination: { total, page, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
-    console.error('Get Reports Error:', error);
+    Logger.error('Get Reports Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -716,7 +717,7 @@ exports.assignReport = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Report assigned', data: report });
   } catch (error) {
-    console.error('Assign Report Error:', error);
+    Logger.error('Assign Report Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -751,7 +752,7 @@ exports.resolveReport = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Report resolved', data: report });
   } catch (error) {
-    console.error('Resolve Report Error:', error);
+    Logger.error('Resolve Report Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -804,7 +805,7 @@ exports.createBackup = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'Backup created', data: backup });
   } catch (error) {
-    console.error('Create Backup Error:', error);
+    Logger.error('Create Backup Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -818,7 +819,7 @@ exports.getBackups = async (req, res) => {
     const backups = await SystemSettings.find({ category: 'backups' }).sort({ createdAt: -1 });
     return res.status(200).json({ success: true, data: backups });
   } catch (error) {
-    console.error('Get Backups Error:', error);
+    Logger.error('Get Backups Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -838,7 +839,7 @@ exports.getCMSPages = async (req, res) => {
     }).sort({ 'value.updatedAt': -1 });
     return res.status(200).json({ success: true, data: pages });
   } catch (error) {
-    console.error('Get CMS Pages Error:', error);
+    Logger.error('Get CMS Pages Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -882,7 +883,7 @@ exports.createCMSPage = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'CMS page created', data: page });
   } catch (error) {
-    console.error('Create CMS Page Error:', error);
+    Logger.error('Create CMS Page Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -919,7 +920,7 @@ exports.updateCMSPage = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'CMS page updated', data: page });
   } catch (error) {
-    console.error('Update CMS Page Error:', error);
+    Logger.error('Update CMS Page Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -981,7 +982,7 @@ exports.getTerminology = async (req, res) => {
 
     return res.status(200).json({ success: true, data: terminology });
   } catch (error) {
-    console.error('Get Terminology Error:', error);
+    Logger.error('Get Terminology Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -1091,7 +1092,7 @@ exports.getManagerDashboard = async (req, res) => {
 
     return res.status(200).json({ success: true, data: stats });
   } catch (error) {
-    console.error('Get Manager Dashboard Error:', error);
+    Logger.error('Get Manager Dashboard Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/controllers/profileController.js
 // ARVIND PARTY - MASTER USER PROFILE SYSTEM
@@ -121,7 +122,7 @@ exports.getProfile = async (req, res, next) => {
       data: profileData,
     });
   } catch (error) {
-    console.error('❌ Get Profile Error:', error);
+    Logger.error('❌ Get Profile Error:', error);
     next(error);
   }
 };
@@ -235,7 +236,7 @@ exports.updateProfile = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('❌ Update Profile Error:', error);
+    Logger.error('❌ Update Profile Error:', error);
     next(error);
   }
 };
@@ -285,7 +286,7 @@ exports.uploadAvatar = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('❌ Upload Avatar Error:', error);
+    Logger.error('❌ Upload Avatar Error:', error);
     next(error);
   }
 };
@@ -325,7 +326,7 @@ exports.getXpProgress = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('❌ Get XP Error:', error);
+    Logger.error('❌ Get XP Error:', error);
     next(error);
   }
 };

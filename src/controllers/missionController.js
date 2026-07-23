@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 const MissionProgress = require('../models/MissionProgress');
 
@@ -44,7 +45,7 @@ exports.getMissions = async (req, res) => {
 
     res.status(200).json({ success: true, missions: missionsWithProgress });
   } catch (error) {
-    console.error('Get Missions Error:', error);
+    Logger.error('Get Missions Error:', error);
     res.status(500).json({ error: 'Failed to load missions' });
   }
 };
@@ -73,7 +74,7 @@ exports.claimReward = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Reward claimed!', rewardCoins: mission.rewardCoins, balance: { coins: user.coins }});
   } catch (error) {
-    console.error('Claim Reward Error:', error);
+    Logger.error('Claim Reward Error:', error);
     res.status(500).json({ error: 'Failed to claim reward' });
   }
 };

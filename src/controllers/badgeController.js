@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const Badge = require('../models/Badge');
 const User = require('../models/User');
 
@@ -69,7 +70,7 @@ exports.getUserBadges = async (userId) => {
       isUnlocked: user.badges.includes(badge.id) || checkBadgeUnlocked(user, badge)
     }));
   } catch (error) {
-    console.error('Error getting user badges:', error);
+    Logger.error('Error getting user badges:', error);
     return [];
   }
 };
@@ -100,7 +101,7 @@ exports.checkAndAwardBadges = async (userId) => {
 
     return newlyAwarded;
   } catch (error) {
-    console.error('Error checking and awarding badges:', error);
+    Logger.error('Error checking and awarding badges:', error);
     return [];
   }
 };
@@ -193,8 +194,8 @@ exports.initializeDefaultBadges = async () => {
     ];
 
     await Badge.insertMany(defaultBadges);
-    console.log('✅ Default badges initialized');
+    Logger.info('✅ Default badges initialized');
   } catch (error) {
-    console.error('Error initializing default badges:', error);
+    Logger.error('Error initializing default badges:', error);
   }
 };

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const Attendance = require('../models/Attendance');
 const Agency = require('../models/Agency');
 const User = require('../models/User');
@@ -51,7 +52,7 @@ exports.startSession = async (req, res) => {
 
     res.status(200).json({ success: true, attendance, message: 'Attendance session started' });
   } catch (error) {
-    console.error('Start Session Error:', error);
+    Logger.error('Start Session Error:', error);
     res.status(500).json({ success: false, message: 'Failed to start attendance' });
   }
 };
@@ -103,7 +104,7 @@ exports.endSession = async (req, res) => {
       isValidDay: attendance.isValidDay,
     });
   } catch (error) {
-    console.error('End Session Error:', error);
+    Logger.error('End Session Error:', error);
     res.status(500).json({ success: false, message: 'Failed to end attendance' });
   }
 };
@@ -141,7 +142,7 @@ exports.getLiveAttendance = async (req, res) => {
 
     res.status(200).json({ success: true, data: result, count: result.length });
   } catch (error) {
-    console.error('Live Attendance Error:', error);
+    Logger.error('Live Attendance Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch live attendance' });
   }
 };
@@ -189,7 +190,7 @@ exports.getMonthlyAttendance = async (req, res) => {
     const data = Object.values(summary);
     res.status(200).json({ success: true, data, count: data.length, month: m, year: y });
   } catch (error) {
-    console.error('Monthly Attendance Error:', error);
+    Logger.error('Monthly Attendance Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch monthly attendance' });
   }
 };
@@ -213,7 +214,7 @@ exports.getHostAttendanceHistory = async (req, res) => {
 
     res.status(200).json({ success: true, data: history, count: history.length });
   } catch (error) {
-    console.error('Host History Error:', error);
+    Logger.error('Host History Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch host history' });
   }
 };

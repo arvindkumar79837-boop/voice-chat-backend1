@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 const WalletTransaction = require('../models/WalletTransaction');
 const Withdrawal = require('../models/Withdrawal');
@@ -52,7 +53,7 @@ const createAuditLog = async (userId, action, details = {}) => {
   try {
     await AuditLog.create({ userId, action, details });
   } catch (error) {
-    console.error('Audit log creation failed:', error);
+    Logger.error('Audit log creation failed:', error);
   }
 };
 
@@ -132,7 +133,7 @@ const updateIncomeAnalytics = async (userId, walletType, type, amount, config) =
     
     await analytics.save();
   } catch (error) {
-    console.error('Income analytics update failed:', error);
+    Logger.error('Income analytics update failed:', error);
   }
 };
 
@@ -224,7 +225,7 @@ exports.getWallet = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Get Wallet Error:', error);
+    Logger.error('Get Wallet Error:', error);
     next(error);
   }
 };
@@ -262,7 +263,7 @@ exports.getTransactionHistory = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Transaction History Error:', error);
+    Logger.error('Transaction History Error:', error);
     next(error);
   }
 };
@@ -319,7 +320,7 @@ exports.getFamilyWallet = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Get Family Wallet Error:', error);
+    Logger.error('Get Family Wallet Error:', error);
     next(error);
   }
 };
@@ -400,7 +401,7 @@ exports.contributeToFamilyWallet = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Contribute to Family Wallet Error:', error);
+    Logger.error('Contribute to Family Wallet Error:', error);
     next(error);
   }
 };
@@ -437,7 +438,7 @@ exports.addFamilyTaskReward = async (req, res, next) => {
     await createAuditLog(adminId, 'family_task_reward', { familyId, taskCoins, taskDiamonds, description });
     res.status(200).json({ success: true, message: 'Family task reward added', data: familyWallet });
   } catch (error) {
-    console.error('Add Family Task Reward Error:', error);
+    Logger.error('Add Family Task Reward Error:', error);
     next(error);
   }
 };
@@ -504,7 +505,7 @@ exports.getAgencyWallet = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Get Agency Wallet Error:', error);
+    Logger.error('Get Agency Wallet Error:', error);
     next(error);
   }
 };
@@ -559,7 +560,7 @@ exports.creditAgencyCommission = async (req, res, next) => {
       data: { agencyWallet, commission, commissionRate: rate }
     });
   } catch (error) {
-    console.error('Credit Agency Commission Error:', error);
+    Logger.error('Credit Agency Commission Error:', error);
     next(error);
   }
 };
@@ -626,7 +627,7 @@ exports.requestAgencyWithdrawal = async (req, res, next) => {
       data: { withdrawalId: withdrawal._id, amount, status: withdrawal.status }
     });
   } catch (error) {
-    console.error('Request Agency Withdrawal Error:', error);
+    Logger.error('Request Agency Withdrawal Error:', error);
     next(error);
   }
 };
@@ -705,7 +706,7 @@ exports.sendGift = async (req, res, next) => {
       data: { coinsRemaining: updatedSender.coins, recipientId, quantity, taxAmount, diamondCredit }
     });
   } catch (error) {
-    console.error('Send Gift Error:', error);
+    Logger.error('Send Gift Error:', error);
     next(error);
   }
 };
@@ -768,7 +769,7 @@ exports.exchangeDiamondsToCoins = async (req, res, next) => {
       data: { diamondsRemaining: updatedUser.diamonds, coinsReceived, diamondsExchanged: requiredDiamonds }
     });
   } catch (error) {
-    console.error('Exchange Error:', error);
+    Logger.error('Exchange Error:', error);
     next(error);
   }
 };
@@ -885,7 +886,7 @@ exports.requestWithdrawal = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Withdrawal Request Error:', error);
+    Logger.error('Withdrawal Request Error:', error);
     next(error);
   }
 };
@@ -900,7 +901,7 @@ exports.getWithdrawalStatus = async (req, res, next) => {
 
     res.status(200).json({ success: true, data: withdrawals });
   } catch (error) {
-    console.error('Get Withdrawal Status Error:', error);
+    Logger.error('Get Withdrawal Status Error:', error);
     next(error);
   }
 };
@@ -931,7 +932,7 @@ exports.getAllWithdrawals = async (req, res, next) => {
       pagination: { page, limit, total, pages: Math.ceil(total / limit) }
     });
   } catch (error) {
-    console.error('Get All Withdrawals Error:', error);
+    Logger.error('Get All Withdrawals Error:', error);
     next(error);
   }
 };
@@ -948,7 +949,7 @@ exports.getWithdrawalDetails = async (req, res, next) => {
 
     res.status(200).json({ success: true, data: withdrawal });
   } catch (error) {
-    console.error('Get Withdrawal Details Error:', error);
+    Logger.error('Get Withdrawal Details Error:', error);
     next(error);
   }
 };
@@ -973,17 +974,30 @@ exports.approveWithdrawal = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Not authorized to approve withdrawals' });
     }
 
-    const nextStage = {
-      'SELLER_REVIEW': 'MERCHANT_REVIEW',
-      'MERCHANT_REVIEW': 'OWNER_FINANCE',
-      'OWNER_FINANCE': 'PROCESSING',
-      'PROCESSING': 'PAID'
-    };
-
     const user = await User.findById(withdrawal.userId);
+    // KYC Check on approval (P1-11)
+    if (user?.kyc?.status !== 'verified') {
+      return res.status(403).json({ success: false, message: 'User KYC is not verified. Cannot approve.' });
+    }
+
     if ((user.diamonds || 0) < withdrawal.diamondsRequested) {
       return res.status(400).json({ success: false, message: 'User no longer has sufficient balance' });
     }
+
+    // Multi-step approval check: different person for each stage if > ₹1000 (P1-11)
+    const amountINR = withdrawal.amountINR;
+    const isHighValue = amountINR > 1000;
+    const previousApprovers = withdrawal.workflow.map(w => w.actorId?.toString());
+    if (isHighValue && previousApprovers.includes(approverId.toString())) {
+      return res.status(403).json({ success: false, message: 'Multi-step approval requires a different approver for this stage.' });
+    }
+
+    const nextStageMap = {
+      'SELLER_REVIEW': isHighValue ? 'MERCHANT_REVIEW' : 'PAID',
+      'MERCHANT_REVIEW': isHighValue ? 'OWNER_FINANCE' : 'PAID',
+      'OWNER_FINANCE': 'PAID',
+      'PROCESSING': 'PAID'
+    };
 
     withdrawal.workflow.push({
       stage: withdrawal.currentStage,
@@ -993,7 +1007,7 @@ exports.approveWithdrawal = async (req, res, next) => {
       note: `Approved by ${approver.name} (${approver.role})`
     });
 
-    const newStage = nextStage[withdrawal.currentStage];
+    const newStage = nextStageMap[withdrawal.currentStage] || 'PAID';
     if (newStage === 'PAID') {
       withdrawal.status = 'APPROVED';
       withdrawal.currentStage = 'PROCESSING';
@@ -1030,7 +1044,7 @@ exports.approveWithdrawal = async (req, res, next) => {
 
     res.status(200).json({ success: true, message: 'Withdrawal approved', data: withdrawal });
   } catch (error) {
-    console.error('Approve Withdrawal Error:', error);
+    Logger.error('Approve Withdrawal Error:', error);
     next(error);
   }
 };
@@ -1074,7 +1088,7 @@ exports.rejectWithdrawal = async (req, res, next) => {
 
     res.status(200).json({ success: true, message: 'Withdrawal rejected', data: withdrawal });
   } catch (error) {
-    console.error('Reject Withdrawal Error:', error);
+    Logger.error('Reject Withdrawal Error:', error);
     next(error);
   }
 };
@@ -1125,7 +1139,7 @@ exports.processWithdrawal = async (req, res, next) => {
 
     res.status(200).json({ success: true, message: 'Withdrawal marked as paid', data: withdrawal });
   } catch (error) {
-    console.error('Process Withdrawal Error:', error);
+    Logger.error('Process Withdrawal Error:', error);
     next(error);
   }
 };
@@ -1214,7 +1228,7 @@ exports.getIncomeAnalytics = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Get Income Analytics Error:', error);
+    Logger.error('Get Income Analytics Error:', error);
     next(error);
   }
 };
@@ -1268,7 +1282,7 @@ exports.freezeUserWallet = async (req, res, next) => {
 
     res.status(200).json({ success: true, message: `Wallet ${walletType} frozen`, data: result });
   } catch (error) {
-    console.error('Freeze Wallet Error:', error);
+    Logger.error('Freeze Wallet Error:', error);
     next(error);
   }
 };
@@ -1308,7 +1322,7 @@ exports.unfreezeUserWallet = async (req, res, next) => {
 
     res.status(200).json({ success: true, message: `Wallet ${walletType} unfrozen` });
   } catch (error) {
-    console.error('Unfreeze Wallet Error:', error);
+    Logger.error('Unfreeze Wallet Error:', error);
     next(error);
   }
 };
@@ -1369,7 +1383,7 @@ exports.adjustUserWallet = async (req, res, next) => {
 
     res.status(200).json({ success: true, message: 'Wallet adjusted', data: updatedUser });
   } catch (error) {
-    console.error('Adjust Wallet Error:', error);
+    Logger.error('Adjust Wallet Error:', error);
     next(error);
   }
 };
@@ -1426,7 +1440,7 @@ exports.getWalletStats = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Get Wallet Stats Error:', error);
+    Logger.error('Get Wallet Stats Error:', error);
     next(error);
   }
 };
@@ -1436,7 +1450,7 @@ exports.getWalletConfig = async (req, res, next) => {
     const config = await getWalletConfig();
     res.status(200).json({ success: true, data: config });
   } catch (error) {
-    console.error('Get Wallet Config Error:', error);
+    Logger.error('Get Wallet Config Error:', error);
     next(error);
   }
 };
@@ -1449,7 +1463,7 @@ exports.updateWalletConfig = async (req, res, next) => {
     await createAuditLog(req.user.userId, 'wallet_config_updated', { config: updatedConfig });
     res.status(200).json({ success: true, message: 'Configuration updated', data: updatedConfig });
   } catch (error) {
-    console.error('Update Wallet Config Error:', error);
+    Logger.error('Update Wallet Config Error:', error);
     next(error);
   }
 };
@@ -1482,7 +1496,7 @@ exports.getAllTransactions = async (req, res, next) => {
       pagination: { page, limit, total, pages: Math.ceil(total / limit) }
     });
   } catch (error) {
-    console.error('Get All Transactions Error:', error);
+    Logger.error('Get All Transactions Error:', error);
     next(error);
   }
 };
@@ -1517,7 +1531,7 @@ exports.getTaxRecords = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Get Tax Records Error:', error);
+    Logger.error('Get Tax Records Error:', error);
     next(error);
   }
 };
@@ -1557,7 +1571,7 @@ exports.getFamilyWalletTransactions = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Get Family Wallet Transactions Error:', error);
+    Logger.error('Get Family Wallet Transactions Error:', error);
     next(error);
   }
 };
@@ -1603,7 +1617,7 @@ exports.getAgencyWalletTransactions = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Get Agency Wallet Transactions Error:', error);
+    Logger.error('Get Agency Wallet Transactions Error:', error);
     next(error);
   }
 };
@@ -1676,7 +1690,7 @@ exports.getHostAgencyDashboard = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Get Host Agency Dashboard Error:', error);
+    Logger.error('Get Host Agency Dashboard Error:', error);
     next(error);
   }
 };
@@ -1791,7 +1805,7 @@ exports.getOwnerAgencyDashboard = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Get Owner Agency Dashboard Error:', error);
+    Logger.error('Get Owner Agency Dashboard Error:', error);
     next(error);
   }
 };
@@ -1859,7 +1873,7 @@ exports.getAgencyMonthlyHistory = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Get Agency Monthly History Error:', error);
+    Logger.error('Get Agency Monthly History Error:', error);
     next(error);
   }
 };
@@ -1961,7 +1975,7 @@ exports.updateAgencyMonthlyStats = async (req, res, next) => {
       data: monthlyStats
     });
   } catch (error) {
-    console.error('Update Agency Monthly Stats Error:', error);
+    Logger.error('Update Agency Monthly Stats Error:', error);
     next(error);
   }
 };

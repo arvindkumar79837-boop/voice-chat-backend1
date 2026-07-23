@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const Room = require('../models/Room');
 const User = require('../models/User');
 const crypto = require('crypto');
@@ -131,7 +132,7 @@ exports.createRoom = async (req, res) => {
       room
     });
   } catch (error) {
-    console.error('Create Room Error:', error);
+    Logger.error('Create Room Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to create room.', error: error.message });
   }
 };
@@ -187,7 +188,7 @@ exports.getLiveRooms = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Live Rooms Error:', error);
+    Logger.error('Get Live Rooms Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch rooms.', error: error.message });
   }
 };
@@ -222,7 +223,7 @@ exports.getRoomsByType = async (req, res) => {
 
     return res.status(200).json({ success: true, rooms: sanitizedRooms });
   } catch (error) {
-    console.error('Get Rooms By Type Error:', error);
+    Logger.error('Get Rooms By Type Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch rooms by type.', error: error.message });
   }
 };
@@ -253,7 +254,7 @@ exports.getRoomDetail = async (req, res) => {
       room: { ...rest, hasPassword: !!roomPassword }
     });
   } catch (error) {
-    console.error('Get Room Detail Error:', error);
+    Logger.error('Get Room Detail Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch room details.', error: error.message });
   }
 };
@@ -307,7 +308,7 @@ exports.joinRoom = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Join Room Error:', error);
+    Logger.error('Join Room Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to join room.', error: error.message });
   }
 };
@@ -342,7 +343,7 @@ exports.verifyPassword = async (req, res) => {
       message: isValid ? 'Password correct.' : 'Incorrect password.'
     });
   } catch (error) {
-    console.error('Verify Password Error:', error);
+    Logger.error('Verify Password Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to verify password.', error: error.message });
   }
 };
@@ -390,7 +391,7 @@ exports.toggleSeatLock = async (req, res) => {
       seat: room.seats[seatIdx]
     });
   } catch (error) {
-    console.error('Toggle Seat Lock Error:', error);
+    Logger.error('Toggle Seat Lock Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to toggle seat lock.', error: error.message });
   }
 };
@@ -433,7 +434,7 @@ exports.toggleSeatMute = async (req, res) => {
       seat: room.seats[seatIdx]
     });
   } catch (error) {
-    console.error('Toggle Seat Mute Error:', error);
+    Logger.error('Toggle Seat Mute Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to toggle seat mute.', error: error.message });
   }
 };
@@ -500,7 +501,7 @@ exports.claimSeat = async (req, res) => {
       seat: room.seats[seatIdx]
     });
   } catch (error) {
-    console.error('Claim Seat Error:', error);
+    Logger.error('Claim Seat Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to claim seat.', error: error.message });
   }
 };
@@ -544,7 +545,7 @@ exports.releaseSeat = async (req, res) => {
       seat: room.seats[seatIdx]
     });
   } catch (error) {
-    console.error('Release Seat Error:', error);
+    Logger.error('Release Seat Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to release seat.', error: error.message });
   }
 };
@@ -595,7 +596,7 @@ exports.kickFromSeat = async (req, res) => {
       seat: room.seats[seatIdx]
     });
   } catch (error) {
-    console.error('Kick From Seat Error:', error);
+    Logger.error('Kick From Seat Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to kick user from seat.', error: error.message });
   }
 };
@@ -636,7 +637,7 @@ exports.updateCosmetics = async (req, res) => {
       cosmetics: room.cosmetics
     });
   } catch (error) {
-    console.error('Update Cosmetics Error:', error);
+    Logger.error('Update Cosmetics Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update cosmetics.', error: error.message });
   }
 };
@@ -691,7 +692,7 @@ exports.purchaseBackground = async (req, res) => {
       purchasedBackgrounds: room.cosmetics.purchasedBackgrounds
     });
   } catch (error) {
-    console.error('Purchase Background Error:', error);
+    Logger.error('Purchase Background Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to purchase background.', error: error.message });
   }
 };
@@ -737,7 +738,7 @@ exports.getRoomRanking = async (req, res) => {
       rooms
     });
   } catch (error) {
-    console.error('Get Room Ranking Error:', error);
+    Logger.error('Get Room Ranking Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch room ranking.', error: error.message });
   }
 };
@@ -795,7 +796,7 @@ exports.sendGiftToRoom = async (req, res) => {
       lootBoxPoints: room.lootBoxPoints
     });
   } catch (error) {
-    console.error('Send Gift To Room Error:', error);
+    Logger.error('Send Gift To Room Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to send gift.', error: error.message });
   }
 };
@@ -861,7 +862,7 @@ exports.challengeRoomPK = async (req, res) => {
       challenge: pkChallenge
     });
   } catch (error) {
-    console.error('Challenge PK Error:', error);
+    Logger.error('Challenge PK Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to start PK challenge.', error: error.message });
   }
 };
@@ -889,7 +890,7 @@ exports.getPKStatus = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get PK Status Error:', error);
+    Logger.error('Get PK Status Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to get PK status.', error: error.message });
   }
 };
@@ -925,7 +926,7 @@ exports.getRoomTasks = async (req, res) => {
       tasks: room.dailyTasks
     });
   } catch (error) {
-    console.error('Get Room Tasks Error:', error);
+    Logger.error('Get Room Tasks Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch tasks.', error: error.message });
   }
 };
@@ -967,7 +968,7 @@ exports.updateTaskProgress = async (req, res) => {
       task
     });
   } catch (error) {
-    console.error('Update Task Progress Error:', error);
+    Logger.error('Update Task Progress Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update task.', error: error.message });
   }
 };
@@ -1008,7 +1009,7 @@ exports.claimTaskReward = async (req, res) => {
       rewardedXp: task.rewardXp
     });
   } catch (error) {
-    console.error('Claim Task Reward Error:', error);
+    Logger.error('Claim Task Reward Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to claim reward.', error: error.message });
   }
 };
@@ -1051,7 +1052,7 @@ exports.updateRoomSettings = async (req, res) => {
       room
     });
   } catch (error) {
-    console.error('Update Room Settings Error:', error);
+    Logger.error('Update Room Settings Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update settings.', error: error.message });
   }
 };
@@ -1084,7 +1085,7 @@ exports.closeRoom = async (req, res) => {
       message: 'Room closed successfully.'
     });
   } catch (error) {
-    console.error('Close Room Error:', error);
+    Logger.error('Close Room Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to close room.', error: error.message });
   }
 };
@@ -1117,7 +1118,7 @@ exports.toggleLive = async (req, res) => {
       isLive: room.isLive
     });
   } catch (error) {
-    console.error('Toggle Live Error:', error);
+    Logger.error('Toggle Live Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to toggle live status.', error: error.message });
   }
 };

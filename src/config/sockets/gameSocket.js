@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const jwt = require('jsonwebtoken');
 const GameRecord = require('../../models/GameRecord');
 const User = require('../../models/User');
@@ -22,16 +23,16 @@ function setupGameSocket(io) {
   });
 
   gameNamespace.on('connection', (socket) => {
-    console.log(`🎮 Game socket connected: User ${socket.userId}, Socket ${socket.id}`);
+    Logger.info(`🎮 Game socket connected: User ${socket.userId}, Socket ${socket.id}`);
 
     socket.on('join_game_room', async (gameId) => {
       try {
         const roomName = `game_${gameId}`;
         socket.join(roomName);
-        console.log(`User ${socket.userId} joined game room: ${roomName}`);
+        Logger.info(`User ${socket.userId} joined game room: ${roomName}`);
         socket.emit('joined_game_room', { gameId, room: roomName });
       } catch (error) {
-        console.error('Join game room error:', error);
+        Logger.error('Join game room error:', error);
         socket.emit('error', { message: 'Failed to join game room' });
       }
     });
@@ -39,7 +40,7 @@ function setupGameSocket(io) {
     socket.on('leave_game_room', (gameId) => {
       const roomName = `game_${gameId}`;
       socket.leave(roomName);
-      console.log(`User ${socket.userId} left game room: ${roomName}`);
+      Logger.info(`User ${socket.userId} left game room: ${roomName}`);
       socket.emit('left_game_room', { gameId });
     });
 
@@ -67,7 +68,7 @@ function setupGameSocket(io) {
 
         socket.emit('game_action_confirmed', { sessionId, action });
       } catch (error) {
-        console.error('Game action error:', error);
+        Logger.error('Game action error:', error);
         socket.emit('error', { message: 'Failed to process game action' });
       }
     });
@@ -129,13 +130,13 @@ function setupGameSocket(io) {
           balance: { coins: user.coins, diamonds: user.diamonds }
         });
       } catch (error) {
-        console.error('Game result error:', error);
+        Logger.error('Game result error:', error);
         socket.emit('error', { message: 'Failed to process game result' });
       }
     });
 
     socket.on('disconnect', () => {
-      console.log(`🎮 Game socket disconnected: User ${socket.userId}`);
+      Logger.info(`🎮 Game socket disconnected: User ${socket.userId}`);
     });
   });
 

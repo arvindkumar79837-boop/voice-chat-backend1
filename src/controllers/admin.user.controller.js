@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 
 /**
@@ -35,7 +36,7 @@ exports.getAllUsers = async (req, res) => {
       pagination: { total, page, pages: Math.ceil(total / limit) }
     });
   } catch (error) {
-    console.error('getAllUsers Error:', error);
+    Logger.error('getAllUsers Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -75,7 +76,7 @@ exports.toggleBanStatus = async (req, res) => {
 
     return res.status(200).json({ success: true, message: `User successfully ${isBanned ? 'banned' : 'unbanned'}.`, data: user });
   } catch (error) {
-    console.error('toggleBanStatus Error:', error);
+    Logger.error('toggleBanStatus Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -93,7 +94,7 @@ exports.verifyUser = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'User verified', data: user });
   } catch (error) {
-    console.error('Verify User Error:', error);
+    Logger.error('Verify User Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -118,7 +119,7 @@ exports.adjustUserCoins = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'User balance updated', data: user });
   } catch (error) {
-    console.error('Adjust User Coins Error:', error);
+    Logger.error('Adjust User Coins Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -128,7 +129,7 @@ exports.getWithdrawals = async (req, res) => {
     const withdrawals = await require('../models/Withdrawal').find().sort({ createdAt: -1 });
     return res.status(200).json({ success: true, data: withdrawals });
   } catch (error) {
-    console.error('Get Withdrawals Error:', error);
+    Logger.error('Get Withdrawals Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -145,7 +146,7 @@ exports.approveWithdrawal = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Withdrawal approved', data: item });
   } catch (error) {
-    console.error('Approve Withdrawal Error:', error);
+    Logger.error('Approve Withdrawal Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -162,7 +163,7 @@ exports.rejectWithdrawal = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Withdrawal rejected', data: item });
   } catch (error) {
-    console.error('Reject Withdrawal Error:', error);
+    Logger.error('Reject Withdrawal Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -173,7 +174,7 @@ exports.getAnnouncements = async (req, res) => {
     const items = await Announcement.find().sort({ createdAt: -1 });
     return res.status(200).json({ success: true, data: items });
   } catch (error) {
-    console.error('Get Announcements Error:', error);
+    Logger.error('Get Announcements Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -185,7 +186,7 @@ exports.sendAnnouncement = async (req, res) => {
     const item = await Announcement.create({ title, message });
     return res.status(201).json({ success: true, message: 'Announcement sent', data: item });
   } catch (error) {
-    console.error('Send Announcement Error:', error);
+    Logger.error('Send Announcement Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -196,7 +197,7 @@ exports.getGifts = async (req, res) => {
     const gifts = await Gift.find().sort({ createdAt: -1 });
     return res.status(200).json({ success: true, data: gifts });
   } catch (error) {
-    console.error('Get Gifts Error:', error);
+    Logger.error('Get Gifts Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -207,7 +208,7 @@ exports.addGift = async (req, res) => {
     const item = await Gift.create(req.body);
     return res.status(201).json({ success: true, data: item });
   } catch (error) {
-    console.error('Add Gift Error:', error);
+    Logger.error('Add Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -219,7 +220,7 @@ exports.updateGift = async (req, res) => {
     if (!item) return res.status(404).json({ success: false, message: 'Gift not found' });
     return res.status(200).json({ success: true, data: item });
   } catch (error) {
-    console.error('Update Gift Error:', error);
+    Logger.error('Update Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -231,7 +232,7 @@ exports.deleteGift = async (req, res) => {
     if (!item) return res.status(404).json({ success: false, message: 'Gift not found' });
     return res.status(200).json({ success: true, message: 'Gift deleted' });
   } catch (error) {
-    console.error('Delete Gift Error:', error);
+    Logger.error('Delete Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -242,7 +243,7 @@ exports.getRecharges = async (req, res) => {
     const items = await Recharge.find().sort({ createdAt: -1 });
     return res.status(200).json({ success: true, data: items });
   } catch (error) {
-    console.error('Get Recharges Error:', error);
+    Logger.error('Get Recharges Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -253,7 +254,7 @@ exports.getSecurityLogins = async (req, res) => {
     const items = await AuditLog.find({ action: /LOGIN|LOGOUT|TOKEN_REFRESH|SUSPICIOUS_ACTIVITY/i }).sort({ createdAt: -1 }).limit(100);
     return res.status(200).json({ success: true, data: items });
   } catch (error) {
-    console.error('Get Security Logins Error:', error);
+    Logger.error('Get Security Logins Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -265,7 +266,7 @@ exports.blockIp = async (req, res) => {
 
     return res.status(200).json({ success: true, message: `Blocked IP ${ip}` });
   } catch (error) {
-    console.error('Block IP Error:', error);
+    Logger.error('Block IP Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

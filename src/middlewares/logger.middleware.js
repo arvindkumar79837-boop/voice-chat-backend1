@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/middlewares/logger.middleware.js
 // ARVIND PARTY - STRUCTURED LOGGER
@@ -27,19 +28,19 @@ const log = (level, message, meta = {}) => {
   // Console output with colors
   switch (level) {
     case 'ERROR':
-      console.error(chalk.red(`[${timestamp}] ERROR: ${message}`), meta);
+      Logger.error(chalk.red(`[${timestamp}] ERROR: ${message}`), meta);
       break;
     case 'WARN':
-      console.warn(chalk.yellow(`[${timestamp}] WARN: ${message}`), meta);
+      Logger.warn(chalk.yellow(`[${timestamp}] WARN: ${message}`), meta);
       break;
     case 'INFO':
-      console.log(chalk.cyan(`[${timestamp}] INFO: ${message}`), meta);
+      Logger.info(chalk.cyan(`[${timestamp}] INFO: ${message}`), meta);
       break;
     case 'DEBUG':
-      console.log(chalk.gray(`[${timestamp}] DEBUG: ${message}`), meta);
+      Logger.info(chalk.gray(`[${timestamp}] DEBUG: ${message}`), meta);
       break;
     default:
-      console.log(`[${timestamp}] ${level}: ${message}`, meta);
+      Logger.info(`[${timestamp}] ${level}: ${message}`, meta);
   }
 };
 

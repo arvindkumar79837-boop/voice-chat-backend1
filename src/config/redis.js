@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 /**
  * Arvind Party - Redis Configuration
  */
@@ -56,34 +57,34 @@ const connectRedis = async () => {
     
     redisClient.on('error', (err) => {
       MonitoringService.updateRedisStatus(false);
-      console.error('❌ Redis Client Error:', err.message);
+      Logger.error('❌ Redis Client Error:', err.message);
     });
 
     redisClient.on('connect', () => {
       MonitoringService.updateRedisStatus(true);
-      console.log('🔄 Redis Client Connected');
+      Logger.info('🔄 Redis Client Connected');
     });
 
     redisClient.on('ready', () => {
       MonitoringService.updateRedisStatus(true);
-      console.log('✅ Redis Client Ready');
+      Logger.info('✅ Redis Client Ready');
     });
 
     redisClient.on('reconnecting', () => {
-      console.log('🔄 Redis Client Reconnecting...');
+      Logger.info('🔄 Redis Client Reconnecting...');
     });
 
     redisClient.on('end', () => {
       MonitoringService.updateRedisStatus(false);
-      console.log('⚠️ Redis Client Disconnected');
+      Logger.info('⚠️ Redis Client Disconnected');
     });
 
     await Promise.race([connectPromise, timeoutPromise]);
-    console.log('✅ Redis Connected Successfully');
+    Logger.info('✅ Redis Connected Successfully');
     return true;
   } catch (error) {
-    console.error('⚠️ Redis Connection Failed:', error.message);
-    console.log('⚠️ Server will continue running without Redis cache');
+    Logger.error('⚠️ Redis Connection Failed:', error.message);
+    Logger.info('⚠️ Server will continue running without Redis cache');
     return false;
   }
 };
@@ -93,7 +94,7 @@ const getRedisClient = () => redisClient;
 const disconnectRedis = async () => {
   if (redisClient) {
     await redisClient.quit();
-    console.log('📴 Redis Connection Closed');
+    Logger.info('📴 Redis Connection Closed');
   }
 };
 

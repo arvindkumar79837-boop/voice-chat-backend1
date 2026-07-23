@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: arvind-party-backend/src/sockets/matchmakingSocket.js
 // ARVIND PARTY - BLIND DATE MATCHMAKING SOCKET HANDLER
@@ -6,18 +7,35 @@
 const User = require('../models/User');
 const Room = require('../models/Room');
 const crypto = require('crypto');
+const { getRedisClient } = require('../config/redis');
 
-// In-memory queue for users searching for a match.
-// For production, this should be moved to a more scalable store like Redis.
-const matchmakingQueue = [];
+// Redis key for matchmaking queue
+const MATCHMAKING_QUEUE_KEY = 'blind_date:matchmaking_queue';
 
 // Simple matchmaking algorithm: finds the first two users in the queue.
 const attemptToMatchUsers = async (io) => {
-  if (matchmakingQueue.length >= 2) {
-    const user1 = matchmakingQueue.shift();
-    const user2 = matchmakingQueue.shift();
+  const redis = getRedisClient();
+  if (!redis) {
+    Logger.warn('[Matchmaking] Redis not available, skipping match attempt');
+    return;
+  }
 
-    console.log(`[Matchmaking] Attempting to match ${user1.name} with ${user2.name}`);
+  try {
+    const queueSize = await redis.lLen(MATCHMAKING_QUEUE_KEY);
+    if (queueSize >= 2) {
+      // Pop two users atomically using a transaction or script
+      const user1Raw = await redis.lPop(MATCHMAKING_QUEUE_KEY);
+      const user2Raw = await redis.lPop(MATCHMAKING_QUEUE_KEY);
+      
+      if (!user1Raw || !user2Raw) {
+        if (user1Raw) await redis.lPush(MATCHMAKING_QUEUE_KEY, user1Raw);
+        return;
+      }
+
+      const user1 = JSON.parse(user1Raw);
+      const user2 = JSON.parse(user2Raw);
+
+    Logger.info(`[Matchmaking] Attempting to match ${user1.name} with ${user2.name}`);
 
     try {
       // 1. Create a new private room for the matched pair
@@ -46,11 +64,14 @@ const attemptToMatchUsers = async (io) => {
       io.to(user1.socketId).emit('blind_date:match_found', payloadForUser1);
       io.to(user2.socketId).emit('blind_date:match_found', payloadForUser2);
 
-      console.log(`[Matchmaking] Match found! Room ${newRoom._id} created for ${user1.name} and ${user2.name}.`);
+      Logger.info(`[Matchmaking] Match found! Room ${newRoom._id} created for ${user1.name} and ${user2.name}.`);
     } catch (error) {
-      console.error('[Matchmaking] Error creating room for match:', error);
-      matchmakingQueue.unshift(user2);
-      matchmakingQueue.unshift(user1);
+      Logger.error('[Matchmaking] Error creating room for match:', error);
+      // Put users back in queue if room creation fails
+      if (user1 && user2) {
+        await redis.lPush(MATCHMAKING_QUEUE_KEY, JSON.stringify(user2));
+        await redis.lPush(MATCHMAKING_QUEUE_KEY, JSON.stringify(user1));
+      }
     }
   }
 };
@@ -70,10 +91,13 @@ const startMatchmaking = (io) => {
 module.exports = (io, socket) => {
   startMatchmaking(io);
   socket.on('blind_date:start_search', async () => {
-    if (matchmakingQueue.some(user => user.socketId === socket.id)) return;
+    const redis = getRedisClient();
+    if (!redis) return socket.emit('blind_date:error', { message: 'Matchmaking unavailable' });
+
     try {
       const user = await User.findById(socket.data.userId).lean();
       if (!user) return;
+      
       const queueEntry = {
         socketId: socket.id,
         userId: user._id.toString(),
@@ -82,27 +106,61 @@ module.exports = (io, socket) => {
         age: user.age,
         gender: user.gender,
       };
-      matchmakingQueue.push(queueEntry);
-      console.log(`[Matchmaking] ${queueEntry.name} joined queue. Size: ${matchmakingQueue.length}`);
+
+      // Remove existing entry for this socket if any
+      const currentQueue = await redis.lRange(MATCHMAKING_QUEUE_KEY, 0, -1);
+      for (const item of currentQueue) {
+        const parsed = JSON.parse(item);
+        if (parsed.socketId === socket.id || parsed.userId === user._id.toString()) {
+          await redis.lRem(MATCHMAKING_QUEUE_KEY, 0, item);
+        }
+      }
+
+      await redis.rPush(MATCHMAKING_QUEUE_KEY, JSON.stringify(queueEntry));
+      const newSize = await redis.lLen(MATCHMAKING_QUEUE_KEY);
+      
+      Logger.info(`[Matchmaking] ${queueEntry.name} joined queue. Size: ${newSize}`);
       attemptToMatchUsers(io);
     } catch (error) {
-      console.error('[Matchmaking] Error adding user to queue:', error);
+      Logger.error('[Matchmaking] Error adding user to queue:', error);
     }
   });
 
-  socket.on('blind_date:cancel_search', () => {
-    const index = matchmakingQueue.findIndex(user => user.socketId === socket.id);
-    if (index !== -1) {
-      const removedUser = matchmakingQueue.splice(index, 1);
-      console.log(`[Matchmaking] ${removedUser[0].name} left queue. Size: ${matchmakingQueue.length}`);
+  socket.on('blind_date:cancel_search', async () => {
+    const redis = getRedisClient();
+    if (!redis) return;
+
+    try {
+      const currentQueue = await redis.lRange(MATCHMAKING_QUEUE_KEY, 0, -1);
+      for (const item of currentQueue) {
+        const parsed = JSON.parse(item);
+        if (parsed.socketId === socket.id) {
+          await redis.lRem(MATCHMAKING_QUEUE_KEY, 0, item);
+          Logger.info(`[Matchmaking] ${parsed.name} left queue.`);
+          break;
+        }
+      }
+    } catch (error) {
+      Logger.error('[Matchmaking] Error cancelling search:', error);
     }
   });
 
-  socket.on('disconnect', () => {
-    const index = matchmakingQueue.findIndex(user => user.socketId === socket.id);
-    if (index !== -1) {
-      const removedUser = matchmakingQueue.splice(index, 1);
-      console.log(`[Matchmaking] ${removedUser[0].name} disconnected, removed from queue. Size: ${matchmakingQueue.length}`);
+  socket.on('disconnect', async () => {
+    const redis = getRedisClient();
+    if (!redis) return;
+
+    try {
+      const currentQueue = await redis.lRange(MATCHMAKING_QUEUE_KEY, 0, -1);
+      for (const item of currentQueue) {
+        const parsed = JSON.parse(item);
+        if (parsed.socketId === socket.id) {
+          await redis.lRem(MATCHMAKING_QUEUE_KEY, 0, item);
+          Logger.info(`[Matchmaking] ${parsed.name} disconnected, removed from queue.`);
+          break;
+        }
+      }
+    } catch (error) {
+      Logger.error('[Matchmaking] Error removing user on disconnect:', error);
     }
   });
 };

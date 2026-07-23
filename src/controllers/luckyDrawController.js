@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const LuckyDraw = require('../models/LuckyDraw');
 const User = require('../models/User');
 const UserEventProgress = require('../models/UserEventProgress');
@@ -25,7 +26,7 @@ exports.createLuckyDraw = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Lucky draw created', data: luckyDraw });
   } catch (error) {
-    console.error('Create LuckyDraw Error:', error);
+    Logger.error('Create LuckyDraw Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create lucky draw' });
   }
 };
@@ -86,7 +87,7 @@ exports.getActiveLuckyDraws = async (req, res) => {
 
     res.status(200).json({ success: true, data: draws });
   } catch (error) {
-    console.error('Get LuckyDraws Error:', error);
+    Logger.error('Get LuckyDraws Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch lucky draws' });
   }
 };
@@ -101,7 +102,7 @@ exports.getLuckyDrawById = async (req, res) => {
     }
     res.status(200).json({ success: true, data: draw });
   } catch (error) {
-    console.error('Get LuckyDraw Error:', error);
+    Logger.error('Get LuckyDraw Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch lucky draw' });
   }
 };
@@ -232,7 +233,7 @@ exports.spinWheel = async (req, res) => {
 
     res.status(200).json({ success: true, data: { prize: prizeResult, jackpot_hit: jackpotHit } });
   } catch (error) {
-    console.error('Spin Wheel Error:', error);
+    Logger.error('Spin Wheel Error:', error);
     res.status(500).json({ success: false, message: 'Failed to process spin' });
   }
 };
@@ -245,7 +246,7 @@ exports.adminGetAll = async (req, res) => {
       .sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: draws });
   } catch (error) {
-    console.error('Admin Get LuckyDraws Error:', error);
+    Logger.error('Admin Get LuckyDraws Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch lucky draws' });
   }
 };
@@ -259,7 +260,7 @@ exports.updateLuckyDraw = async (req, res) => {
     }
     res.status(200).json({ success: true, data: draw });
   } catch (error) {
-    console.error('Update LuckyDraw Error:', error);
+    Logger.error('Update LuckyDraw Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update lucky draw' });
   }
 };
@@ -273,7 +274,7 @@ exports.deleteLuckyDraw = async (req, res) => {
     }
     res.status(200).json({ success: true, message: 'Lucky draw deleted' });
   } catch (error) {
-    console.error('Delete LuckyDraw Error:', error);
+    Logger.error('Delete LuckyDraw Error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete lucky draw' });
   }
 };
@@ -371,7 +372,7 @@ async function spinFromConfig(req, res, config, user) {
       } 
     });
   } catch (error) {
-    console.error('Spin from config error:', error);
+    Logger.error('Spin from config error:', error);
     res.status(500).json({ success: false, message: 'Failed to process spin from config' });
   }
 }

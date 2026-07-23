@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/controllers/eventController.js
 // ARVIND PARTY - MASTER EVENT ENGINE CONTROLLER
@@ -56,7 +57,7 @@ class EventController {
         count: enrichedEvents.length
       });
     } catch (error) {
-      console.error('Error fetching active events:', error);
+      Logger.error('Error fetching active events:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch active events'
@@ -116,7 +117,7 @@ class EventController {
         data: enrichedEvent
       });
     } catch (error) {
-      console.error('Error fetching event details:', error);
+      Logger.error('Error fetching event details:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch event details'
@@ -192,7 +193,7 @@ class EventController {
         }
       });
     } catch (error) {
-      console.error('Error joining event:', error);
+      Logger.error('Error joining event:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to join event'
@@ -238,7 +239,7 @@ class EventController {
         }
       });
     } catch (error) {
-      console.error('Error leaving event:', error);
+      Logger.error('Error leaving event:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to leave event'
@@ -332,7 +333,7 @@ class EventController {
         }
       });
     } catch (error) {
-      console.error('Error claiming event reward:', error);
+      Logger.error('Error claiming event reward:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to claim reward'
@@ -396,7 +397,7 @@ class EventController {
         }
       });
     } catch (error) {
-      console.error('Error updating progress:', error);
+      Logger.error('Error updating progress:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update progress'
@@ -434,7 +435,7 @@ class EventController {
         }
       });
     } catch (error) {
-      console.error('Error fetching user event history:', error);
+      Logger.error('Error fetching user event history:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch event history'
@@ -475,7 +476,7 @@ class EventController {
         }
       });
     } catch (error) {
-      console.error('Error fetching admin events:', error);
+      Logger.error('Error fetching admin events:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch events'
@@ -526,7 +527,7 @@ class EventController {
         message: 'Event created successfully'
       });
     } catch (error) {
-      console.error('Error creating event:', error);
+      Logger.error('Error creating event:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to create event'
@@ -561,7 +562,7 @@ class EventController {
         message: 'Event updated successfully'
       });
     } catch (error) {
-      console.error('Error updating event:', error);
+      Logger.error('Error updating event:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update event'
@@ -594,7 +595,7 @@ class EventController {
         message: 'Event deleted successfully'
       });
     } catch (error) {
-      console.error('Error deleting event:', error);
+      Logger.error('Error deleting event:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to delete event'
@@ -613,7 +614,7 @@ class EventController {
         data: tasks
       });
     } catch (error) {
-      console.error('Error fetching welcome week tasks:', error);
+      Logger.error('Error fetching welcome week tasks:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch tasks'
@@ -630,7 +631,7 @@ class EventController {
         message: 'Task created successfully'
       });
     } catch (error) {
-      console.error('Error creating task:', error);
+      Logger.error('Error creating task:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to create task'
@@ -648,7 +649,7 @@ class EventController {
         message: 'Task updated successfully'
       });
     } catch (error) {
-      console.error('Error updating task:', error);
+      Logger.error('Error updating task:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update task'
@@ -671,7 +672,7 @@ class EventController {
         data: gifts
       });
     } catch (error) {
-      console.error('Error fetching festival gifts:', error);
+      Logger.error('Error fetching festival gifts:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch festival gifts'
@@ -688,7 +689,7 @@ class EventController {
         message: 'Festival gift created successfully'
       });
     } catch (error) {
-      console.error('Error creating festival gift:', error);
+      Logger.error('Error creating festival gift:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to create festival gift'
@@ -711,7 +712,7 @@ class EventController {
         data: rewards
       });
     } catch (error) {
-      console.error('Error fetching anniversary rewards:', error);
+      Logger.error('Error fetching anniversary rewards:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch anniversary rewards'
@@ -728,7 +729,7 @@ class EventController {
         message: 'Anniversary reward created successfully'
       });
     } catch (error) {
-      console.error('Error creating anniversary reward:', error);
+      Logger.error('Error creating anniversary reward:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to create anniversary reward'
@@ -748,7 +749,7 @@ class EventController {
         data: pool
       });
     } catch (error) {
-      console.error('Error fetching prize pool:', error);
+      Logger.error('Error fetching prize pool:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch prize pool'
@@ -773,7 +774,7 @@ class EventController {
         message: 'Prize pool updated successfully'
       });
     } catch (error) {
-      console.error('Error updating prize pool:', error);
+      Logger.error('Error updating prize pool:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update prize pool'
@@ -812,7 +813,7 @@ class EventController {
         }
       });
     } catch (error) {
-      console.error('Error fetching event stats:', error);
+      Logger.error('Error fetching event stats:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch event statistics'
@@ -962,7 +963,7 @@ class EventController {
         tournament_rounds: event.metadata.tournament_rounds
       });
     } catch (error) {
-      console.error('Error fetching tournament standings:', error);
+      Logger.error('Error fetching tournament standings:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch tournament standings'
@@ -1002,7 +1003,7 @@ class EventController {
         }
       });
     } catch (error) {
-      console.error('Error fetching events dashboard:', error);
+      Logger.error('Error fetching events dashboard:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch events dashboard'

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const BlindDateProfile = require('../models/BlindDateProfile');
 const BlindDateSession = require('../models/BlindDateSession');
 const IcebreakerPrompt = require('../models/IcebreakerPrompt');
@@ -99,7 +100,7 @@ exports.processQueue = async () => {
         }
       }
     } finally { await redis.del(QUEUE_LOCK_KEY); }
-  } catch (err) { console.error('Blind date queue error:', err.message); }
+  } catch (err) { Logger.error('Blind date queue error:', err.message); }
 };
 
 function isCompatible(a, b) {
@@ -141,7 +142,7 @@ async function createMatch(userA, userB, redis) {
   if (promptId) { const p = await IcebreakerPrompt.findById(promptId).select('text'); if (p) icebreakerText = p.text; }
   session._matchData = { userA: { userId: userA.userId, name: userA.name, avatar: userA.avatar }, userB: { userId: userB.userId, name: userB.name, avatar: userB.avatar }, icebreakerText, coinsCharged };
   await session.save();
-  console.log(`✅ Blind date match: ${userA.userId} <-> ${userB.userId}`);
+  Logger.info(`✅ Blind date match: ${userA.userId} <-> ${userB.userId}`);
 }
 
 exports.getSession = async (req, res) => {

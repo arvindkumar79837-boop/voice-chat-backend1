@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/middlewares/refreshToken.middleware.js
 // ARVIND PARTY — Refresh Token Rotation & Revocation Guard
@@ -94,7 +95,7 @@ const refreshTokenMiddleware = async (req, res, next) => {
     req.refreshTokenRecord = stored;
     next();
   } catch (error) {
-    console.error('Refresh Token Middleware Error:', error);
+    Logger.error('Refresh Token Middleware Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal server error during token refresh.',

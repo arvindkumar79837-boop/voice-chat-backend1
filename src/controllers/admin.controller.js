@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 const WalletTransaction = require('../models/WalletTransaction');
 const Withdrawal = require('../models/Withdrawal');
@@ -62,7 +63,7 @@ exports.getStats = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('getStats Error:', error);
+    Logger.error('getStats Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -107,7 +108,7 @@ exports.getUsers = async (req, res) => {
       pagination: { total, page, pages: Math.ceil(total / limit) }
     });
   } catch (error) {
-    console.error('getUsers Error:', error);
+    Logger.error('getUsers Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -124,7 +125,7 @@ exports.getUserDetail = async (req, res) => {
       data: user
     });
   } catch (error) {
-    console.error('getUserDetail Error:', error);
+    Logger.error('getUserDetail Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -151,7 +152,7 @@ exports.updateUser = async (req, res) => {
       data: user
     });
   } catch (error) {
-    console.error('updateUser Error:', error);
+    Logger.error('updateUser Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -185,7 +186,7 @@ exports.toggleBan = async (req, res) => {
       data: user
     });
   } catch (error) {
-    console.error('toggleBan Error:', error);
+    Logger.error('toggleBan Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -239,7 +240,7 @@ exports.getWallets = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('getWallets Error:', error);
+    Logger.error('getWallets Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -281,7 +282,7 @@ exports.adjustWallet = async (req, res) => {
       data: user
     });
   } catch (error) {
-    console.error('adjustWallet Error:', error);
+    Logger.error('adjustWallet Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -298,7 +299,7 @@ exports.getLiveRooms = async (req, res) => {
       data: rooms
     });
   } catch (error) {
-    console.error('getLiveRooms Error:', error);
+    Logger.error('getLiveRooms Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -311,7 +312,7 @@ exports.getBans = async (req, res) => {
 
     return res.status(200).json({ success: true, data: users });
   } catch (error) {
-    console.error('getBans Error:', error);
+    Logger.error('getBans Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -335,7 +336,7 @@ exports.createBan = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'User banned successfully', data: user });
   } catch (error) {
-    console.error('createBan Error:', error);
+    Logger.error('createBan Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -354,7 +355,7 @@ exports.liftBan = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Ban lifted successfully', data: user });
   } catch (error) {
-    console.error('liftBan Error:', error);
+    Logger.error('liftBan Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -374,7 +375,7 @@ exports.getGlobalSettings = async (req, res) => {
     const settings = await GlobalSetting.findOne();
     return res.status(200).json({ success: true, data: settings || {} });
   } catch (error) {
-    console.error('getGlobalSettings Error:', error);
+    Logger.error('getGlobalSettings Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -395,7 +396,7 @@ exports.updateGlobalSettings = async (req, res) => {
     await settings.save();
     return res.status(200).json({ success: true, message: 'Global settings updated', data: settings });
   } catch (error) {
-    console.error('updateGlobalSettings Error:', error);
+    Logger.error('updateGlobalSettings Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -418,7 +419,7 @@ exports.adminSearch = async (req, res) => {
 
     return res.status(200).json({ success: true, data: { users } });
   } catch (error) {
-    console.error('adminSearch Error:', error);
+    Logger.error('adminSearch Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

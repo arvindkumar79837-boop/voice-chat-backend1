@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const Tournament = require('../models/Tournament');
 const User = require('../models/User');
 const Championship = require('../models/Championship');
@@ -22,7 +23,7 @@ exports.createTournament = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Tournament created successfully', data: tournament });
   } catch (error) {
-    console.error('Create Tournament Error:', error);
+    Logger.error('Create Tournament Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create tournament' });
   }
 };
@@ -50,7 +51,7 @@ exports.getTournaments = async (req, res) => {
       pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
     });
   } catch (error) {
-    console.error('Get Tournaments Error:', error);
+    Logger.error('Get Tournaments Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch tournaments' });
   }
 };
@@ -66,7 +67,7 @@ exports.getTournamentById = async (req, res) => {
 
     res.status(200).json({ success: true, data: tournament });
   } catch (error) {
-    console.error('Get Tournament Error:', error);
+    Logger.error('Get Tournament Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch tournament' });
   }
 };
@@ -118,7 +119,7 @@ exports.registerForTournament = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Registered successfully', data: tournament });
   } catch (error) {
-    console.error('Register Tournament Error:', error);
+    Logger.error('Register Tournament Error:', error);
     res.status(500).json({ success: false, message: 'Failed to register' });
   }
 };
@@ -146,7 +147,7 @@ exports.updateTournamentScore = async (req, res) => {
 
     res.status(200).json({ success: true, data: tournament });
   } catch (error) {
-    console.error('Update Tournament Score Error:', error);
+    Logger.error('Update Tournament Score Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update score' });
   }
 };
@@ -173,7 +174,7 @@ exports.completeTournament = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Tournament completed', data: tournament });
   } catch (error) {
-    console.error('Complete Tournament Error:', error);
+    Logger.error('Complete Tournament Error:', error);
     res.status(500).json({ success: false, message: 'Failed to complete tournament' });
   }
 };
@@ -246,7 +247,7 @@ exports.getTournamentLeaderboard = async (req, res) => {
 
     res.status(200).json({ success: true, data: sorted, total: tournament.participants_count });
   } catch (error) {
-    console.error('Get Tournament Leaderboard Error:', error);
+    Logger.error('Get Tournament Leaderboard Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch leaderboard' });
   }
 };
@@ -259,7 +260,7 @@ exports.adminGetAllTournaments = async (req, res) => {
 
     res.status(200).json({ success: true, data: tournaments });
   } catch (error) {
-    console.error('Admin Get Tournaments Error:', error);
+    Logger.error('Admin Get Tournaments Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch tournaments' });
   }
 };

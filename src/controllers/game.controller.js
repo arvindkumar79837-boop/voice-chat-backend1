@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 const LuckyDrawReward = require('../models/LuckyDrawReward');
 
@@ -15,7 +16,7 @@ exports.getLuckyWheelRewards = async (req, res) => {
       .lean();
     return res.status(200).json({ success: true, data: rewards });
   } catch (error) {
-    console.error('getLuckyWheelRewards Error:', error);
+    Logger.error('getLuckyWheelRewards Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -74,7 +75,7 @@ exports.spinLuckyWheel = async (req, res) => {
       data: { reward: selectedReward, newBalance: updatedUser.coins }
     });
   } catch (error) {
-    console.error('spinLuckyWheel Error:', error);
+    Logger.error('spinLuckyWheel Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

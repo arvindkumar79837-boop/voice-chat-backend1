@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const DealerWallet = require('../models/DealerWallet');
@@ -71,7 +72,7 @@ exports.generateForUser = async (req, res) => {
     });
   } catch (error) {
     await session.abortTransaction();
-    console.error('Generate For User Error:', error);
+    Logger.error('Generate For User Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   } finally {
     session.endSession();
@@ -173,7 +174,7 @@ exports.distributeCoins = async (req, res) => {
     });
   } catch (error) {
     await session.abortTransaction();
-    console.error('Distribute Coins Error:', error);
+    Logger.error('Distribute Coins Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   } finally {
     session.endSession();

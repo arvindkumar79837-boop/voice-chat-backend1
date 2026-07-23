@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/controllers/auth.controller.js
 // ARVIND PARTY - PRODUCTION-READY AUTHENTICATION
@@ -83,7 +84,7 @@ exports.login = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('❌ Login Error:', error);
+    Logger.error('❌ Login Error:', error);
     next(error);
   }
 };
@@ -163,7 +164,7 @@ exports.register = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('❌ Register Error:', error);
+    Logger.error('❌ Register Error:', error);
     next(error);
   }
 };
@@ -263,7 +264,7 @@ exports.logout = async (req, res, next) => {
       message: 'Logged out successfully'
     });
   } catch (error) {
-    console.error('❌ Logout Error:', error);
+    Logger.error('❌ Logout Error:', error);
     next(error);
   }
 };
@@ -347,7 +348,7 @@ exports.deleteAccount = async (req, res, next) => {
       message: 'Account deleted permanently'
     });
   } catch (error) {
-    console.error('❌ Delete Account Error:', error);
+    Logger.error('❌ Delete Account Error:', error);
     next(error);
   }
 };

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/services/fraudDetection.service.js
 // ARVIND PARTY — Financial Fraud Protection Engine [Phase 34]
@@ -55,7 +56,7 @@ const verifyGooglePlayPurchase = async ({ packageName, productId, purchaseToken 
     }
     return { valid: true, consumed: data.consumptionState === 1, purchaseTime: data.purchaseTimeMillis };
   } catch (err) {
-    console.error('Google Play verification failed:', err.response?.data || err.message);
+    Logger.error('Google Play verification failed:', err.response?.data || err.message);
     return { valid: false, reason: err.response?.data?.error?.message || err.message };
   }
 };
@@ -96,7 +97,7 @@ const verifyGooglePlaySubscription = async ({ packageName, productId, purchaseTo
       cancelReason: data.cancelReason || null,
     };
   } catch (err) {
-    console.error('Google Play subscription verification failed:', err.response?.data || err.message);
+    Logger.error('Google Play subscription verification failed:', err.response?.data || err.message);
     return { valid: false, reason: err.response?.data?.error?.message || err.message };
   }
 };

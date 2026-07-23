@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/services/ip.service.js
 // ARVIND PARTY - IP INTELLIGENCE SERVICE
@@ -29,7 +30,7 @@ const checkIpInfo = async (ipAddress) => {
     const data = response.data;
 
     if (data.status === 'fail') {
-      console.warn(`[IP Service] Failed to check IP ${ipAddress}: ${data.message}`);
+      Logger.warn(`[IP Service] Failed to check IP ${ipAddress}: ${data.message}`);
       return { isVpn: false, country: 'Unknown', city: 'Unknown', isp: 'Unknown' };
     }
 
@@ -41,7 +42,7 @@ const checkIpInfo = async (ipAddress) => {
       isp: data.isp || 'Unknown',
     };
   } catch (error) {
-    console.error(`[IP Service] Error checking IP ${ipAddress}:`, error.message);
+    Logger.error(`[IP Service] Error checking IP ${ipAddress}:`, error.message);
     // Fail-safe: If the service fails, do not block the user.
     return { isVpn: false, country: 'Unknown', city: 'Unknown', isp: 'Unknown' };
   }

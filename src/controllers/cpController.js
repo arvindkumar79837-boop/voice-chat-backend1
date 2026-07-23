@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const CpPair = require('../models/CpPair');
 const User = require('../models/User');
 
@@ -17,7 +18,7 @@ exports.getMyCp = async (req, res) => {
 
     res.status(200).json({ success: true, cpPair: cpData });
   } catch (error) {
-    console.error('Get CP Error:', error);
+    Logger.error('Get CP Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch CP details' });
   }
 };
@@ -32,7 +33,7 @@ exports.bindCp = async (req, res) => {
     const newCp = await CpPair.create({ user1Id: userId, user2Id: targetUserId });
     res.status(201).json({ success: true, cpPair: newCp, message: "Successfully bound as CP!" });
   } catch (error) {
-    console.error('Bind CP Error:', error);
+    Logger.error('Bind CP Error:', error);
     res.status(500).json({ success: false, message: 'Failed to bind CP' });
   }
 };

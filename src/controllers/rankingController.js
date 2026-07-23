@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 const redisRankingService = require('../services/redisRankingService');
 
@@ -46,7 +47,7 @@ exports.getTopWealth = async (req, res) => {
 
     res.status(200).json({ success: true, rankings: enriched });
   } catch (error) {
-    console.error('Wealth Ranking Error:', error);
+    Logger.error('Wealth Ranking Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch wealth rankings' });
   }
 };
@@ -96,7 +97,7 @@ exports.getTopCharm = async (req, res) => {
 
     res.status(200).json({ success: true, rankings: enriched });
   } catch (error) {
-    console.error('Charm Ranking Error:', error);
+    Logger.error('Charm Ranking Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch charm rankings' });
   }
 };
@@ -110,7 +111,7 @@ exports.getGiftRanking = async (req, res) => {
     const rankings = await redisRankingService.getGiftRanking(period, country, limit);
     res.status(200).json({ success: true, rankings });
   } catch (error) {
-    console.error('Gift Ranking Error:', error);
+    Logger.error('Gift Ranking Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch gift rankings' });
   }
 };
@@ -124,7 +125,7 @@ exports.getFamilyRanking = async (req, res) => {
     const rankings = await redisRankingService.getFamilyRanking(period, country, limit);
     res.status(200).json({ success: true, rankings });
   } catch (error) {
-    console.error('Family Ranking Error:', error);
+    Logger.error('Family Ranking Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch family rankings' });
   }
 };
@@ -138,7 +139,7 @@ exports.getAgencyRanking = async (req, res) => {
     const rankings = await redisRankingService.getAgencyRanking(period, country, limit);
     res.status(200).json({ success: true, rankings });
   } catch (error) {
-    console.error('Agency Ranking Error:', error);
+    Logger.error('Agency Ranking Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch agency rankings' });
   }
 };
@@ -152,7 +153,7 @@ exports.getRoomRanking = async (req, res) => {
     const rankings = await redisRankingService.getRoomRanking(period, country, limit);
     res.status(200).json({ success: true, rankings });
   } catch (error) {
-    console.error('Room Ranking Error:', error);
+    Logger.error('Room Ranking Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch room rankings' });
   }
 };
@@ -166,7 +167,7 @@ exports.getPKRanking = async (req, res) => {
     const rankings = await redisRankingService.getPKRanking(period, country, limit);
     res.status(200).json({ success: true, rankings });
   } catch (error) {
-    console.error('PK Ranking Error:', error);
+    Logger.error('PK Ranking Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch PK rankings' });
   }
 };
@@ -180,7 +181,7 @@ exports.getRichList = async (req, res) => {
     const rankings = await redisRankingService.getRichList(period, country, limit);
     res.status(200).json({ success: true, rankings });
   } catch (error) {
-    console.error('Rich List Error:', error);
+    Logger.error('Rich List Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch rich list' });
   }
 };
@@ -194,7 +195,7 @@ exports.getPopularList = async (req, res) => {
     const rankings = await redisRankingService.getPopularList(period, country, limit);
     res.status(200).json({ success: true, rankings });
   } catch (error) {
-    console.error('Popular List Error:', error);
+    Logger.error('Popular List Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch popular list' });
   }
 };
@@ -211,7 +212,7 @@ exports.getMyRanks = async (req, res) => {
     const ranks = await redisRankingService.getUserAllRanks(userId, country);
     res.status(200).json({ success: true, ranks });
   } catch (error) {
-    console.error('My Ranks Error:', error);
+    Logger.error('My Ranks Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch ranks' });
   }
 };
@@ -233,7 +234,7 @@ exports.getAdminLeaderboard = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin Leaderboard Error:', error);
+    Logger.error('Admin Leaderboard Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch leaderboard' });
   }
 };
@@ -249,7 +250,7 @@ exports.resetLeaderboard = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Leaderboard reset successfully', flushedKeys: result.flushed });
   } catch (error) {
-    console.error('Reset Leaderboard Error:', error);
+    Logger.error('Reset Leaderboard Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to reset leaderboard' });
   }
 };
@@ -259,7 +260,7 @@ exports.getRankingStats = async (req, res) => {
     const stats = await redisRankingService.getStats();
     res.status(200).json({ success: true, stats });
   } catch (error) {
-    console.error('Ranking Stats Error:', error);
+    Logger.error('Ranking Stats Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch ranking stats' });
   }
 };
@@ -277,7 +278,7 @@ exports.flushRankingCache = async (req, res) => {
 
     res.status(200).json({ success: true, result });
   } catch (error) {
-    console.error('Flush Cache Error:', error);
+    Logger.error('Flush Cache Error:', error);
     res.status(500).json({ success: false, message: 'Failed to flush ranking cache' });
   }
 };

@@ -4,6 +4,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const walletController = require('../controllers/walletController');
 const { authMiddleware: auth } = require('../middlewares/auth.middleware');
 const adminAuth = require('../middlewares/isAdmin');
+const { validateBody, validateObjectId } = require('../middlewares/validation.middleware');
 
 // ===================== USER WALLET =====================
 
@@ -17,17 +18,26 @@ router.get('/wallet/transactions', auth, asyncHandler(walletController.getTransa
 
 // ===================== SEND GIFT =====================
 
-router.post('/wallet/gift/send', auth, asyncHandler(walletController.sendGift));
+router.post('/wallet/gift/send', auth, validateBody({
+  recipientId: { required: true },
+  giftId: { required: true },
+  quantity: { isNumeric: true }
+}), asyncHandler(walletController.sendGift));
 
 // ===================== DIAMOND EXCHANGE =====================
 
 // Wallet Exchange (Diamond to Coin)
-router.post('/wallet/exchange', auth, asyncHandler(walletController.exchangeDiamondsToCoins));
+router.post('/wallet/exchange', auth, validateBody({
+  diamondsToExchange: { required: true, isNumeric: true }
+}), asyncHandler(walletController.exchangeDiamondsToCoins));
 
 // ===================== DIAMOND WITHDRAWAL =====================
 
 // Withdrawal Routes
-router.post('/wallet/withdraw/request', auth, asyncHandler(walletController.requestWithdrawal));
+router.post('/wallet/withdraw/request', auth, validateBody({
+  amount: { isNumeric: true },
+  diamonds: { isNumeric: true }
+}), asyncHandler(walletController.requestWithdrawal));
 router.get('/wallet/withdraw/status', auth, asyncHandler(walletController.getWithdrawalStatus));
 
 // ===================== FAMILY WALLET =====================

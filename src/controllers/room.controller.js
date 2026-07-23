@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const Room = require('../models/Room');
 const redisRankingIntegration = require('../services/redisRankingIntegration');
 
@@ -73,7 +74,7 @@ exports.createRoom = async (req, res) => {
     });
 
     // Initialize room in Redis rankings
-    redisRankingIntegration.onRoomActivity(room._id, 1, ownerId).catch(err => console.error('Redis room init failed:', err.message));
+    redisRankingIntegration.onRoomActivity(room._id, 1, ownerId).catch(err => Logger.error('Redis room init failed:', err.message));
 
     return res.status(201).json({
       success: true,
@@ -81,7 +82,7 @@ exports.createRoom = async (req, res) => {
       room
     });
   } catch (error) {
-    console.error('Create Room Error:', error);
+    Logger.error('Create Room Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to create room.',

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const InviteEvent = require('../models/InviteEvent');
 const User = require('../models/User');
 const crypto = require('crypto');
@@ -52,7 +53,7 @@ exports.generateInviteLink = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Generate Invite Error:', error);
+    Logger.error('Generate Invite Error:', error);
     res.status(500).json({ success: false, message: 'Failed to generate invite link' });
   }
 };
@@ -114,7 +115,7 @@ exports.registerViaInvite = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Register via Invite Error:', error);
+    Logger.error('Register via Invite Error:', error);
     res.status(500).json({ success: false, message: 'Failed to register via invite' });
   }
 };
@@ -163,7 +164,7 @@ exports.processRechargeCommission = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Process Recharge Commission Error:', error);
+    Logger.error('Process Recharge Commission Error:', error);
     res.status(500).json({ success: false, message: 'Failed to process commission' });
   }
 };
@@ -195,7 +196,7 @@ exports.getMyInviteStats = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Invite Stats Error:', error);
+    Logger.error('Get Invite Stats Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get invite stats' });
   }
 };
@@ -224,7 +225,7 @@ exports.adminGetAllInvites = async (req, res) => {
       pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
     });
   } catch (error) {
-    console.error('Admin Get Invites Error:', error);
+    Logger.error('Admin Get Invites Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch invites' });
   }
 };
@@ -251,7 +252,7 @@ exports.adminUpdateCommission = async (req, res) => {
 
     res.status(200).json({ success: true, data: invite });
   } catch (error) {
-    console.error('Admin Update Commission Error:', error);
+    Logger.error('Admin Update Commission Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update commission' });
   }
 };

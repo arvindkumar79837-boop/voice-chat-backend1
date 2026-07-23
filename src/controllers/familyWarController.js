@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const FamilyWar = require('../models/FamilyWar');
 const Family = require('../models/Family');
 const User = require('../models/User');
@@ -53,7 +54,7 @@ familyWarController.createWar = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'War created successfully', data: war });
   } catch (error) {
-    console.error('Create War Error:', error);
+    Logger.error('Create War Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create war' });
   }
 };
@@ -76,7 +77,7 @@ familyWarController.getAllWars = async (req, res) => {
       pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
     });
   } catch (error) {
-    console.error('Get Wars Error:', error);
+    Logger.error('Get Wars Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch wars' });
   }
 };
@@ -92,7 +93,7 @@ familyWarController.getActiveWars = async (req, res) => {
 
     res.status(200).json({ success: true, data: wars });
   } catch (error) {
-    console.error('Get Active Wars Error:', error);
+    Logger.error('Get Active Wars Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch active wars' });
   }
 };
@@ -106,7 +107,7 @@ familyWarController.getWarById = async (req, res) => {
     }
     res.status(200).json({ success: true, data: war });
   } catch (error) {
-    console.error('Get War Error:', error);
+    Logger.error('Get War Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch war details' });
   }
 };
@@ -136,7 +137,7 @@ familyWarController.updateWarStatus = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'War status updated', data: war });
   } catch (error) {
-    console.error('Update War Status Error:', error);
+    Logger.error('Update War Status Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update war status' });
   }
 };
@@ -202,7 +203,7 @@ familyWarController.submitFamilyWarGift = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Gift registered for war', war });
   } catch (error) {
-    console.error('Submit War Gift Error:', error);
+    Logger.error('Submit War Gift Error:', error);
     res.status(500).json({ success: false, message: 'Failed to submit war gift' });
   }
 };
@@ -218,7 +219,7 @@ familyWarController.cancelWar = async (req, res) => {
     await war.save();
     res.status(200).json({ success: true, message: 'War cancelled' });
   } catch (error) {
-    console.error('Cancel War Error:', error);
+    Logger.error('Cancel War Error:', error);
     res.status(500).json({ success: false, message: 'Failed to cancel war' });
   }
 };
@@ -247,7 +248,7 @@ familyWarController.getWarLeaderboard = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get War Leaderboard Error:', error);
+    Logger.error('Get War Leaderboard Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch war leaderboard' });
   }
 };

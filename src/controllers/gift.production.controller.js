@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const Gift = require('../models/Gift');
 const User = require('../models/User');
 const GiftEvent = require('../models/GiftEvent');
@@ -49,7 +50,7 @@ exports.getStoreGifts = async (req, res) => {
       totalGifts: gifts.length
     });
   } catch (error) {
-    console.error('Get Store Gifts Error:', error);
+    Logger.error('Get Store Gifts Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch gifts.', error: error.message });
   }
 };
@@ -75,7 +76,7 @@ exports.getGiftsByType = async (req, res) => {
 
     return res.status(200).json({ success: true, gifts });
   } catch (error) {
-    console.error('Get Gifts By Type Error:', error);
+    Logger.error('Get Gifts By Type Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch gifts.', error: error.message });
   }
 };
@@ -334,7 +335,7 @@ exports.sendGift = async (req, res) => {
       event: giftEvent
     });
   } catch (error) {
-    console.error('Send Gift Error:', error);
+    Logger.error('Send Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to send gift.', error: error.message });
   }
 };
@@ -358,7 +359,7 @@ exports.sendComboGift = async (req, res) => {
 
     return exports.sendGift(req, res);
   } catch (error) {
-    console.error('Send Combo Gift Error:', error);
+    Logger.error('Send Combo Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to send combo gift.', error: error.message });
   }
 };
@@ -428,7 +429,7 @@ exports.claimTreasure = async (req, res) => {
       balance: updatedUser.coins
     });
   } catch (error) {
-    console.error('Claim Treasure Error:', error);
+    Logger.error('Claim Treasure Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to claim treasure.', error: error.message });
   }
 };
@@ -460,7 +461,7 @@ exports.getGiftInventory = async (req, res) => {
       inventory
     });
   } catch (error) {
-    console.error('Get Gift Inventory Error:', error);
+    Logger.error('Get Gift Inventory Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch inventory.', error: error.message });
   }
 };
@@ -498,7 +499,7 @@ exports.getGiftCollection = async (req, res) => {
       uniqueGiftsCount: collection.length
     });
   } catch (error) {
-    console.error('Get Gift Collection Error:', error);
+    Logger.error('Get Gift Collection Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch collection.', error: error.message });
   }
 };
@@ -539,7 +540,7 @@ exports.setGiftGoal = async (req, res) => {
       goal: { targetCoins, currentCoins: room.totalGiftPoints || 0, title }
     });
   } catch (error) {
-    console.error('Set Gift Goal Error:', error);
+    Logger.error('Set Gift Goal Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to set gift goal.', error: error.message });
   }
 };
@@ -604,7 +605,7 @@ exports.getGiftLeaderboard = async (req, res) => {
       leaderboard: enriched
     });
   } catch (error) {
-    console.error('Get Gift Leaderboard Error:', error);
+    Logger.error('Get Gift Leaderboard Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch leaderboard.', error: error.message });
   }
 };
@@ -658,7 +659,7 @@ exports.getGiftStatistics = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Gift Statistics Error:', error);
+    Logger.error('Get Gift Statistics Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch statistics.', error: error.message });
   }
 };
@@ -704,7 +705,7 @@ exports.getGiftHistory = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Gift History Error:', error);
+    Logger.error('Get Gift History Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch history.', error: error.message });
   }
 };
@@ -742,7 +743,7 @@ exports.createFestivalGift = async (req, res) => {
       gift
     });
   } catch (error) {
-    console.error('Create Festival Gift Error:', error);
+    Logger.error('Create Festival Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to create festival gift.', error: error.message });
   }
 };
@@ -768,7 +769,7 @@ exports.toggleGiftAvailability = async (req, res) => {
       isAvailable: gift.isAvailable
     });
   } catch (error) {
-    console.error('Toggle Gift Error:', error);
+    Logger.error('Toggle Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to toggle gift.', error: error.message });
   }
 };
@@ -783,7 +784,7 @@ exports.adminCreateGift = async (req, res) => {
     const gift = await Gift.create(giftData);
     return res.status(201).json({ success: true, message: 'Gift created.', gift });
   } catch (error) {
-    console.error('Admin Create Gift Error:', error);
+    Logger.error('Admin Create Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to create gift.', error: error.message });
   }
 };
@@ -804,7 +805,7 @@ exports.adminUpdateGift = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Gift updated.', gift });
   } catch (error) {
-    console.error('Admin Update Gift Error:', error);
+    Logger.error('Admin Update Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update gift.', error: error.message });
   }
 };
@@ -819,7 +820,7 @@ exports.adminDeleteGift = async (req, res) => {
     await Gift.findByIdAndDelete(giftId);
     return res.status(200).json({ success: true, message: 'Gift deleted.' });
   } catch (error) {
-    console.error('Admin Delete Gift Error:', error);
+    Logger.error('Admin Delete Gift Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to delete gift.', error: error.message });
   }
 };

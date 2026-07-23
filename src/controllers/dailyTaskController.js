@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const DailyTask = require('../models/DailyTask');
 const User = require('../models/User');
 const UserEventProgress = require('../models/UserEventProgress');
@@ -12,7 +13,7 @@ exports.createDailyTask = async (req, res) => {
     const task = await DailyTask.create(payload);
     res.status(201).json({ success: true, data: task });
   } catch (error) {
-    console.error('Create DailyTask Error:', error);
+    Logger.error('Create DailyTask Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create task' });
   }
 };
@@ -55,7 +56,7 @@ exports.getActiveTasks = async (req, res) => {
 
     res.status(200).json({ success: true, data: enrichedTasks });
   } catch (error) {
-    console.error('Get DailyTasks Error:', error);
+    Logger.error('Get DailyTasks Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch tasks' });
   }
 };
@@ -107,7 +108,7 @@ exports.updateTaskProgress = async (req, res) => {
 
     res.status(200).json({ success: true, data: userProgress });
   } catch (error) {
-    console.error('Update Task Progress Error:', error);
+    Logger.error('Update Task Progress Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update progress' });
   }
 };
@@ -182,7 +183,7 @@ exports.claimTaskReward = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Claim Task Reward Error:', error);
+    Logger.error('Claim Task Reward Error:', error);
     res.status(500).json({ success: false, message: 'Failed to claim reward' });
   }
 };
@@ -193,7 +194,7 @@ exports.adminGetAllTasks = async (req, res) => {
     const tasks = await DailyTask.find().sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: tasks });
   } catch (error) {
-    console.error('Admin Get Tasks Error:', error);
+    Logger.error('Admin Get Tasks Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch tasks' });
   }
 };
@@ -207,7 +208,7 @@ exports.adminUpdateTask = async (req, res) => {
     }
     res.status(200).json({ success: true, data: task });
   } catch (error) {
-    console.error('Admin Update Task Error:', error);
+    Logger.error('Admin Update Task Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update task' });
   }
 };
@@ -221,7 +222,7 @@ exports.adminDeleteTask = async (req, res) => {
     }
     res.status(200).json({ success: true, message: 'Task deleted' });
   } catch (error) {
-    console.error('Admin Delete Task Error:', error);
+    Logger.error('Admin Delete Task Error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete task' });
   }
 };
@@ -284,7 +285,7 @@ exports.seedDefaultTasks = async (req, res) => {
     const allTasks = await DailyTask.find();
     res.status(200).json({ success: true, message: 'Default tasks seeded', data: allTasks });
   } catch (error) {
-    console.error('Seed Tasks Error:', error);
+    Logger.error('Seed Tasks Error:', error);
     res.status(500).json({ success: false, message: 'Failed to seed tasks' });
   }
 };

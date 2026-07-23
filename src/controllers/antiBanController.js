@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/controllers/antiBanController.js
 // ARVIND PARTY - ANTI-BAN & DEVICE MANAGEMENT (Owner Panel)
@@ -85,7 +86,7 @@ exports.banDevice = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('❌ Ban Device Error:', error);
+    Logger.error('❌ Ban Device Error:', error);
     next(error);
   }
 };
@@ -140,7 +141,7 @@ exports.unbanDevice = async (req, res, next) => {
       message: 'Device has been unbanned successfully.',
     });
   } catch (error) {
-    console.error('❌ Unban Device Error:', error);
+    Logger.error('❌ Unban Device Error:', error);
     next(error);
   }
 };
@@ -200,7 +201,7 @@ exports.listBannedDevices = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('❌ List Banned Devices Error:', error);
+    Logger.error('❌ List Banned Devices Error:', error);
     next(error);
   }
 };
@@ -241,7 +242,7 @@ exports.checkDeviceStatus = async (req, res, next) => {
       message: 'Device is not banned',
     });
   } catch (error) {
-    console.error('❌ Check Device Status Error:', error);
+    Logger.error('❌ Check Device Status Error:', error);
     next(error);
   }
 };

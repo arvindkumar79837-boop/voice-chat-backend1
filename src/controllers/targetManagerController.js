@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // CONTROLLER: TargetManagerController — Streamer targets & 50-50 revenue split
 // Weekly, 15-Day, Monthly cycles with diamond-to-coin exchange enforcement
@@ -53,7 +54,7 @@ exports.createTarget = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'Target created successfully', data: target });
   } catch (error) {
-    console.error('createTarget Error:', error);
+    Logger.error('createTarget Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -81,7 +82,7 @@ exports.updateProgress = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Progress updated', data: target });
   } catch (error) {
-    console.error('updateProgress Error:', error);
+    Logger.error('updateProgress Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -148,7 +149,7 @@ exports.requestDiamondExchange = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('requestDiamondExchange Error:', error);
+    Logger.error('requestDiamondExchange Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -229,7 +230,7 @@ exports.approveExchange = async (req, res) => {
       data: target,
     });
   } catch (error) {
-    console.error('approveExchange Error:', error);
+    Logger.error('approveExchange Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -267,7 +268,7 @@ exports.getTargets = async (req, res) => {
       pagination: { total, page: pageNum, pages: Math.ceil(total / limitNum) },
     });
   } catch (error) {
-    console.error('getTargets Error:', error);
+    Logger.error('getTargets Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -288,7 +289,7 @@ exports.getTargetDetail = async (req, res) => {
 
     return res.status(200).json({ success: true, data: target });
   } catch (error) {
-    console.error('getTargetDetail Error:', error);
+    Logger.error('getTargetDetail Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -344,7 +345,7 @@ exports.autoCreateCycles = async (req, res) => {
       data: { count: targets.length, cycleType },
     });
   } catch (error) {
-    console.error('autoCreateCycles Error:', error);
+    Logger.error('autoCreateCycles Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

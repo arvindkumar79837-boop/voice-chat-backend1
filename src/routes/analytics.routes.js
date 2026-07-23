@@ -1,7 +1,13 @@
 const express = require('express');
 const analyticsController = require('../controllers/analytics.controller');
+const { authMiddleware } = require('../middlewares/auth.middleware');
+const { verifyStaff } = require('../middlewares/adminMiddleware');
 
 const router = express.Router();
+
+// Protect all analytics routes - only staff and admins can access
+router.use(authMiddleware);
+router.use(verifyStaff);
 
 /**
  * =================================================================

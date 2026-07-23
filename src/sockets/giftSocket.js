@@ -1,10 +1,25 @@
+const Logger = require('../utils/logger');
 const Gift = require('../models/Gift');
 const User = require('../models/User');
 const GiftEvent = require('../models/GiftEvent');
 const Room = require('../models/Room');
-const { createClient } = require('../config/redis');
-let redisClient;
-const getRedis = () => { try { return require('../config/redis').client || null; } catch { return null; } };
+const GiftTransaction = require('../models/GiftTransaction');
+const WalletTransaction = require('../models/WalletTransaction');
+const { isUserInRoom } = require('../utils/socketHelpers');
+const { getRedisClient } = require('../config/redis');
+
+const RATE_LIMIT_COOLDOWN = 2; // 2 seconds between gifts
+const getRedis = () => { try { return getRedisClient(); } catch { return null; } };
+
+const checkRateLimit = async (userId, action) => {
+  const redis = getRedis();
+  if (!redis) return true;
+  const key = `rate_limit:${action}:${userId}`;
+  const isLimited = await redis.get(key);
+  if (isLimited) return false;
+  await redis.set(key, '1', { EX: RATE_LIMIT_COOLDOWN });
+  return true;
+};
 
 
 module.exports = (io, socket) => {
@@ -16,8 +31,20 @@ module.exports = (io, socket) => {
         const { roomId, senderName, receiverId, giftId, giftName, quantity, cost } = data;
         const senderId = authedUserId;
 
-        if (!senderId || !giftId || !receiverId) {
+        if (!senderId || !giftId || !receiverId || !roomId) {
           return socket.emit('gift_error', { message: 'Missing required fields.' });
+        }
+
+        // Rate limit check (P2-14)
+        const allowed = await checkRateLimit(senderId, 'send_gift');
+        if (!allowed) {
+          return socket.emit('gift_error', { message: 'Please wait a moment before sending another gift.' });
+        }
+
+        // Room membership check (P0-2)
+        const isInRoom = await isUserInRoom(senderId, roomId);
+        if (!isInRoom) {
+          return socket.emit('gift_error', { message: 'You must be in the room to send a gift.' });
         }
 
         const gift = await Gift.findById(giftId);
@@ -245,8 +272,62 @@ module.exports = (io, socket) => {
 
         socket.emit('gift_balance_updated', { balance: updatedSender.coins });
 
+        // Save transactions (P0-3)
+        try {
+          const diamondsEarned = Math.floor(cost * 0.4); // Assuming 40% diamond conversion
+          
+          await GiftTransaction.create({
+            roomId,
+            senderId,
+            receiverId,
+            giftId,
+            quantity: parseInt(quantity) || 1,
+            totalCoins: cost,
+            diamondsEarned
+          });
+
+          await WalletTransaction.create({
+            userId: senderId,
+            walletType: 'coin',
+            type: 'gift_sent',
+            amount: -cost,
+            description: `Sent ${gift.giftName} x${quantity}`,
+            recipientId: receiverId,
+            giftId: gift._id.toString(),
+            giftName: gift.giftName,
+            quantity: parseInt(quantity) || 1,
+            balanceAfter: updatedSender.coins,
+            status: 'completed'
+          });
+
+          // Also update receiver's diamond balance and log
+          const receiver = await User.findByIdAndUpdate(
+            receiverId,
+            { $inc: { diamonds: diamondsEarned } },
+            { new: true }
+          );
+          
+          if (receiver) {
+            await WalletTransaction.create({
+              userId: receiverId,
+              walletType: 'diamond',
+              type: 'gift_received',
+              amount: diamondsEarned,
+              description: `Received ${gift.giftName} x${quantity}`,
+              senderId,
+              giftId: gift._id.toString(),
+              giftName: gift.giftName,
+              quantity: parseInt(quantity) || 1,
+              balanceAfter: receiver.diamonds,
+              status: 'completed'
+            });
+          }
+        } catch (txnError) {
+          Logger.error('Gift transaction logging error:', txnError);
+        }
+
       } catch (error) {
-        console.error('Send Gift Socket Error:', error);
+        Logger.error('Send Gift Socket Error:', error);
         socket.emit('gift_error', { message: 'Failed to send gift.' });
       }
     };
@@ -260,6 +341,20 @@ module.exports = (io, socket) => {
         const senderId = authedUserId;
         const multiplier = parseInt(comboMultiplier) || 5;
         const totalQty = multiplier;
+
+        if (!roomId) return socket.emit('gift_error', { message: 'Room ID required.' });
+
+        // Rate limit check (P2-14)
+        const allowed = await checkRateLimit(senderId, 'send_combo_gift');
+        if (!allowed) {
+          return socket.emit('gift_error', { message: 'Please wait a moment before sending another combo gift.' });
+        }
+
+        // Room membership check (P0-2)
+        const isInRoom = await isUserInRoom(senderId, roomId);
+        if (!isInRoom) {
+          return socket.emit('gift_error', { message: 'You must be in the room to send a gift.' });
+        }
 
         if (![5, 10, 99, 999].includes(multiplier)) {
           return socket.emit('gift_error', { message: 'Combo must be 5, 10, 99, or 999.' });
@@ -336,8 +431,61 @@ module.exports = (io, socket) => {
 
         socket.emit('gift_balance_updated', { balance: comboSender.coins });
 
+        // Save transactions (P0-3)
+        try {
+          const diamondsEarned = Math.floor(totalCost * 0.4);
+          
+          await GiftTransaction.create({
+            roomId,
+            senderId,
+            receiverId,
+            giftId,
+            quantity: totalQty,
+            totalCoins: totalCost,
+            diamondsEarned
+          });
+
+          await WalletTransaction.create({
+            userId: senderId,
+            walletType: 'coin',
+            type: 'gift_sent',
+            amount: -totalCost,
+            description: `Sent Combo ${gift.giftName} x${totalQty}`,
+            recipientId: receiverId,
+            giftId: gift._id.toString(),
+            giftName: gift.giftName,
+            quantity: totalQty,
+            balanceAfter: comboSender.coins,
+            status: 'completed'
+          });
+
+          const receiver = await User.findByIdAndUpdate(
+            receiverId,
+            { $inc: { diamonds: diamondsEarned } },
+            { new: true }
+          );
+          
+          if (receiver) {
+            await WalletTransaction.create({
+              userId: receiverId,
+              walletType: 'diamond',
+              type: 'gift_received',
+              amount: diamondsEarned,
+              description: `Received Combo ${gift.giftName} x${totalQty}`,
+              senderId,
+              giftId: gift._id.toString(),
+              giftName: gift.giftName,
+              quantity: totalQty,
+              balanceAfter: receiver.diamonds,
+              status: 'completed'
+            });
+          }
+        } catch (txnError) {
+          Logger.error('Combo gift transaction logging error:', txnError);
+        }
+
       } catch (error) {
-        console.error('Combo Gift Socket Error:', error);
+        Logger.error('Combo Gift Socket Error:', error);
       }
     });
 
@@ -375,7 +523,7 @@ module.exports = (io, socket) => {
           balance: user.coins
         });
       } catch (error) {
-        console.error('Claim Treasure Socket Error:', error);
+        Logger.error('Claim Treasure Socket Error:', error);
       }
     });
 
@@ -389,7 +537,7 @@ module.exports = (io, socket) => {
           progressPercent
         });
       } catch (error) {
-        console.error('[update_gift_goal] error:', error.message);
+        Logger.error('[update_gift_goal] error:', error.message);
         socket.emit('error', { message: 'Something went wrong. Please try again.' });
       }
     });
@@ -404,7 +552,7 @@ module.exports = (io, socket) => {
           senderName
         });
       } catch (error) {
-        console.error('[send_frame_gift] error:', error.message);
+        Logger.error('[send_frame_gift] error:', error.message);
         socket.emit('error', { message: 'Something went wrong. Please try again.' });
       }
     });

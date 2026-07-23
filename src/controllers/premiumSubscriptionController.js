@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const PremiumSubscription = require('../models/PremiumSubscription');
 const User = require('../models/User');
 const Staff = require('../models/Staff');
@@ -208,7 +209,7 @@ exports.deactivateExpiredSubscriptions = async () => {
       { $set: { 'activeSubscription.tierId': null, 'activeSubscription.expiresAt': null } }
     );
     const total = result.modifiedCount + staffResult.modifiedCount;
-    if (total > 0) console.log(`✅ Subscription cron: ${total} expired subscriptions deactivated`);
+    if (total > 0) Logger.info(`✅ Subscription cron: ${total} expired subscriptions deactivated`);
     return total;
-  } catch (err) { console.error('Subscription cron error:', err.message); return 0; }
+  } catch (err) { Logger.error('Subscription cron error:', err.message); return 0; }
 };

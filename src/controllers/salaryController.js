@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
@@ -178,7 +179,7 @@ exports.calculateMonthlySalary = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Calculate Salary Error:', error);
+    Logger.error('Calculate Salary Error:', error);
     res.status(500).json({ success: false, message: 'Failed to calculate monthly salary' });
   }
 };
@@ -206,7 +207,7 @@ exports.getSalaryHistory = async (req, res) => {
 
     res.status(200).json({ success: true, data: records, count: records.length });
   } catch (error) {
-    console.error('Salary History Error:', error);
+    Logger.error('Salary History Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch salary history' });
   }
 };
@@ -250,7 +251,7 @@ exports.getHostSalaryDetail = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Host Salary Detail Error:', error);
+    Logger.error('Host Salary Detail Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch salary detail' });
   }
 };

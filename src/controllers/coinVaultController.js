@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // CONTROLLER: CoinVaultController — Owner-only minting, dispatch to sellers
 // ═══════════════════════════════════════════════════════════════════════════
@@ -25,7 +26,7 @@ exports.getVault = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('getVault Error:', error);
+    Logger.error('getVault Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -71,7 +72,7 @@ exports.mintCoins = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('mintCoins Error:', error);
+    Logger.error('mintCoins Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -137,7 +138,7 @@ exports.dispatchToSeller = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('dispatchToSeller Error:', error);
+    Logger.error('dispatchToSeller Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -184,7 +185,7 @@ exports.burnCoins = async (req, res) => {
       data: { amount, currentBalance: vault.currentBalance },
     });
   } catch (error) {
-    console.error('burnCoins Error:', error);
+    Logger.error('burnCoins Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -232,7 +233,7 @@ exports.getVaultHistory = async (req, res) => {
       pagination: { total, page, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
-    console.error('getVaultHistory Error:', error);
+    Logger.error('getVaultHistory Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

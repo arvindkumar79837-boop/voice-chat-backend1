@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const Message = require('../models/RoomMessage');
 
 exports.getChatHistory = async (req, res) => {
@@ -17,7 +18,7 @@ exports.getChatHistory = async (req, res) => {
 
     res.status(200).json({ success: true, data: messages });
   } catch (error) {
-    console.error('Error fetching chat history:', error);
+    Logger.error('Error fetching chat history:', error);
     res.status(500).json({ success: false, message: 'Server error fetching messages.' });
   }
 };

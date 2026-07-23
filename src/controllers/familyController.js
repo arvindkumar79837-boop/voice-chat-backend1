@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const Family = require('../models/Family');
 const FamilyTask = require('../models/FamilyTask');
 const FamilyChat = require('../models/FamilyChatMessage');
@@ -50,7 +51,7 @@ exports.getMyFamily = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get My Family Error:', error);
+    Logger.error('Get My Family Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get family' });
   }
 };
@@ -118,11 +119,11 @@ exports.createFamily = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Insufficient coins for family creation' });
     }
 
-    redisRankingIntegration.onFamilyActivity(familyId, 1, userId).catch(err => console.error('Redis family init failed:', err.message));
+    redisRankingIntegration.onFamilyActivity(familyId, 1, userId).catch(err => Logger.error('Redis family init failed:', err.message));
 
     res.status(201).json({ success: true, message: 'Family created successfully!', data: newFamily });
   } catch (error) {
-    console.error('Error creating family:', error);
+    Logger.error('Error creating family:', error);
     res.status(500).json({ success: false, message: 'Server error while creating family' });
   }
 };
@@ -156,7 +157,7 @@ exports.joinFamily = async (req, res) => {
     family.members_list.push(user.uid);
     await family.save();
 
-    redisRankingIntegration.onFamilyActivity(familyId, 0, userId).catch(err => console.error('Redis family join failed:', err.message));
+    redisRankingIntegration.onFamilyActivity(familyId, 0, userId).catch(err => Logger.error('Redis family join failed:', err.message));
 
     const io = getIO();
     io.to(`family:${familyId}`).emit('family:member_joined', {
@@ -168,7 +169,7 @@ exports.joinFamily = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Joined family successfully!', data: family });
   } catch (error) {
-    console.error('Error joining family:', error);
+    Logger.error('Error joining family:', error);
     res.status(500).json({ success: false, message: 'Server error while joining family' });
   }
 };
@@ -207,11 +208,11 @@ exports.leaveFamily = async (req, res) => {
       username: user.username || user.displayName
     });
 
-    redisRankingIntegration.onFamilyActivity(leavingFamilyId, 0, userId).catch(err => console.error('Redis family leave failed:', err.message));
+    redisRankingIntegration.onFamilyActivity(leavingFamilyId, 0, userId).catch(err => Logger.error('Redis family leave failed:', err.message));
 
     res.status(200).json({ success: true, message: 'Left family successfully.' });
   } catch (error) {
-    console.error('Error leaving family:', error);
+    Logger.error('Error leaving family:', error);
     res.status(500).json({ success: false, message: 'Server error while leaving family' });
   }
 };
@@ -244,7 +245,7 @@ exports.getFamilyInfo = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Family Info Error:', error);
+    Logger.error('Get Family Info Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get family info' });
   }
 };
@@ -290,7 +291,7 @@ exports.updateFamilyDetails = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Family details updated successfully!', data: family });
   } catch (error) {
-    console.error('Update Family Error:', error);
+    Logger.error('Update Family Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update family' });
   }
 };
@@ -324,7 +325,7 @@ exports.searchFamilies = async (req, res) => {
 
     res.status(200).json({ success: true, data: families, total: totalCount, page: parseInt(page) });
   } catch (error) {
-    console.error('Search Families Error:', error);
+    Logger.error('Search Families Error:', error);
     res.status(500).json({ success: false, message: 'Failed to search families' });
   }
 };
@@ -354,7 +355,7 @@ exports.searchUsersByUid = async (req, res) => {
 
     res.status(200).json({ success: true, data: users });
   } catch (error) {
-    console.error('Search Users By UID Error:', error);
+    Logger.error('Search Users By UID Error:', error);
     res.status(500).json({ success: false, message: 'Failed to search users' });
   }
 };
@@ -387,7 +388,7 @@ exports.searchUsersToInvite = async (req, res) => {
 
     res.status(200).json({ success: true, data: users });
   } catch (error) {
-    console.error('Search Users To Invite Error:', error);
+    Logger.error('Search Users To Invite Error:', error);
     res.status(500).json({ success: false, message: 'Failed to search users' });
   }
 };
@@ -466,7 +467,7 @@ exports.sendInvitation = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Invitation sent!', data: invitation });
   } catch (error) {
-    console.error('Send Invitation Error:', error);
+    Logger.error('Send Invitation Error:', error);
     res.status(500).json({ success: false, message: 'Failed to send invitation' });
   }
 };
@@ -497,7 +498,7 @@ exports.getMyInvitations = async (req, res) => {
 
     res.status(200).json({ success: true, data: invitations, total: totalCount });
   } catch (error) {
-    console.error('Get My Invitations Error:', error);
+    Logger.error('Get My Invitations Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get invitations' });
   }
 };
@@ -521,7 +522,7 @@ exports.getSentInvitations = async (req, res) => {
 
     res.status(200).json({ success: true, data: invitations });
   } catch (error) {
-    console.error('Get Sent Invitations Error:', error);
+    Logger.error('Get Sent Invitations Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get sent invitations' });
   }
 };
@@ -595,7 +596,7 @@ exports.respondToInvitation = async (req, res) => {
       res.status(200).json({ success: true, message: 'Invitation rejected.' });
     }
   } catch (error) {
-    console.error('Respond To Invitation Error:', error);
+    Logger.error('Respond To Invitation Error:', error);
     res.status(500).json({ success: false, message: 'Failed to respond to invitation' });
   }
 };
@@ -626,7 +627,7 @@ exports.cancelInvitation = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Invitation cancelled.' });
   } catch (error) {
-    console.error('Cancel Invitation Error:', error);
+    Logger.error('Cancel Invitation Error:', error);
     res.status(500).json({ success: false, message: 'Failed to cancel invitation' });
   }
 };
@@ -694,7 +695,7 @@ exports.assignAdmin = async (req, res) => {
 
     res.status(200).json({ success: true, message: `${targetUser.username} is now ${role}!`, data: { admins_list: family.admins_list, maxAdminSlots: maxSlots } });
   } catch (error) {
-    console.error('Assign Admin Error:', error);
+    Logger.error('Assign Admin Error:', error);
     res.status(500).json({ success: false, message: 'Failed to assign admin' });
   }
 };
@@ -736,7 +737,7 @@ exports.removeAdmin = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Admin privileges removed.', data: { admins_list: family.admins_list } });
   } catch (error) {
-    console.error('Remove Admin Error:', error);
+    Logger.error('Remove Admin Error:', error);
     res.status(500).json({ success: false, message: 'Failed to remove admin' });
   }
 };
@@ -780,7 +781,7 @@ exports.getAdminList = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Admin List Error:', error);
+    Logger.error('Get Admin List Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get admin list' });
   }
 };
@@ -833,7 +834,7 @@ exports.transferOwnership = async (req, res) => {
 
     res.status(200).json({ success: true, message: `Ownership transferred to ${targetUser.username}!` });
   } catch (error) {
-    console.error('Transfer Ownership Error:', error);
+    Logger.error('Transfer Ownership Error:', error);
     res.status(500).json({ success: false, message: 'Failed to transfer ownership' });
   }
 };
@@ -865,7 +866,7 @@ exports.getFamilyTasks = async (req, res) => {
 
     res.status(200).json({ success: true, data: tasks, progress: progressMap });
   } catch (error) {
-    console.error('Get Family Tasks Error:', error);
+    Logger.error('Get Family Tasks Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get family tasks' });
   }
 };
@@ -904,7 +905,7 @@ exports.getTaskProgress = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Task Progress Error:', error);
+    Logger.error('Get Task Progress Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get task progress' });
   }
 };
@@ -938,7 +939,7 @@ exports.submitTaskProgress = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Task progress submitted', data: { taskId, currentProgress: progress } });
   } catch (error) {
-    console.error('Submit Task Progress Error:', error);
+    Logger.error('Submit Task Progress Error:', error);
     res.status(500).json({ success: false, message: 'Failed to submit task progress' });
   }
 };
@@ -976,7 +977,7 @@ exports.claimTaskRewards = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Task rewards claimed!', data: { familyPoints: family.family_points, totalXp: family.total_xp, currentLevel: family.current_level } });
   } catch (error) {
-    console.error('Claim Task Rewards Error:', error);
+    Logger.error('Claim Task Rewards Error:', error);
     res.status(500).json({ success: false, message: 'Failed to claim task rewards' });
   }
 };
@@ -1006,7 +1007,7 @@ exports.getFamilyShopItems = async (req, res) => {
 
     res.status(200).json({ success: true, data: itemsWithStatus });
   } catch (error) {
-    console.error('Get Family Shop Items Error:', error);
+    Logger.error('Get Family Shop Items Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get shop items' });
   }
 };
@@ -1050,7 +1051,7 @@ exports.purchaseFamilyShopItem = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Item purchased successfully!', data: { familyPoints: family.family_points } });
   } catch (error) {
-    console.error('Purchase Family Shop Item Error:', error);
+    Logger.error('Purchase Family Shop Item Error:', error);
     res.status(500).json({ success: false, message: 'Failed to purchase item' });
   }
 };
@@ -1081,7 +1082,7 @@ exports.getFamilyInventory = async (req, res) => {
 
     res.status(200).json({ success: true, data: enrichedInventory });
   } catch (error) {
-    console.error('Get Family Inventory Error:', error);
+    Logger.error('Get Family Inventory Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get family inventory' });
   }
 };
@@ -1105,7 +1106,7 @@ exports.getFamilyChatMessages = async (req, res) => {
 
     res.status(200).json({ success: true, data: messages.reverse() });
   } catch (error) {
-    console.error('Get Family Chat Messages Error:', error);
+    Logger.error('Get Family Chat Messages Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get chat messages' });
   }
 };
@@ -1142,7 +1143,7 @@ exports.sendFamilyChatMessage = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Message sent', data: populatedMessage });
   } catch (error) {
-    console.error('Send Family Chat Message Error:', error);
+    Logger.error('Send Family Chat Message Error:', error);
     res.status(500).json({ success: false, message: 'Failed to send message' });
   }
 };
@@ -1175,7 +1176,7 @@ exports.deleteFamilyChatMessage = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Message deleted' });
   } catch (error) {
-    console.error('Delete Family Chat Message Error:', error);
+    Logger.error('Delete Family Chat Message Error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete message' });
   }
 };
@@ -1204,7 +1205,7 @@ exports.pinFamilyChatMessage = async (req, res) => {
 
     res.status(200).json({ success: true, message: message.isPinned ? 'Message pinned' : 'Message unpinned', data: message });
   } catch (error) {
-    console.error('Pin Family Chat Message Error:', error);
+    Logger.error('Pin Family Chat Message Error:', error);
     res.status(500).json({ success: false, message: 'Failed to pin message' });
   }
 };
@@ -1235,7 +1236,7 @@ exports.addChatReaction = async (req, res) => {
     await message.save();
     res.status(200).json({ success: true, data: message });
   } catch (error) {
-    console.error('Add Chat Reaction Error:', error);
+    Logger.error('Add Chat Reaction Error:', error);
     res.status(500).json({ success: false, message: 'Failed to add reaction' });
   }
 };
@@ -1285,7 +1286,7 @@ exports.createFamilyPK = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Family PK battle created!', data: battle });
   } catch (error) {
-    console.error('Create Family PK Error:', error);
+    Logger.error('Create Family PK Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create family PK' });
   }
 };
@@ -1325,7 +1326,7 @@ exports.joinFamilyPK = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Joined PK battle!', data: battle });
   } catch (error) {
-    console.error('Join Family PK Error:', error);
+    Logger.error('Join Family PK Error:', error);
     res.status(500).json({ success: false, message: 'Failed to join PK battle' });
   }
 };
@@ -1345,7 +1346,7 @@ exports.getActiveFamilyPK = async (req, res) => {
 
     res.status(200).json({ success: true, data: battle });
   } catch (error) {
-    console.error('Get Active Family PK Error:', error);
+    Logger.error('Get Active Family PK Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get active PK' });
   }
 };
@@ -1368,7 +1369,7 @@ exports.getFamilyPKHistory = async (req, res) => {
 
     res.status(200).json({ success: true, data: battles });
   } catch (error) {
-    console.error('Get Family PK History Error:', error);
+    Logger.error('Get Family PK History Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get PK history' });
   }
 };
@@ -1384,7 +1385,7 @@ exports.getFamilyPKDetail = async (req, res) => {
 
     res.status(200).json({ success: true, data: battle });
   } catch (error) {
-    console.error('Get Family PK Detail Error:', error);
+    Logger.error('Get Family PK Detail Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get battle details' });
   }
 };
@@ -1408,7 +1409,7 @@ exports.updateFamilyPKScore = async (req, res) => {
     await battle.save();
     res.status(200).json({ success: true, data: battle });
   } catch (error) {
-    console.error('Update Family PK Score Error:', error);
+    Logger.error('Update Family PK Score Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update score' });
   }
 };
@@ -1427,7 +1428,7 @@ exports.getActiveFamilyWars = async (req, res) => {
 
     res.status(200).json({ success: true, data: wars });
   } catch (error) {
-    console.error('Get Active Family Wars Error:', error);
+    Logger.error('Get Active Family Wars Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get active wars' });
   }
 };
@@ -1450,7 +1451,7 @@ exports.getFamilyWarHistory = async (req, res) => {
 
     res.status(200).json({ success: true, data: wars });
   } catch (error) {
-    console.error('Get Family War History Error:', error);
+    Logger.error('Get Family War History Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get war history' });
   }
 };
@@ -1481,7 +1482,7 @@ exports.registerForFamilyWar = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Registered for war successfully!', data: war });
   } catch (error) {
-    console.error('Register For Family War Error:', error);
+    Logger.error('Register For Family War Error:', error);
     res.status(500).json({ success: false, message: 'Failed to register for war' });
   }
 };
@@ -1499,7 +1500,7 @@ exports.getWarLeaderboard = async (req, res) => {
 
     res.status(200).json({ success: true, data: familyScores, warId });
   } catch (error) {
-    console.error('Get War Leaderboard Error:', error);
+    Logger.error('Get War Leaderboard Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get leaderboard' });
   }
 };
@@ -1522,7 +1523,7 @@ exports.getMyWarContribution = async (req, res) => {
 
     res.status(200).json({ success: true, data: { ...userContribution, familyId: user.familyId, warId } });
   } catch (error) {
-    console.error('Get My War Contribution Error:', error);
+    Logger.error('Get My War Contribution Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get contribution' });
   }
 };
@@ -1560,7 +1561,7 @@ exports.updateWarScore = async (req, res) => {
     await war.save();
     res.status(200).json({ success: true, data: war });
   } catch (error) {
-    console.error('Update War Score Error:', error);
+    Logger.error('Update War Score Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update war score' });
   }
 };
@@ -1604,7 +1605,7 @@ exports.getFamilyLeaderboard = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Family Leaderboard Error:', error);
+    Logger.error('Get Family Leaderboard Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get leaderboard' });
   }
 };
@@ -1657,7 +1658,7 @@ exports.updateLeaderboard = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Leaderboard updated!' });
   } catch (error) {
-    console.error('Update Leaderboard Error:', error);
+    Logger.error('Update Leaderboard Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update leaderboard' });
   }
 };
@@ -1676,7 +1677,7 @@ exports.getDailyFamilyRankings = async (req, res) => {
 
     res.status(200).json({ success: true, data: rankings });
   } catch (error) {
-    console.error('Get Daily Family Rankings Error:', error);
+    Logger.error('Get Daily Family Rankings Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get rankings' });
   }
 };
@@ -1696,7 +1697,7 @@ exports.getWeeklyFamilyRankings = async (req, res) => {
 
     res.status(200).json({ success: true, data: rankings });
   } catch (error) {
-    console.error('Get Weekly Family Rankings Error:', error);
+    Logger.error('Get Weekly Family Rankings Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get rankings' });
   }
 };
@@ -1716,7 +1717,7 @@ exports.getMonthlyFamilyRankings = async (req, res) => {
 
     res.status(200).json({ success: true, data: rankings });
   } catch (error) {
-    console.error('Get Monthly Family Rankings Error:', error);
+    Logger.error('Get Monthly Family Rankings Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get rankings' });
   }
 };
@@ -1763,7 +1764,7 @@ exports.startStaySession = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Stay session started!', data: session });
   } catch (error) {
-    console.error('Start Stay Session Error:', error);
+    Logger.error('Start Stay Session Error:', error);
     res.status(500).json({ success: false, message: 'Failed to start stay session' });
   }
 };
@@ -1836,7 +1837,7 @@ exports.redeemStayReward = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Redeem Stay Reward Error:', error);
+    Logger.error('Redeem Stay Reward Error:', error);
     res.status(500).json({ success: false, message: 'Failed to redeem stay reward' });
   }
 };
@@ -1875,7 +1876,7 @@ exports.endStaySession = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('End Stay Session Error:', error);
+    Logger.error('End Stay Session Error:', error);
     res.status(500).json({ success: false, message: 'Failed to end stay session' });
   }
 };
@@ -1904,7 +1905,7 @@ exports.getMyStaySession = async (req, res) => {
 
     res.status(200).json({ success: true, data: { activeSession: session, history } });
   } catch (error) {
-    console.error('Get My Stay Session Error:', error);
+    Logger.error('Get My Stay Session Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get stay session' });
   }
 };
@@ -1926,7 +1927,7 @@ exports.getRewardConfig = async (req, res) => {
 
     res.status(200).json({ success: true, data: family.reward_config });
   } catch (error) {
-    console.error('Get Reward Config Error:', error);
+    Logger.error('Get Reward Config Error:', error);
     res.status(500).json({ success: false, message: 'Failed to get reward config' });
   }
 };
@@ -1968,7 +1969,7 @@ exports.updateRewardConfig = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Reward configuration updated!', data: family.reward_config });
   } catch (error) {
-    console.error('Update Reward Config Error:', error);
+    Logger.error('Update Reward Config Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update reward config' });
   }
 };
@@ -2005,7 +2006,7 @@ exports.setOfficialRoom = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Official room set!', data: { official_room_id: roomId } });
   } catch (error) {
-    console.error('Set Official Room Error:', error);
+    Logger.error('Set Official Room Error:', error);
     res.status(500).json({ success: false, message: 'Failed to set official room' });
   }
 };
@@ -2100,7 +2101,7 @@ async function updateLeaderboardForMember(familyId, user) {
       );
     }
   } catch (error) {
-    console.error('Update Leaderboard For Member Error:', error);
+    Logger.error('Update Leaderboard For Member Error:', error);
   }
 }
 
@@ -2125,7 +2126,7 @@ exports.adminGetAllFamilies = async (req, res) => {
 
     res.status(200).json({ success: true, data: families, total: totalCount, page: parseInt(page) });
   } catch (error) {
-    console.error('Admin Get All Families Error:', error);
+    Logger.error('Admin Get All Families Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch families' });
   }
 };
@@ -2145,7 +2146,7 @@ exports.adminToggleFamilyStatus = async (req, res) => {
 
     res.status(200).json({ success: true, message: `Family ${isActive ? 'activated' : 'deactivated'} successfully`, data: family });
   } catch (error) {
-    console.error('Admin Toggle Family Status Error:', error);
+    Logger.error('Admin Toggle Family Status Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update family status' });
   }
 };
@@ -2170,7 +2171,7 @@ exports.adminBanFamily = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Family banned successfully' });
   } catch (error) {
-    console.error('Admin Ban Family Error:', error);
+    Logger.error('Admin Ban Family Error:', error);
     res.status(500).json({ success: false, message: 'Failed to ban family' });
   }
 };
@@ -2192,7 +2193,7 @@ exports.adminUnbanFamily = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Family unbanned successfully' });
   } catch (error) {
-    console.error('Admin Unban Family Error:', error);
+    Logger.error('Admin Unban Family Error:', error);
     res.status(500).json({ success: false, message: 'Failed to unban family' });
   }
 };
@@ -2212,7 +2213,7 @@ exports.adminDeleteFamily = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Family deleted permanently' });
   } catch (error) {
-    console.error('Admin Delete Family Error:', error);
+    Logger.error('Admin Delete Family Error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete family' });
   }
 };

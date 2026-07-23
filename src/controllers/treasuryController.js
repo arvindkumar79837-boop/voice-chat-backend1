@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const TreasuryLog = require('../models/TreasuryLog');
 
 exports.generateCoins = async (req, res) => {
@@ -25,7 +26,7 @@ exports.generateCoins = async (req, res) => {
       data: { amount, reason, generatedBy, timestamp: log.createdAt }
     });
   } catch (error) {
-    console.error('Coin Generation Error:', error);
+    Logger.error('Coin Generation Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -55,7 +56,7 @@ exports.deductCoins = async (req, res) => {
       data: { amount: -Math.abs(amount), reason, generatedBy, timestamp: log.createdAt }
     });
   } catch (error) {
-    console.error('Coin Deduction Error:', error);
+    Logger.error('Coin Deduction Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -91,7 +92,7 @@ exports.sendReward = async (req, res) => {
       data: { userId, amount, reason, generatedBy, timestamp: log.createdAt }
     });
   } catch (error) {
-    console.error('Send Reward Error:', error);
+    Logger.error('Send Reward Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -104,7 +105,7 @@ exports.getCoinOrders = async (req, res) => {
       .lean();
     return res.status(200).json({ success: true, data: logs });
   } catch (error) {
-    console.error('Get Coin Orders Error:', error);
+    Logger.error('Get Coin Orders Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -114,7 +115,7 @@ exports.getLogs = async (req, res) => {
     const logs = await TreasuryLog.find().sort({ createdAt: -1 }).limit(100);
     return res.status(200).json({ success: true, data: logs });
   } catch (error) {
-    console.error('Fetch Logs Error:', error);
+    Logger.error('Fetch Logs Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

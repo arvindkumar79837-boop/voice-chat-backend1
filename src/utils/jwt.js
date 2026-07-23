@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/utils/jwt.js
 // ARVIND PARTY — JWT Access Token + Refresh Token Engine
@@ -99,7 +100,7 @@ const isTokenBlacklisted = async (token) => {
  * Kept for backward-compatible usage in older controllers.
  */
 const generateToken = (userId) => {
-  console.warn('[jwt] DEPRECATED: generateToken() called — migrate to generateAccessToken()+generateRefreshToken()');
+  Logger.warn('[jwt] DEPRECATED: generateToken() called — migrate to generateAccessToken()+generateRefreshToken()');
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const VipSystem = require('../models/VipSystem');
 const CosmeticItem = require('../models/CosmeticItem');
@@ -58,7 +59,7 @@ exports.getUserVipStatus = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get VIP Status Error:', error);
+    Logger.error('Get VIP Status Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch VIP status' });
   }
 };
@@ -100,7 +101,7 @@ exports.addVipXP = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Add VIP XP Error:', error);
+    Logger.error('Add VIP XP Error:', error);
     res.status(500).json({ success: false, message: 'Failed to add VIP XP' });
   }
 };
@@ -167,7 +168,7 @@ exports.activateSVIP = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Activate SVIP Error:', error);
+    Logger.error('Activate SVIP Error:', error);
     res.status(500).json({ success: false, message: 'Failed to activate SVIP' });
   }
 };
@@ -199,7 +200,7 @@ exports.deactivateSVIP = async (req, res) => {
     });
     res.status(200).json({ success: true, message: 'SVIP deactivated' });
   } catch (error) {
-    console.error('Deactivate SVIP Error:', error);
+    Logger.error('Deactivate SVIP Error:', error);
     res.status(500).json({ success: false, message: 'Failed to deactivate SVIP' });
   }
 };
@@ -216,7 +217,7 @@ exports.listSVIPUsers = async (req, res) => {
     }));
     res.status(200).json({ success: true, data: enriched });
   } catch (error) {
-    console.error('List SVIP Users Error:', error);
+    Logger.error('List SVIP Users Error:', error);
     res.status(500).json({ success: false, message: 'Failed to list SVIP users' });
   }
 };
@@ -282,7 +283,7 @@ exports.purchasePremium = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Purchase Premium Error:', error);
+    Logger.error('Purchase Premium Error:', error);
     res.status(500).json({ success: false, message: 'Failed to purchase premium' });
   }
 };
@@ -298,7 +299,7 @@ exports.cancelPremiumAutoRenew = async (req, res) => {
     await vipData.save();
     res.status(200).json({ success: true, message: 'Auto-renew cancelled' });
   } catch (error) {
-    console.error('Cancel Premium Auto Renew Error:', error);
+    Logger.error('Cancel Premium Auto Renew Error:', error);
     res.status(500).json({ success: false, message: 'Failed to cancel auto-renew' });
   }
 };
@@ -326,7 +327,7 @@ exports.getAvailableCosmetics = async (req, res) => {
     });
     res.status(200).json({ success: true, data: enrichedItems });
   } catch (error) {
-    console.error('Get Available Cosmetics Error:', error);
+    Logger.error('Get Available Cosmetics Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch cosmetics' });
   }
 };
@@ -424,7 +425,7 @@ exports.purchaseCosmetic = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Purchase Cosmetic Error:', error);
+    Logger.error('Purchase Cosmetic Error:', error);
     res.status(500).json({ success: false, message: 'Failed to purchase cosmetic' });
   }
 };
@@ -511,7 +512,7 @@ exports.applyCosmetic = async (req, res) => {
       data: { active_cosmetics: vipData.active_cosmetics }
     });
   } catch (error) {
-    console.error('Apply Cosmetic Error:', error);
+    Logger.error('Apply Cosmetic Error:', error);
     res.status(500).json({ success: false, message: 'Failed to apply cosmetic' });
   }
 };
@@ -540,7 +541,7 @@ exports.getVipMissions = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get VIP Missions Error:', error);
+    Logger.error('Get VIP Missions Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch missions' });
   }
 };
@@ -610,7 +611,7 @@ exports.updateMissionProgress = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Update Mission Progress Error:', error);
+    Logger.error('Update Mission Progress Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update mission progress' });
   }
 };
@@ -667,7 +668,7 @@ exports.claimMissionReward = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Claim Mission Reward Error:', error);
+    Logger.error('Claim Mission Reward Error:', error);
     res.status(500).json({ success: false, message: 'Failed to claim reward' });
   }
 };
@@ -703,7 +704,7 @@ exports.getVIPShopItems = async (req, res) => {
     }));
     res.status(200).json({ success: true, data: enrichedItems });
   } catch (error) {
-    console.error('Get VIP Shop Items Error:', error);
+    Logger.error('Get VIP Shop Items Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch VIP shop items' });
   }
 };
@@ -762,7 +763,7 @@ exports.triggerVIPEntry = async (req, res) => {
     }
     res.status(200).json({ success: true, message: 'VIP entry triggered', data: { entry_effect: entryEffect } });
   } catch (error) {
-    console.error('Trigger VIP Entry Error:', error);
+    Logger.error('Trigger VIP Entry Error:', error);
     res.status(500).json({ success: false, message: 'Failed to trigger VIP entry' });
   }
 };
@@ -795,7 +796,7 @@ exports.adminUpdateVipLevel = async (req, res) => {
     await vipData.save();
     res.status(200).json({ success: true, message: 'VIP data updated', data: { vip_level: vipData.vip_level, vip_xp: vipData.vip_xp } });
   } catch (error) {
-    console.error('Admin Update VIP Level Error:', error);
+    Logger.error('Admin Update VIP Level Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update VIP' });
   }
 };
@@ -831,7 +832,7 @@ exports.adminListAllVIP = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin List All VIP Error:', error);
+    Logger.error('Admin List All VIP Error:', error);
     res.status(500).json({ success: false, message: 'Failed to list VIP users' });
   }
 };
@@ -867,7 +868,7 @@ exports.adminManageCosmetics = async (req, res) => {
     }
     res.status(400).json({ success: false, message: 'Invalid action' });
   } catch (error) {
-    console.error('Admin Manage Cosmetics Error:', error);
+    Logger.error('Admin Manage Cosmetics Error:', error);
     res.status(500).json({ success: false, message: 'Failed to manage cosmetics' });
   }
 };
@@ -901,7 +902,7 @@ exports.getVIPLeaderboard = async (req, res) => {
     }));
     res.status(200).json({ success: true, data: enriched });
   } catch (error) {
-    console.error('Get VIP Leaderboard Error:', error);
+    Logger.error('Get VIP Leaderboard Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch VIP leaderboard' });
   }
 };
@@ -949,7 +950,7 @@ exports.claimPremiumDailyBonus = async (req, res) => {
       data: { coins_added: premiumDailyBonus, coins_total: user.coins, vip_xp_added: 10 }
     });
   } catch (error) {
-    console.error('Claim Premium Daily Bonus Error:', error);
+    Logger.error('Claim Premium Daily Bonus Error:', error);
     res.status(500).json({ success: false, message: 'Failed to claim daily bonus' });
   }
 };
@@ -994,8 +995,8 @@ exports.initializeDefaultCosmetics = async () => {
       { item_id: 'badge_vip15', item_type: 'badge', item_name: 'Supreme VIP Badge', description: 'VIP Level 15 badge', coin_cost: 0, vip_level_required: 15, display_order: 42 }
     ];
     await CosmeticItem.insertMany(defaults);
-    console.log('[VIP SYSTEM] Default cosmetic items initialized:', defaults.length, 'items created');
+    Logger.info('[VIP SYSTEM] Default cosmetic items initialized:', defaults.length, 'items created');
   } catch (error) {
-    console.error('Initialize Default Cosmetics Error:', error);
+    Logger.error('Initialize Default Cosmetics Error:', error);
   }
 };

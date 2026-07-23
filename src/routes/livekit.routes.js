@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('../utils/asyncHandler');
@@ -30,7 +31,7 @@ router.get('/:roomId/livekit/token', asyncHandler(async (req, res) => {
       liveKitWsUrl: result.liveKitWsUrl
     });
   } catch (error) {
-    console.error('LiveKit token error:', error);
+    Logger.error('LiveKit token error:', error);
     res.status(500).json({ success: false, message: 'Failed to generate LiveKit token' });
   }
 }));
@@ -61,7 +62,7 @@ router.post('/token', asyncHandler(async (req, res) => {
       liveKitWsUrl: result.liveKitWsUrl
     });
   } catch (error) {
-    console.error('LiveKit token error:', error);
+    Logger.error('LiveKit token error:', error);
     res.status(500).json({ success: false, message: 'Failed to generate LiveKit token' });
   }
 }));

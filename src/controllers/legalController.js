@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const LegalDocument = require('../models/LegalDocument');
 const Staff = require('../models/Staff');
 const User = require('../models/User');
@@ -169,7 +170,7 @@ exports.processExpiredDeletions = async () => {
     }
     return processed;
   } catch (err) {
-    console.error('Error processing expired deletions:', err);
+    Logger.error('Error processing expired deletions:', err);
     return 0;
   }
 };

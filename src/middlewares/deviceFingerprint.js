@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/middlewares/deviceFingerprint.js
 // ARVIND PARTY - DEVICE FINGERPRINTING + ANTI-BAN MIDDLEWARE
@@ -85,7 +86,7 @@ const checkBannedDevice = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('[checkBannedDevice] Error:', error);
+    Logger.error('[checkBannedDevice] Error:', error);
     next();
   }
 };
@@ -129,7 +130,7 @@ const validateDeviceFingerprint = async (req, res, next) => {
           );
 
           if (!isRegistered) {
-            console.log(`[DeviceFingerprint] New device detected for user ${userId}: ${fingerprint}`);
+            Logger.info(`[DeviceFingerprint] New device detected for user ${userId}: ${fingerprint}`);
             req.newDeviceDetected = true;
             req.deviceFingerprint = fingerprint;
           }
@@ -144,7 +145,7 @@ const validateDeviceFingerprint = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('[DeviceFingerprint] Middleware error:', error);
+    Logger.error('[DeviceFingerprint] Middleware error:', error);
     next();
   }
 };
@@ -190,10 +191,10 @@ const registerDeviceFingerprint = async (userId, fingerprint, deviceInfo = {}) =
     }
 
     await user.save();
-    console.log(`[DeviceFingerprint] Device registered for user ${userId}: ${fingerprint}`);
+    Logger.info(`[DeviceFingerprint] Device registered for user ${userId}: ${fingerprint}`);
     return true;
   } catch (error) {
-    console.error('[DeviceFingerprint] Registration error:', error);
+    Logger.error('[DeviceFingerprint] Registration error:', error);
     return false;
   }
 };
@@ -213,13 +214,13 @@ const removeDeviceFingerprint = async (userId, fingerprint) => {
         device => device.fingerprint !== fingerprint
       );
       await user.save();
-      console.log(`[DeviceFingerprint] Device removed for user ${userId}: ${fingerprint}`);
+      Logger.info(`[DeviceFingerprint] Device removed for user ${userId}: ${fingerprint}`);
       return true;
     }
 
     return false;
   } catch (error) {
-    console.error('[DeviceFingerprint] Removal error:', error);
+    Logger.error('[DeviceFingerprint] Removal error:', error);
     return false;
   }
 };

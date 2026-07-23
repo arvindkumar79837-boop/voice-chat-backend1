@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/utils/logger.js
 // ARVIND PARTY — Structured Logging (Winston)
@@ -59,11 +60,11 @@ try {
   // Fallback if winston not installed yet
   const noop = () => {};
   logger = {
-    info: (msg, meta) => console.log(`[INFO] ${msg}`, meta || ''),
-    error: (msg, meta) => console.error(`[ERROR] ${msg}`, meta || ''),
-    warn: (msg, meta) => console.warn(`[WARN] ${msg}`, meta || ''),
+    info: (msg, meta) => Logger.info(`[INFO] ${msg}`, meta || ''),
+    error: (msg, meta) => Logger.error(`[ERROR] ${msg}`, meta || ''),
+    warn: (msg, meta) => Logger.warn(`[WARN] ${msg}`, meta || ''),
     debug: (msg, meta) => {
-      if (process.env.DEBUG_LOGS === 'true') console.log(`[DEBUG] ${msg}`, meta || '');
+      if (process.env.DEBUG_LOGS === 'true') Logger.info(`[DEBUG] ${msg}`, meta || '');
     },
     http: noop,
   };

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const PowerMatrix = require('../models/PowerMatrix');
 const User = require('../models/User');
 const Room = require('../models/Room');
@@ -66,7 +67,7 @@ exports.getPowerMatrix = async (req, res) => {
       data: matrix
     });
   } catch (error) {
-    console.error('Get Power Matrix Error:', error);
+    Logger.error('Get Power Matrix Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch power matrix.',
@@ -113,7 +114,7 @@ exports.updatePowerMatrix = async (req, res) => {
       data: updatedMatrix
     });
   } catch (error) {
-    console.error('Update Power Matrix Error:', error);
+    Logger.error('Update Power Matrix Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to update power matrix.',
@@ -140,7 +141,7 @@ exports.resetPowerMatrix = async (req, res) => {
       data: populatedMatrix
     });
   } catch (error) {
-    console.error('Reset Power Matrix Error:', error);
+    Logger.error('Reset Power Matrix Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to reset power matrix.',
@@ -229,7 +230,7 @@ exports.checkUserPower = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Check User Power Error:', error);
+    Logger.error('Check User Power Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to check user power.',
@@ -253,7 +254,7 @@ exports.getPowerMatrixHistory = async (req, res) => {
       data: history
     });
   } catch (error) {
-    console.error('Get Power Matrix History Error:', error);
+    Logger.error('Get Power Matrix History Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch power matrix history.',

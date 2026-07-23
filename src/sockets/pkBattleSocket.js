@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const PKBattle = require('../models/PKBattle');
 const Gift = require('../models/Gift');
 
@@ -25,31 +26,38 @@ module.exports = (io, socket) => {
       const validQty = Math.max(1, Math.min(parseInt(quantity) || 1, 999));
       const score = gift.coinPrice * validQty;
 
+      let update = {};
       if (currentUser === host) {
-        battle.hostScore += score;
+        update = { $inc: { hostScore: score } };
       } else if (currentUser === opponent) {
-        battle.opponentScore += score;
+        update = { $inc: { opponentScore: score } };
       } else {
         if (supportedUserId) {
           if (supportedUserId === host) {
-            battle.hostScore += score;
+            update = { $inc: { hostScore: score } };
           } else if (supportedUserId === opponent) {
-            battle.opponentScore += score;
+            update = { $inc: { opponentScore: score } };
           } else {
             return;
           }
         }
       }
 
-      await battle.save();
+      const updatedBattle = await PKBattle.findByIdAndUpdate(
+        battleId,
+        update,
+        { new: true }
+      );
 
-      io.to(battle.roomId.toString()).emit('pk_score_update', {
-        battleId: battle._id,
-        hostScore: battle.hostScore,
-        opponentScore: battle.opponentScore,
-      });
+      if (updatedBattle) {
+        io.to(updatedBattle.roomId.toString()).emit('pk_score_update', {
+          battleId: updatedBattle._id,
+          hostScore: updatedBattle.hostScore,
+          opponentScore: updatedBattle.opponentScore,
+        });
+      }
     } catch (error) {
-      console.error('PK Score Update Error:', error);
+      Logger.error('PK Score Update Error:', error);
     }
   });
 };

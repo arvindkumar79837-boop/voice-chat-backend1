@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const Penalty = require('../models/Penalty');
 const User = require('../models/User');
@@ -53,7 +54,7 @@ exports.applyPenalty = async (req, res) => {
 
     res.status(201).json({ success: true, penalty, message: 'Penalty applied successfully' });
   } catch (error) {
-    console.error('Apply Penalty Error:', error);
+    Logger.error('Apply Penalty Error:', error);
     res.status(500).json({ success: false, message: 'Failed to apply penalty' });
   }
 };
@@ -79,7 +80,7 @@ exports.getHostPenalties = async (req, res) => {
 
     res.status(200).json({ success: true, data: penalties, count: penalties.length });
   } catch (error) {
-    console.error('Get Host Penalties Error:', error);
+    Logger.error('Get Host Penalties Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch penalties' });
   }
 };
@@ -112,7 +113,7 @@ exports.removePenalty = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Penalty removed successfully' });
   } catch (error) {
-    console.error('Remove Penalty Error:', error);
+    Logger.error('Remove Penalty Error:', error);
     res.status(500).json({ success: false, message: 'Failed to remove penalty' });
   }
 };
@@ -149,7 +150,7 @@ exports.getMonthlyPenaltySummary = async (req, res) => {
       year: y,
     });
   } catch (error) {
-    console.error('Monthly Penalty Summary Error:', error);
+    Logger.error('Monthly Penalty Summary Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch penalty summary' });
   }
 };

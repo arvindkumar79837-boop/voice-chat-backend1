@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // SOCKET: rewardSocket — Real-time reward config broadcasting
 // ═══════════════════════════════════════════════════════════════════════════
@@ -26,18 +27,18 @@ const initRewardSocket = (io) => {
   });
 
   gameNamespace.on('connection', (socket) => {
-    console.log(`Client connected to game socket: ${socket.id}`);
+    Logger.info(`Client connected to game socket: ${socket.id}`);
 
     // Join game-specific room
     socket.on('join_game_room', (gameType) => {
       socket.join(`game:${gameType}`);
-      console.log(`Socket ${socket.id} joined room: game:${gameType}`);
+      Logger.info(`Socket ${socket.id} joined room: game:${gameType}`);
     });
 
     // Leave game room
     socket.on('leave_game_room', (gameType) => {
       socket.leave(`game:${gameType}`);
-      console.log(`Socket ${socket.id} left room: game:${gameType}`);
+      Logger.info(`Socket ${socket.id} left room: game:${gameType}`);
     });
 
     // Request current active config
@@ -59,7 +60,7 @@ const initRewardSocket = (io) => {
 
     // Handle disconnect
     socket.on('disconnect', () => {
-      console.log(`Client disconnected from game socket: ${socket.id}`);
+      Logger.info(`Client disconnected from game socket: ${socket.id}`);
     });
   });
 
@@ -97,7 +98,7 @@ const broadcastConfigUpdate = async (config) => {
       });
     }
   } catch (error) {
-    console.error('Broadcast config update error:', error);
+    Logger.error('Broadcast config update error:', error);
   }
 };
 
@@ -109,7 +110,7 @@ const broadcastPrizeUpdate = async (gameType, prizeData) => {
       timestamp: new Date()
     });
   } catch (error) {
-    console.error('Broadcast prize update error:', error);
+    Logger.error('Broadcast prize update error:', error);
   }
 };
 
@@ -125,7 +126,7 @@ const broadcastJackpotHit = async (gameType, jackpotData) => {
       timestamp: new Date()
     });
   } catch (error) {
-    console.error('Broadcast jackpot error:', error);
+    Logger.error('Broadcast jackpot error:', error);
   }
 };
 
@@ -138,7 +139,7 @@ const broadcastAssetUpdate = async (assetType, action, assetData) => {
       timestamp: new Date()
     });
   } catch (error) {
-    console.error('Broadcast asset update error:', error);
+    Logger.error('Broadcast asset update error:', error);
   }
 };
 

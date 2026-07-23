@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 /**
  * Arvind Party - Redis Ranking Integration Service
  * Call this from controllers to automatically update rankings when events happen
@@ -46,7 +47,7 @@ class RedisRankingIntegration {
         giftIcon
       );
     } catch (error) {
-      console.error('Gift Ranking Integration Error:', error.message);
+      Logger.error('Gift Ranking Integration Error:', error.message);
     }
   }
 
@@ -79,7 +80,7 @@ class RedisRankingIntegration {
         }
       }
     } catch (error) {
-      console.error('Family Ranking Integration Error:', error.message);
+      Logger.error('Family Ranking Integration Error:', error.message);
     }
   }
 
@@ -97,7 +98,7 @@ class RedisRankingIntegration {
         );
       }
     } catch (error) {
-      console.error('Agency Ranking Integration Error:', error.message);
+      Logger.error('Agency Ranking Integration Error:', error.message);
     }
   }
 
@@ -117,7 +118,7 @@ class RedisRankingIntegration {
         );
       }
     } catch (error) {
-      console.error('Room Ranking Integration Error:', error.message);
+      Logger.error('Room Ranking Integration Error:', error.message);
     }
   }
 
@@ -171,14 +172,14 @@ class RedisRankingIntegration {
         );
       }
     } catch (error) {
-      console.error('PK Battle Ranking Integration Error:', error.message);
+      Logger.error('PK Battle Ranking Integration Error:', error.message);
     }
   }
 
   // ─── BATCH INITIALIZATION FROM MONGODB ──────────────────────────────────
   async initializeAllRankingsFromDB() {
     try {
-      console.log('🔄 Initializing rankings from MongoDB...');
+      Logger.info('🔄 Initializing rankings from MongoDB...');
 
       const users = await User.find({ isActive: true, isBanned: false })
         .select('uid name avatar diamonds coins level vipLevel country totalGiftsSent totalGiftsReceived');
@@ -234,10 +235,10 @@ class RedisRankingIntegration {
         );
       }
 
-      console.log('✅ Rankings initialized from MongoDB');
+      Logger.info('✅ Rankings initialized from MongoDB');
       return { success: true, usersInitialized: users.length };
     } catch (error) {
-      console.error('Ranking Initialization Error:', error.message);
+      Logger.error('Ranking Initialization Error:', error.message);
       return { success: false, error: error.message };
     }
   }
@@ -275,10 +276,10 @@ class RedisRankingIntegration {
         );
       }
 
-      console.log(`✅ Gift rankings initialized: ${Object.keys(giftCounts).length} gifts`);
+      Logger.info(`✅ Gift rankings initialized: ${Object.keys(giftCounts).length} gifts`);
       return { success: true, giftsInitialized: Object.keys(giftCounts).length };
     } catch (error) {
-      console.error('Gift Ranking Initialization Error:', error.message);
+      Logger.error('Gift Ranking Initialization Error:', error.message);
       return { success: false, error: error.message };
     }
   }

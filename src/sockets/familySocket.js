@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const Family = require('../models/Family');
 const User = require('../models/User');
 const FamilyStayReward = require('../models/FamilyStayReward');
@@ -45,7 +46,7 @@ function setupFamilySocketHandlers(io, socket) {
 
       socket.emit('family:joined', { familyId, family_name: family.family_name });
     } catch (error) {
-      console.error('Family Join Error:', error);
+      Logger.error('Family Join Error:', error);
       socket.emit('family:error', { message: 'Failed to join family room.' });
     }
   });
@@ -60,7 +61,7 @@ function setupFamilySocketHandlers(io, socket) {
 
       socket.data.familyId = null;
     } catch (error) {
-      console.error('Family Leave Error:', error);
+      Logger.error('Family Leave Error:', error);
     }
   });
 
@@ -94,7 +95,7 @@ function setupFamilySocketHandlers(io, socket) {
 
       io.to(`family:${familyId}`).emit('family:new_message', chatMessage);
     } catch (error) {
-      console.error('Family Send Message Error:', error);
+      Logger.error('Family Send Message Error:', error);
       socket.emit('family:error', { message: 'Failed to send message.' });
     }
   });
@@ -121,7 +122,7 @@ function setupFamilySocketHandlers(io, socket) {
 
       io.to(`family:${familyId}`).emit('family:gift_alert', alert);
     } catch (error) {
-      console.error('Family Gift Alert Error:', error);
+      Logger.error('Family Gift Alert Error:', error);
     }
   });
 
@@ -175,7 +176,7 @@ function setupFamilySocketHandlers(io, socket) {
 
       socket.emit('family:stay:session', { sessionId: session._id, active: true });
     } catch (error) {
-      console.error('Family Stay Start Error:', error);
+      Logger.error('Family Stay Start Error:', error);
       socket.emit('family:stay:error', { message: 'Failed to start stay session.' });
     }
   });
@@ -255,7 +256,7 @@ function setupFamilySocketHandlers(io, socket) {
         xpEarned
       });
     } catch (error) {
-      console.error('Family Stay Redeem Error:', error);
+      Logger.error('Family Stay Redeem Error:', error);
       socket.emit('family:stay:error', { message: 'Failed to redeem reward.' });
     }
   });
@@ -289,7 +290,7 @@ function setupFamilySocketHandlers(io, socket) {
         io.to(`family:${familyId}`).emit('family:stay:left', { uid });
       }
     } catch (error) {
-      console.error('Family Stay End Error:', error);
+      Logger.error('Family Stay End Error:', error);
     }
   });
 
@@ -321,7 +322,7 @@ function setupFamilySocketHandlers(io, socket) {
         socket.emit('family:stay:status', { active: false });
       }
     } catch (error) {
-      console.error('Family Stay Status Error:', error);
+      Logger.error('Family Stay Status Error:', error);
       socket.emit('family:stay:status', { active: false });
     }
   });
@@ -347,7 +348,7 @@ function setupFamilySocketHandlers(io, socket) {
         await getRedis().del(staySessionKey(uid));
       }
     } catch (error) {
-      console.error('Family Disconnect Error:', error);
+      Logger.error('Family Disconnect Error:', error);
     }
   });
 }

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const VipPlan = require('../models/VipPlan');
 const VipUser = require('../models/VipUser');
 const User = require('../models/User');
@@ -7,7 +8,7 @@ exports.getVipPlans = async (req, res) => {
     const plans = await VipPlan.find().sort({ level: 1 });
     res.status(200).json({ success: true, plans });
   } catch (error) {
-    console.error('Fetch VIP Plans Error:', error);
+    Logger.error('Fetch VIP Plans Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch VIP plans' });
   }
 };
@@ -27,7 +28,7 @@ exports.createVipPlan = async (req, res) => {
     const plan = await VipPlan.create({ name, level, price, durationDays, benefits });
     res.status(201).json({ success: true, message: 'VIP plan created successfully', plan });
   } catch (error) {
-    console.error('Create VIP Plan Error:', error);
+    Logger.error('Create VIP Plan Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create VIP plan' });
   }
 };
@@ -44,7 +45,7 @@ exports.updateVipPlan = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'VIP plan updated successfully', plan });
   } catch (error) {
-    console.error('Update VIP Plan Error:', error);
+    Logger.error('Update VIP Plan Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update VIP plan' });
   }
 };
@@ -79,7 +80,7 @@ exports.buyVip = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'VIP purchased successfully!', vip: vipRecord });
   } catch (error) {
-    console.error('Buy VIP Error:', error);
+    Logger.error('Buy VIP Error:', error);
     res.status(500).json({ success: false, message: 'Failed to process VIP purchase' });
   }
 };

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/controllers/security.controller.js
 // ARVIND PARTY — Security Dashboard Controller for Owner Web Panel
@@ -39,7 +40,7 @@ exports.getDashboard = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Security Dashboard Error:', error);
+    Logger.error('Security Dashboard Error:', error);
     res.status(500).json({ success: false, message: 'Failed to load dashboard.' });
   }
 };
@@ -70,7 +71,7 @@ exports.getFraudAlerts = async (req, res) => {
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
-    console.error('Get Fraud Alerts Error:', error);
+    Logger.error('Get Fraud Alerts Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch fraud alerts.' });
   }
 };
@@ -102,7 +103,7 @@ exports.updateFraudAlert = async (req, res) => {
 
     res.status(200).json({ success: true, data: alert });
   } catch (error) {
-    console.error('Update Fraud Alert Error:', error);
+    Logger.error('Update Fraud Alert Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update alert.' });
   }
 };
@@ -115,7 +116,7 @@ exports.getBannedDevices = async (req, res) => {
     const devices = await BannedDevice.find({}).sort({ bannedAt: -1 }).lean();
     res.status(200).json({ success: true, data: devices });
   } catch (error) {
-    console.error('Get Banned Devices Error:', error);
+    Logger.error('Get Banned Devices Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch banned devices.' });
   }
 };
@@ -150,7 +151,7 @@ exports.banDevice = async (req, res) => {
 
     res.status(201).json({ success: true, data: device });
   } catch (error) {
-    console.error('Ban Device Error:', error);
+    Logger.error('Ban Device Error:', error);
     res.status(500).json({ success: false, message: 'Failed to ban device.' });
   }
 };
@@ -168,7 +169,7 @@ exports.unbanDevice = async (req, res) => {
     });
     res.status(200).json({ success: true, message: 'Device unbanned.' });
   } catch (error) {
-    console.error('Unban Device Error:', error);
+    Logger.error('Unban Device Error:', error);
     res.status(500).json({ success: false, message: 'Failed to unban device.' });
   }
 };
@@ -181,7 +182,7 @@ exports.getBlockedIps = async (req, res) => {
     const ips = await BlockedIp.find({}).sort({ createdAt: -1 }).lean();
     res.status(200).json({ success: true, data: ips });
   } catch (error) {
-    console.error('Get Blocked IPs Error:', error);
+    Logger.error('Get Blocked IPs Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch blocked IPs.' });
   }
 };
@@ -218,7 +219,7 @@ exports.blockIp = async (req, res) => {
 
     res.status(201).json({ success: true, data: ip });
   } catch (error) {
-    console.error('Block IP Error:', error);
+    Logger.error('Block IP Error:', error);
     res.status(500).json({ success: false, message: 'Failed to block IP.' });
   }
 };
@@ -228,7 +229,7 @@ exports.unblockIp = async (req, res) => {
     await BlockedIp.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, message: 'IP unblocked.' });
   } catch (error) {
-    console.error('Unblock IP Error:', error);
+    Logger.error('Unblock IP Error:', error);
     res.status(500).json({ success: false, message: 'Failed to unblock IP.' });
   }
 };
@@ -257,7 +258,7 @@ exports.getAuditLogs = async (req, res) => {
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
-    console.error('Get Audit Logs Error:', error);
+    Logger.error('Get Audit Logs Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch audit logs.' });
   }
 };
@@ -286,7 +287,7 @@ exports.getLiveThreats = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get Live Threats Error:', error);
+    Logger.error('Get Live Threats Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch live threats.' });
   }
 };

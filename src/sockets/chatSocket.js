@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const RoomMessage = require('../models/RoomMessage');
 
 module.exports = (io, socket) => {
@@ -23,7 +24,7 @@ module.exports = (io, socket) => {
         messageId: newMessage._id,
       });
     } catch (error) {
-      console.error('Chat message error:', error);
+      Logger.error('Chat message error:', error);
     }
   });
 
@@ -40,7 +41,7 @@ module.exports = (io, socket) => {
       }
       io.to(roomId).emit('receive_reaction', { roomId, emoji, senderId });
     } catch (error) {
-      console.error('[send_reaction] error:', error.message);
+      Logger.error('[send_reaction] error:', error.message);
       socket.emit('error', { message: 'Something went wrong. Please try again.' });
     }
   });
@@ -53,7 +54,7 @@ module.exports = (io, socket) => {
         socket.to(roomId).emit('chat:typing', data);
       }
     } catch (error) {
-      console.error('[chat:typing] error:', error.message);
+      Logger.error('[chat:typing] error:', error.message);
       socket.emit('error', { message: 'Something went wrong. Please try again.' });
     }
   });
@@ -70,7 +71,7 @@ module.exports = (io, socket) => {
         io.to(`user:${receiverId}`).emit('chat:private', { ...data, senderId });
       }
     } catch (error) {
-      console.error('[chat:private] error:', error.message);
+      Logger.error('[chat:private] error:', error.message);
       socket.emit('error', { message: 'Something went wrong. Please try again.' });
     }
   });

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const LoginStreak = require('../models/LoginStreak');
 const User = require('../models/User');
 
@@ -11,7 +12,7 @@ exports.getLoginStreak = async (req, res) => {
     }
     res.status(200).json({ success: true, data: streak });
   } catch (error) {
-    console.error('Get LoginStreak Error:', error);
+    Logger.error('Get LoginStreak Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch login streak' });
   }
 };
@@ -155,7 +156,7 @@ exports.claimDailyLogin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Claim Daily Login Error:', error);
+    Logger.error('Claim Daily Login Error:', error);
     res.status(500).json({ success: false, message: 'Failed to claim daily login' });
   }
 };
@@ -169,7 +170,7 @@ exports.adminGetAllStreaks = async (req, res) => {
       .limit(200);
     res.status(200).json({ success: true, data: streaks });
   } catch (error) {
-    console.error('Admin Get Streaks Error:', error);
+    Logger.error('Admin Get Streaks Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch streaks' });
   }
 };
@@ -188,7 +189,7 @@ exports.adminResetStreak = async (req, res) => {
     }
     res.status(200).json({ success: true, message: 'Streak reset', data: streak });
   } catch (error) {
-    console.error('Admin Reset Streak Error:', error);
+    Logger.error('Admin Reset Streak Error:', error);
     res.status(500).json({ success: false, message: 'Failed to reset streak' });
   }
 };

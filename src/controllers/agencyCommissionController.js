@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // CONTROLLER: AgencyCommissionController — Full commission tier management
 // for host agencies with multi-level commission structures
@@ -44,7 +45,7 @@ exports.createCommissionTier = async (req, res) => {
       data: agency.commissionTiers,
     });
   } catch (error) {
-    console.error('createCommissionTier Error:', error);
+    Logger.error('createCommissionTier Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -80,7 +81,7 @@ exports.updateCommissionTier = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Commission tier updated', data: agency.commissionTiers });
   } catch (error) {
-    console.error('updateCommissionTier Error:', error);
+    Logger.error('updateCommissionTier Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -108,7 +109,7 @@ exports.deleteCommissionTier = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Commission tier deleted', data: agency.commissionTiers });
   } catch (error) {
-    console.error('deleteCommissionTier Error:', error);
+    Logger.error('deleteCommissionTier Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -125,7 +126,7 @@ exports.getCommissionTiers = async (req, res) => {
     }
     return res.status(200).json({ success: true, data: agency.commissionTiers || [] });
   } catch (error) {
-    console.error('getCommissionTiers Error:', error);
+    Logger.error('getCommissionTiers Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -183,7 +184,7 @@ exports.calculateCommission = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('calculateCommission Error:', error);
+    Logger.error('calculateCommission Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

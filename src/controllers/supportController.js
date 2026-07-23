@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const SupportTicket = require('../models/SupportTicket');
 const User = require('../models/User');
 const VisitorHistory = require('../models/VisitorHistory');
@@ -365,7 +366,7 @@ exports.replyToTicket = async (req, res) => {
     await ticket.save();
     return res.status(200).json({ success: true, data: ticket });
   } catch (error) {
-    console.error('Reply To Ticket Error:', error);
+    Logger.error('Reply To Ticket Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to reply to ticket' });
   }
 };

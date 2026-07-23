@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/config/cors.js
 // ARVIND PARTY - CORS CONFIGURATION
@@ -58,7 +59,7 @@ const corsConfig = cors({
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.warn(`CORS rejected origin: ${origin}`);
+      Logger.warn(`CORS rejected origin: ${origin}`);
       callback(new Error(`Origin ${origin} not allowed by CORS`));
     }
   },

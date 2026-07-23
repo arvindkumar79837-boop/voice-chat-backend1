@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // CONTROLLER: GoogleAuthController — Google OAuth login
 // ═══════════════════════════════════════════════════════════════════════════
@@ -74,7 +75,7 @@ exports.googleLogin = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Google Login Error:', error);
+    Logger.error('Google Login Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -139,7 +140,7 @@ exports.appleLogin = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Apple Login Error:', error);
+    Logger.error('Apple Login Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

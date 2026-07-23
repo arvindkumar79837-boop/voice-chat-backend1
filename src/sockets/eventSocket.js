@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const Event = require('../models/Event');
 const UserEventProgress = require('../models/UserEventProgress');
@@ -29,7 +30,7 @@ class EventSocket {
 
     eventNamespace.on('connection', (socket) => {
       const userId = socket.data?.userId;
-      console.log(`Event socket connected: ${userId}`);
+      Logger.info(`Event socket connected: ${userId}`);
 
       socket.on('join_event_room', async (eventId) => {
         try {
@@ -48,9 +49,9 @@ class EventSocket {
             participants_count: event.participants_count
           });
 
-          console.log(`User ${userId} joined event room: ${eventId}`);
+          Logger.info(`User ${userId} joined event room: ${eventId}`);
         } catch (error) {
-          console.error('Error joining event room:', error);
+          Logger.error('Error joining event room:', error);
           socket.emit('error', { message: 'Failed to join event room' });
         }
       });
@@ -58,7 +59,7 @@ class EventSocket {
       socket.on('leave_event_room', (eventId) => {
         socket.leave(`event:${eventId}`);
         socket.emit('event_room_left', { eventId });
-        console.log(`User ${userId} left event room: ${eventId}`);
+        Logger.info(`User ${userId} left event room: ${eventId}`);
       });
 
       socket.on('update_event_progress', async (data) => {
@@ -98,7 +99,7 @@ class EventSocket {
             is_completed: progress.is_completed
           });
         } catch (error) {
-          console.error('Error updating progress via socket:', error);
+          Logger.error('Error updating progress via socket:', error);
           socket.emit('error', { message: 'Failed to update progress' });
         }
       });
@@ -148,17 +149,17 @@ class EventSocket {
             event_name: event.event_name
           });
         } catch (error) {
-          console.error('Error claiming reward via socket:', error);
+          Logger.error('Error claiming reward via socket:', error);
           socket.emit('error', { message: 'Failed to claim reward' });
         }
       });
 
       socket.on('disconnect', () => {
-        console.log(`Event socket disconnected: ${userId}`);
+        Logger.info(`Event socket disconnected: ${userId}`);
       });
     });
 
-    console.log('Event socket initialized on /events namespace');
+    Logger.info('Event socket initialized on /events namespace');
   }
 
   /**

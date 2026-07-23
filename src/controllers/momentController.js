@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/controllers/momentController.js
 // ARVIND PARTY - MOMENTS / POSTS CONTROLLER
@@ -34,7 +35,7 @@ exports.getMomentsFeed = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching moments feed:', error);
+    Logger.error('Error fetching moments feed:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch moments feed'
@@ -74,7 +75,7 @@ exports.createMoment = async (req, res) => {
       message: 'Moment created successfully'
     });
   } catch (error) {
-    console.error('Error creating moment:', error);
+    Logger.error('Error creating moment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create moment'
@@ -104,7 +105,7 @@ exports.getMoment = async (req, res) => {
       data: moment
     });
   } catch (error) {
-    console.error('Error fetching moment:', error);
+    Logger.error('Error fetching moment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch moment'
@@ -149,7 +150,7 @@ exports.likeMoment = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error liking moment:', error);
+    Logger.error('Error liking moment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to like moment'
@@ -187,7 +188,7 @@ exports.unlikeMoment = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error unliking moment:', error);
+    Logger.error('Error unliking moment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to unlike moment'
@@ -235,7 +236,7 @@ exports.addComment = async (req, res) => {
       data: populated.comments[moment.comments.length - 1]
     });
   } catch (error) {
-    console.error('Error adding comment:', error);
+    Logger.error('Error adding comment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to add comment'
@@ -268,7 +269,7 @@ exports.deleteComment = async (req, res) => {
       message: 'Comment deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting comment:', error);
+    Logger.error('Error deleting comment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete comment'
@@ -306,7 +307,7 @@ exports.deleteMoment = async (req, res) => {
       message: 'Moment deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting moment:', error);
+    Logger.error('Error deleting moment:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete moment'
@@ -353,7 +354,7 @@ exports.searchMoments = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error searching moments:', error);
+    Logger.error('Error searching moments:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to search moments'
@@ -370,7 +371,7 @@ exports.getAllMoments = async (req, res) => {
 
     return res.status(200).json({ success: true, data: moments });
   } catch (error) {
-    console.error('Get All Moments Error:', error);
+    Logger.error('Get All Moments Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch moments' });
   }
 };
@@ -388,7 +389,7 @@ exports.adminDeleteMoment = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Moment deleted by admin' });
   } catch (error) {
-    console.error('Admin Delete Moment Error:', error);
+    Logger.error('Admin Delete Moment Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to delete moment' });
   }
 };

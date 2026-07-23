@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const PowerMatrix = require('../models/PowerMatrix');
 const User = require('../models/User');
 const Room = require('../models/Room');
@@ -111,7 +112,7 @@ const checkPowerMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Power validation middleware error:', error);
+    Logger.error('Power validation middleware error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to validate power.',
@@ -166,7 +167,7 @@ const checkRoomOwner = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Room owner check middleware error:', error);
+    Logger.error('Room owner check middleware error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to verify room ownership.',

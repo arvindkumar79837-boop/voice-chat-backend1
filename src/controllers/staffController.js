@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // CONTROLLER: StaffController — Full 15+ role management with Owner enforcement
 // Password modification strictly locked under Owner control
@@ -74,7 +75,7 @@ exports.createStaff = async (req, res) => {
       data: { uid, loginId, name, role, permissions: finalPermissions },
     });
   } catch (error) {
-    console.error('Staff Creation Error:', error);
+    Logger.error('Staff Creation Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -142,7 +143,7 @@ exports.loginStaff = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Staff Login Error:', error);
+    Logger.error('Staff Login Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -211,7 +212,7 @@ exports.loginStaffPassword = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Staff Password Login Error:', error);
+    Logger.error('Staff Password Login Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -228,7 +229,7 @@ exports.getMyProfile = async (req, res) => {
     }
     return res.status(200).json({ success: true, data: staff });
   } catch (error) {
-    console.error('Get My Profile Error:', error);
+    Logger.error('Get My Profile Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -242,7 +243,7 @@ exports.getStaffList = async (req, res) => {
     const staffList = await Staff.find({}, { password: 0 }).sort({ roleLevel: -1, createdAt: -1 });
     return res.status(200).json({ success: true, data: staffList });
   } catch (error) {
-    console.error('Get Staff List Error:', error);
+    Logger.error('Get Staff List Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -322,7 +323,7 @@ exports.updateStaff = async (req, res) => {
     delete staffData.password;
     return res.status(200).json({ success: true, message: 'Staff updated', data: staffData });
   } catch (error) {
-    console.error('Update Staff Error:', error);
+    Logger.error('Update Staff Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -350,7 +351,7 @@ exports.deleteStaff = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Staff deleted permanently' });
   } catch (error) {
-    console.error('Delete Staff Error:', error);
+    Logger.error('Delete Staff Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -388,7 +389,7 @@ exports.changeStaffPassword = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Password changed and locked by Owner' });
   } catch (error) {
-    console.error('changeStaffPassword Error:', error);
+    Logger.error('changeStaffPassword Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -415,7 +416,7 @@ exports.getAdminRoles = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get Admin Roles Error:', error);
+    Logger.error('Get Admin Roles Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -429,7 +430,7 @@ exports.createAdminRole = async (req, res) => {
     const { uid, loginId, password, role, permissions } = req.body;
     return exports.createStaff({ ...req, body: { uid, loginId, password, role, permissions } }, res);
   } catch (error) {
-    console.error('Create Admin Role Error:', error);
+    Logger.error('Create Admin Role Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -444,7 +445,7 @@ exports.updateAdminRole = async (req, res) => {
     const { role, permissions } = req.body;
     return exports.updateStaff({ ...req, params: { id }, body: { role, permissions } }, res);
   } catch (error) {
-    console.error('Update Admin Role Error:', error);
+    Logger.error('Update Admin Role Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -465,7 +466,7 @@ exports.searchUser = async (req, res) => {
 
     return res.status(200).json({ success: true, data: users });
   } catch (error) {
-    console.error('Search User Error:', error);
+    Logger.error('Search User Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -491,7 +492,7 @@ exports.getAuditLogs = async (req, res) => {
       pagination: { total, page, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
-    console.error('Get Audit Logs Error:', error);
+    Logger.error('Get Audit Logs Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

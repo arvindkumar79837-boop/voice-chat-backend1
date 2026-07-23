@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const VisitorHistory = require('../models/VisitorHistory');
@@ -61,7 +62,7 @@ exports.followUser = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Follow User Error:', error);
+    Logger.error('Follow User Error:', error);
     res.status(500).json({ success: false, message: 'Failed to follow user' });
   }
 };
@@ -107,7 +108,7 @@ exports.unfollowUser = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Unfollow User Error:', error);
+    Logger.error('Unfollow User Error:', error);
     res.status(500).json({ success: false, message: 'Failed to unfollow user' });
   }
 };
@@ -149,7 +150,7 @@ exports.getFollowers = async (req, res) => {
       count: followers.length
     });
   } catch (error) {
-    console.error('Get Followers Error:', error);
+    Logger.error('Get Followers Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch followers' });
   }
 };
@@ -191,7 +192,7 @@ exports.getFollowing = async (req, res) => {
       count: following.length
     });
   } catch (error) {
-    console.error('Get Following Error:', error);
+    Logger.error('Get Following Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch following list' });
   }
 };
@@ -236,7 +237,7 @@ exports.recordVisit = async (req, res) => {
       data: existingVisit
     });
   } catch (error) {
-    console.error('Record Visit Error:', error);
+    Logger.error('Record Visit Error:', error);
     res.status(500).json({ success: false, message: 'Failed to record visit' });
   }
 };
@@ -273,7 +274,7 @@ exports.getVisitorHistory = async (req, res) => {
       count: visitorList.length
     });
   } catch (error) {
-    console.error('Get Visitor History Error:', error);
+    Logger.error('Get Visitor History Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch visitor history' });
   }
 };
@@ -323,7 +324,7 @@ exports.blockUser = async (req, res) => {
       blockedCount: currentUser.blockedCount
     });
   } catch (error) {
-    console.error('Block User Error:', error);
+    Logger.error('Block User Error:', error);
     res.status(500).json({ success: false, message: 'Failed to block user' });
   }
 };
@@ -356,7 +357,7 @@ exports.unblockUser = async (req, res) => {
       blockedCount: currentUser.blockedCount
     });
   } catch (error) {
-    console.error('Unblock User Error:', error);
+    Logger.error('Unblock User Error:', error);
     res.status(500).json({ success: false, message: 'Failed to unblock user' });
   }
 };
@@ -396,7 +397,7 @@ exports.getBlockList = async (req, res) => {
       blockedCount: user.blockedCount || 0
     });
   } catch (error) {
-    console.error('Get Block List Error:', error);
+    Logger.error('Get Block List Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch block list' });
   }
 };
@@ -427,7 +428,7 @@ exports.checkBlockStatus = async (req, res) => {
       isBlockedByThem
     });
   } catch (error) {
-    console.error('Check Block Status Error:', error);
+    Logger.error('Check Block Status Error:', error);
     res.status(500).json({ success: false, message: 'Failed to check block status' });
   }
 };

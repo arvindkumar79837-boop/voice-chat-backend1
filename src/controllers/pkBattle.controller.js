@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const PKBattle = require('../models/PKBattle');
 const Room = require('../models/Room');
 const User =require('../models/User');
@@ -36,7 +37,7 @@ const endBattleInternal = async (battleId, io) => {
       battle.hostScore,
       battle.opponentScore
     )
-    .catch((err) => console.error('Redis PK ranking update failed:', err.message));
+    .catch((err) => Logger.error('Redis PK ranking update failed:', err.message));
 };
 
 exports.requestBattle = async (req, res) => {
@@ -93,7 +94,7 @@ exports.requestBattle = async (req, res) => {
       .status(201)
       .json({ success: true, message: 'PK Battle request sent.', data: battle });
   } catch (error) {
-    console.error('PK Battle Request Error:', error);
+    Logger.error('PK Battle Request Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -146,7 +147,7 @@ exports.acceptBattle = async (req, res) => {
       .status(200)
       .json({ success: true, message: 'PK Battle started!', data: battle });
   } catch (error) {
-    console.error('PK Battle Accept Error:', error);
+    Logger.error('PK Battle Accept Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -159,7 +160,7 @@ exports.endBattle = async (req, res) => {
     await endBattleInternal(battleId, req.app.get('io'));
     return res.status(200).json({ success: true, message: 'PK Battle ended.' });
   } catch (error) {
-    console.error('PK Battle End Error:', error);
+    Logger.error('PK Battle End Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

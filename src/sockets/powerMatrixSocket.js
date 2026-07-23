@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const PowerMatrix = require('../models/PowerMatrix');
 const User = require('../models/User');
 const Room = require('../models/Room');
@@ -74,7 +75,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
         }
       });
     } catch (error) {
-      console.error('Power check socket error:', error);
+      Logger.error('Power check socket error:', error);
       socket.emit('power:error', { message: 'Failed to check authority.' });
     }
   });
@@ -121,7 +122,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
       };
       await storePowerActionLog(actionLog);
     } catch (error) {
-      console.error('Mute user socket error:', error);
+      Logger.error('Mute user socket error:', error);
       socket.emit('room:error', { message: 'Failed to mute user.' });
     }
   });
@@ -192,7 +193,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
       };
       await storePowerActionLog(actionLog);
     } catch (error) {
-      console.error('Kick user socket error:', error);
+      Logger.error('Kick user socket error:', error);
       socket.emit('room:error', { message: 'Failed to kick user.' });
     }
   });
@@ -228,7 +229,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('Unmute user socket error:', error);
+      Logger.error('Unmute user socket error:', error);
       socket.emit('room:error', { message: 'Failed to unmute user.' });
     }
   });
@@ -270,7 +271,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
         }
       });
     } catch (error) {
-      console.error('Admin update power matrix error:', error);
+      Logger.error('Admin update power matrix error:', error);
       socket.emit('admin:error', { message: 'Failed to update power matrix.' });
     }
   });
@@ -326,7 +327,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
         }
       });
     } catch (error) {
-      console.error('Admin reset power matrix error:', error);
+      Logger.error('Admin reset power matrix error:', error);
       socket.emit('admin:error', { message: 'Failed to reset power matrix.' });
     }
   });
@@ -396,7 +397,7 @@ async function validateSocketPower(io, socket, actorId, targetUserId, action, ro
       }
     };
   } catch (error) {
-    console.error('Validate socket power error:', error);
+    Logger.error('Validate socket power error:', error);
     return { allowed: false, reason: 'Failed to validate power.' };
   }
 }
@@ -416,7 +417,7 @@ async function storePowerActionLog(actionLog) {
       timestamp: actionLog.timestamp
     });
   } catch (error) {
-    console.error('Failed to store power action log:', error);
+    Logger.error('Failed to store power action log:', error);
   }
 }
 

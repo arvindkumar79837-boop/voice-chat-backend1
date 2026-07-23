@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const AgencyTarget = require('../models/AgencyTarget');
 const Agency = require('../models/Agency');
 const AuditLog = require('../models/AuditLog');
@@ -47,7 +48,7 @@ exports.createTarget = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'Target created', data: target });
   } catch (error) {
-    console.error('Create Agency Target Error:', error);
+    Logger.error('Create Agency Target Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -65,7 +66,7 @@ exports.listTargets = async (req, res) => {
 
     return res.status(200).json({ success: true, data: targets });
   } catch (error) {
-    console.error('List Agency Targets Error:', error);
+    Logger.error('List Agency Targets Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -98,7 +99,7 @@ exports.updateTarget = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Target updated', data: target });
   } catch (error) {
-    console.error('Update Agency Target Error:', error);
+    Logger.error('Update Agency Target Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -144,7 +145,7 @@ exports.getAgencyDashboard = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Agency Dashboard Error:', error);
+    Logger.error('Agency Dashboard Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -166,7 +167,7 @@ exports.updateProgress = async (agencyId, amount, metricType) => {
 
     await target.save();
   } catch (error) {
-    console.error('Update Agency Target Progress Error:', error);
+    Logger.error('Update Agency Target Progress Error:', error);
   }
 };
 
@@ -193,7 +194,7 @@ exports.checkExpiredTargets = async () => {
 
     return expired.length;
   } catch (error) {
-    console.error('Check Expired Targets Error:', error);
+    Logger.error('Check Expired Targets Error:', error);
     return 0;
   }
 };

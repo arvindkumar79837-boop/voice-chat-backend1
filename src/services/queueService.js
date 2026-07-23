@@ -8,10 +8,10 @@ try {
   if (RedisConnModule.RedisConnection && typeof RedisConnModule.RedisConnection.minimumVersion === 'string') {
     const originalMinVersion = RedisConnModule.RedisConnection.minimumVersion;
     RedisConnModule.RedisConnection.minimumVersion = '3.0.0';
-    console.log(`🔧 Patched BullMQ Redis version check: ${originalMinVersion} → 3.0.0`);
+    Logger.info(`🔧 Patched BullMQ Redis version check: ${originalMinVersion} → 3.0.0`);
   }
 } catch (patchError) {
-  console.log(`⚠️ BullMQ patch skipped: ${patchError.message}`);
+  Logger.info(`⚠️ BullMQ patch skipped: ${patchError.message}`);
 }
 const Logger = require('../utils/logger');
 
@@ -50,16 +50,16 @@ class QueueService {
       this.redisClient = new Redis(redisOptions);
 
       this.redisClient.on('error', (err) => {
-        console.error('❌ Queue Redis Error:', err.message);
+        Logger.error('❌ Queue Redis Error:', err.message);
         this.isConnected = false;
       });
 
       this.redisClient.on('connect', () => {
-        console.log('🔄 Queue Redis Client Connected');
+        Logger.info('🔄 Queue Redis Client Connected');
       });
 
       this.redisClient.on('ready', () => {
-        console.log('✅ Queue Redis Client Ready');
+        Logger.info('✅ Queue Redis Client Ready');
         this.isConnected = true;
       });
 
@@ -69,10 +69,10 @@ class QueueService {
       );
       await Promise.race([connectPromise, timeoutPromise]);
       this.isConnected = true;
-      console.log('✅ Queue Service Connected');
+      Logger.info('✅ Queue Service Connected');
       return true;
     } catch (error) {
-      console.error('⚠️ Queue Service Connection Failed:', error.message);
+      Logger.error('⚠️ Queue Service Connection Failed:', error.message);
       return false;
     }
   }
@@ -87,7 +87,7 @@ class QueueService {
 
   async createQueue(queueName, options = {}) {
     if (!this.isConnected) {
-      console.warn(`⚠️ Queue service not connected - skipping queue creation for ${queueName}`);
+      Logger.warn(`⚠️ Queue service not connected - skipping queue creation for ${queueName}`);
       return null;
     }
 
@@ -117,18 +117,18 @@ class QueueService {
       queue.on('error', (err) => {
         // Suppress Redis version errors to allow graceful degradation
         if (!err.message || !err.message.includes('Redis version needs to be greater')) {
-          console.error(`❌ Queue ${queueName} error:`, err.message);
+          Logger.error(`❌ Queue ${queueName} error:`, err.message);
         }
       });
       
       this.queues[queueName] = queue;
-      console.log(`✅ Queue created: ${queueName}`);
+      Logger.info(`✅ Queue created: ${queueName}`);
       return queue;
     } catch (error) {
       if (!error.message || !error.message.includes('Redis version needs to be greater')) {
-        console.error(`❌ Failed to create queue ${queueName}:`, error.message);
+        Logger.error(`❌ Failed to create queue ${queueName}:`, error.message);
       } else {
-        console.warn(`⚠️ Queue ${queueName} skipped: Redis version incompatible (BullMQ requires Redis 5+)`);
+        Logger.warn(`⚠️ Queue ${queueName} skipped: Redis version incompatible (BullMQ requires Redis 5+)`);
       }
       return null;
     }
@@ -138,14 +138,14 @@ class QueueService {
     try {
       const queue = await this.createQueue(queueName);
       if (!queue) {
-        console.warn(`⚠️ Queue ${queueName} not available - job ${jobName} not queued`);
+        Logger.warn(`⚠️ Queue ${queueName} not available - job ${jobName} not queued`);
         return null;
       }
       const job = await queue.add(jobName, data, options);
       Logger.info(`Job added to ${queueName}: ${jobName}`, { jobId: job.id, data });
       return job;
     } catch (error) {
-      console.error(`❌ Failed to add job to ${queueName}:`, error);
+      Logger.error(`❌ Failed to add job to ${queueName}:`, error);
       return null;
     }
   }
@@ -174,7 +174,7 @@ class QueueService {
         total: waiting + active + completed + failed + delayed
       };
     } catch (error) {
-      console.error(`❌ Failed to get stats for ${queueName}:`, error);
+      Logger.error(`❌ Failed to get stats for ${queueName}:`, error);
       return null;
     }
   }
@@ -184,10 +184,10 @@ class QueueService {
       if (this.queues[queueName]) {
         await this.queues[queueName].close();
         delete this.queues[queueName];
-        console.log(`✅ Queue closed: ${queueName}`);
+        Logger.info(`✅ Queue closed: ${queueName}`);
       }
     } catch (error) {
-      console.error(`❌ Failed to close queue ${queueName}:`, error);
+      Logger.error(`❌ Failed to close queue ${queueName}:`, error);
     }
   }
 
@@ -196,10 +196,10 @@ class QueueService {
       const queue = this.queues[queueName];
       if (queue) {
         await queue.pause();
-        console.log(`⏸️ Queue paused: ${queueName}`);
+        Logger.info(`⏸️ Queue paused: ${queueName}`);
       }
     } catch (error) {
-      console.error(`❌ Failed to pause queue ${queueName}:`, error);
+      Logger.error(`❌ Failed to pause queue ${queueName}:`, error);
     }
   }
 
@@ -208,10 +208,10 @@ class QueueService {
       const queue = this.queues[queueName];
       if (queue) {
         await queue.resume();
-        console.log(`▶️ Queue resumed: ${queueName}`);
+        Logger.info(`▶️ Queue resumed: ${queueName}`);
       }
     } catch (error) {
-      console.error(`❌ Failed to resume queue ${queueName}:`, error);
+      Logger.error(`❌ Failed to resume queue ${queueName}:`, error);
     }
   }
 
@@ -221,10 +221,10 @@ class QueueService {
       if (queue) {
         await queue.clean(0, jobsToKeep, 'completed');
         await queue.clean(0, jobsToKeep, 'failed');
-        console.log(`🧹 Queue cleaned: ${queueName}`);
+        Logger.info(`🧹 Queue cleaned: ${queueName}`);
       }
     } catch (error) {
-      console.error(`❌ Failed to clean queue ${queueName}:`, error);
+      Logger.error(`❌ Failed to clean queue ${queueName}:`, error);
     }
   }
 
@@ -236,11 +236,11 @@ class QueueService {
 
       if (this.redisClient && this.isConnected) {
         await this.redisClient.quit();
-        console.log('📴 Queue Service Disconnected');
+        Logger.info('📴 Queue Service Disconnected');
       }
       this.isConnected = false;
     } catch (error) {
-      console.error('❌ Error disconnecting queue service:', error);
+      Logger.error('❌ Error disconnecting queue service:', error);
     }
   }
 

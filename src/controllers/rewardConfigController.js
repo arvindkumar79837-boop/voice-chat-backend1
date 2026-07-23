@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const RewardConfig = require('../models/RewardConfig');
 const LuckyDraw = require('../models/LuckyDraw');
 const TreasureHunt = require('../models/TreasureHunt');
@@ -54,7 +55,7 @@ exports.createRewardConfig = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Reward config created', data: config });
   } catch (error) {
-    console.error('Create RewardConfig Error:', error);
+    Logger.error('Create RewardConfig Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create reward config' });
   }
 };
@@ -88,7 +89,7 @@ exports.getAllRewardConfigs = async (req, res) => {
       pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
     });
   } catch (error) {
-    console.error('Get RewardConfigs Error:', error);
+    Logger.error('Get RewardConfigs Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch reward configs' });
   }
 };
@@ -109,7 +110,7 @@ exports.getRewardConfigById = async (req, res) => {
 
     res.status(200).json({ success: true, data: config });
   } catch (error) {
-    console.error('Get RewardConfig Error:', error);
+    Logger.error('Get RewardConfig Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch reward config' });
   }
 };
@@ -163,12 +164,12 @@ exports.updateRewardConfig = async (req, res) => {
         timestamp: new Date()
       });
     } catch (socketError) {
-      console.warn('Socket broadcast failed:', socketError.message);
+      Logger.warn('Socket broadcast failed:', socketError.message);
     }
 
     res.status(200).json({ success: true, message: 'Reward config updated', data: config });
   } catch (error) {
-    console.error('Update RewardConfig Error:', error);
+    Logger.error('Update RewardConfig Error:', error);
     res.status(500).json({ success: false, message: 'Failed to update reward config' });
   }
 };
@@ -199,7 +200,7 @@ exports.deleteRewardConfig = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Reward config deleted' });
   } catch (error) {
-    console.error('Delete RewardConfig Error:', error);
+    Logger.error('Delete RewardConfig Error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete reward config' });
   }
 };
@@ -245,12 +246,12 @@ exports.deployRewardConfig = async (req, res) => {
         timestamp: new Date()
       });
     } catch (socketError) {
-      console.warn('Socket broadcast failed:', socketError.message);
+      Logger.warn('Socket broadcast failed:', socketError.message);
     }
 
     res.status(200).json({ success: true, message: 'Reward config deployed', data: config });
   } catch (error) {
-    console.error('Deploy RewardConfig Error:', error);
+    Logger.error('Deploy RewardConfig Error:', error);
     res.status(500).json({ success: false, message: 'Failed to deploy reward config' });
   }
 };
@@ -282,7 +283,7 @@ exports.getRewardAnalytics = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Analytics Error:', error);
+    Logger.error('Get Analytics Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch analytics' });
   }
 };
@@ -304,7 +305,7 @@ exports.getRewardTiers = async (req, res) => {
 
     res.status(200).json({ success: true, data: tiers });
   } catch (error) {
-    console.error('Get Tiers Error:', error);
+    Logger.error('Get Tiers Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch tiers' });
   }
 };
@@ -379,7 +380,7 @@ exports.getActiveLuckyDraws = async (req, res) => {
       .lean();
     res.status(200).json({ success: true, data: configs });
   } catch (error) {
-    console.error('Get Active LuckyDraws Error:', error);
+    Logger.error('Get Active LuckyDraws Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch active rewards' });
   }
 };

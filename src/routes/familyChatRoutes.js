@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middlewares/auth.middleware');
@@ -33,7 +34,7 @@ router.get('/:familyId/messages', authMiddleware, async (req, res) => {
 
     return successResponse(res, 'Messages fetched', messages.reverse());
   } catch (error) {
-    console.error('Get Messages Error:', error);
+    Logger.error('Get Messages Error:', error);
     return errorResponse(res, 'Failed to get messages');
   }
 });
@@ -76,7 +77,7 @@ router.post('/:familyId/messages', authMiddleware, async (req, res) => {
 
     return successResponse(res, 'Message sent', message);
   } catch (error) {
-    console.error('Send Message Error:', error);
+    Logger.error('Send Message Error:', error);
     return errorResponse(res, 'Failed to send message');
   }
 });
@@ -114,7 +115,7 @@ router.delete('/:familyId/messages/:messageId', authMiddleware, async (req, res)
 
     return successResponse(res, 'Message deleted');
   } catch (error) {
-    console.error('Delete Message Error:', error);
+    Logger.error('Delete Message Error:', error);
     return errorResponse(res, 'Failed to delete message');
   }
 });
@@ -145,7 +146,7 @@ router.post('/:familyId/messages/:messageId/pin', authMiddleware, async (req, re
 
     return successResponse(res, message.isPinned ? 'Message pinned' : 'Message unpinned');
   } catch (error) {
-    console.error('Pin Message Error:', error);
+    Logger.error('Pin Message Error:', error);
     return errorResponse(res, 'Failed to update pin status');
   }
 });
@@ -191,7 +192,7 @@ router.post('/:familyId/messages/:messageId/react', authMiddleware, async (req, 
 
     return successResponse(res, 'Reaction added');
   } catch (error) {
-    console.error('Add Reaction Error:', error);
+    Logger.error('Add Reaction Error:', error);
     return errorResponse(res, 'Failed to add reaction');
   }
 });
@@ -218,7 +219,7 @@ router.get('/:familyId/pinned', authMiddleware, async (req, res) => {
 
     return successResponse(res, 'Pinned messages fetched', pinnedMessages);
   } catch (error) {
-    console.error('Get Pinned Messages Error:', error);
+    Logger.error('Get Pinned Messages Error:', error);
     return errorResponse(res, 'Failed to get pinned messages');
   }
 });

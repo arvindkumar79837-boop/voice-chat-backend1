@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const TreasureHunt = require('../models/TreasureHunt');
 const Event = require('../models/Event');
 const User = require('../models/User');
@@ -25,7 +26,7 @@ exports.createTreasureHunt = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Treasure hunt created successfully', data: treasureHunt });
   } catch (error) {
-    console.error('Create Treasure Hunt Error:', error);
+    Logger.error('Create Treasure Hunt Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create treasure hunt' });
   }
 };
@@ -55,7 +56,7 @@ exports.getTreasureHunts = async (req, res) => {
       pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
     });
   } catch (error) {
-    console.error('Get Treasure Hunts Error:', error);
+    Logger.error('Get Treasure Hunts Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch treasure hunts' });
   }
 };
@@ -74,7 +75,7 @@ exports.getTreasureHuntById = async (req, res) => {
 
     res.status(200).json({ success: true, data: treasureHunt });
   } catch (error) {
-    console.error('Get Treasure Hunt Error:', error);
+    Logger.error('Get Treasure Hunt Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch treasure hunt' });
   }
 };
@@ -124,7 +125,7 @@ exports.collectTreasureKey = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Collect Treasure Key Error:', error);
+    Logger.error('Collect Treasure Key Error:', error);
     res.status(500).json({ success: false, message: 'Failed to collect key' });
   }
 };
@@ -206,7 +207,7 @@ exports.getActiveTreasureHunt = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Active Treasure Hunt Error:', error);
+    Logger.error('Get Active Treasure Hunt Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch treasure hunt' });
   }
 };
@@ -221,7 +222,7 @@ exports.adminGetAllTreasureHunts = async (req, res) => {
 
     res.status(200).json({ success: true, data: treasureHunts });
   } catch (error) {
-    console.error('Admin Get Treasure Hunts Error:', error);
+    Logger.error('Admin Get Treasure Hunts Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch treasure hunts' });
   }
 };

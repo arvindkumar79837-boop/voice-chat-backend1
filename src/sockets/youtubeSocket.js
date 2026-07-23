@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: arvind-party-backend/src/sockets/youtubeSocket.js
 // ARVIND PARTY - YOUTUBE SOCKET HANDLER
@@ -6,7 +7,7 @@
 const YouTubePlaylist = require('../models/YouTubePlaylist');
 
 function youtubeSocket(io, socket) {
-  console.log(`YouTube socket middleware initialized for ${socket.id}`);
+  Logger.info(`YouTube socket middleware initialized for ${socket.id}`);
 
   // Join room
   socket.on('youtube:join_room', async ({ roomId }) => {
@@ -24,9 +25,9 @@ function youtubeSocket(io, socket) {
           participants: playlist.participants,
         });
       }
-      console.log(`User ${userId} joined YouTube room ${roomId}`);
+      Logger.info(`User ${userId} joined YouTube room ${roomId}`);
     } catch (error) {
-      console.error('Error joining YouTube room:', error);
+      Logger.error('Error joining YouTube room:', error);
     }
   });
 
@@ -44,9 +45,9 @@ function youtubeSocket(io, socket) {
           participants: playlist.participants,
         });
       }
-      console.log(`User ${userId} left YouTube room ${roomId}`);
+      Logger.info(`User ${userId} left YouTube room ${roomId}`);
     } catch (error) {
-      console.error('Error leaving YouTube room:', error);
+      Logger.error('Error leaving YouTube room:', error);
     }
   });
 
@@ -60,7 +61,7 @@ function youtubeSocket(io, socket) {
         updatedBy: socket.id,
       });
     } catch (error) {
-      console.error('[youtube:toggle_play] error:', error.message);
+      Logger.error('[youtube:toggle_play] error:', error.message);
       socket.emit('error', { message: 'Something went wrong. Please try again.' });
     }
   });
@@ -75,7 +76,7 @@ function youtubeSocket(io, socket) {
         updatedBy: socket.id,
       });
     } catch (error) {
-      console.error('[youtube:seek] error:', error.message);
+      Logger.error('[youtube:seek] error:', error.message);
       socket.emit('error', { message: 'Something went wrong. Please try again.' });
     }
   });
@@ -98,7 +99,7 @@ function youtubeSocket(io, socket) {
         }
       }
     } catch (error) {
-      console.error('Error changing video:', error);
+      Logger.error('Error changing video:', error);
     }
   });
 
@@ -112,7 +113,7 @@ function youtubeSocket(io, socket) {
         socket.to(roomId).emit('youtube:watch_party_toggled', { enabled });
       }
     } catch (error) {
-      console.error('Error toggling watch party:', error);
+      Logger.error('Error toggling watch party:', error);
     }
   });
 }

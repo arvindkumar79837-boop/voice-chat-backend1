@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const WebViewGame = require('../models/WebViewGame');
 const GameRecord = require('../models/GameRecord');
@@ -25,7 +26,7 @@ exports.getAllGames = async (req, res) => {
       pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
     });
   } catch (error) {
-    console.error('Fetch Games Error:', error);
+    Logger.error('Fetch Games Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -35,7 +36,7 @@ exports.getActiveGames = async (req, res) => {
     const games = await WebViewGame.find({ isActive: true }).select('-createdBy').sort({ createdAt: -1 });
     return res.status(200).json({ success: true, data: games });
   } catch (error) {
-    console.error('Fetch Active Games Error:', error);
+    Logger.error('Fetch Active Games Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -47,7 +48,7 @@ exports.getGameById = async (req, res) => {
     if (!game) return res.status(404).json({ success: false, message: 'Game not found' });
     return res.status(200).json({ success: true, data: game });
   } catch (error) {
-    console.error('Fetch Game Error:', error);
+    Logger.error('Fetch Game Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -90,7 +91,7 @@ exports.createGame = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'Game created successfully', data: game });
   } catch (error) {
-    console.error('Create Game Error:', error);
+    Logger.error('Create Game Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -116,7 +117,7 @@ exports.updateGame = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Game updated successfully', data: game });
   } catch (error) {
-    console.error('Update Game Error:', error);
+    Logger.error('Update Game Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -132,7 +133,7 @@ exports.deleteGame = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Game deactivated successfully' });
   } catch (error) {
-    console.error('Delete Game Error:', error);
+    Logger.error('Delete Game Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -190,7 +191,7 @@ exports.startGameSession = async (req, res) => {
       diamondToCoinRatio: game.diamondToCoinRatio
     });
   } catch (error) {
-    console.error('Start Game Session Error:', error);
+    Logger.error('Start Game Session Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -248,7 +249,7 @@ exports.endGameSession = async (req, res) => {
       winAmount
     });
   } catch (error) {
-    console.error('End Game Session Error:', error);
+    Logger.error('End Game Session Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -292,7 +293,7 @@ exports.getGameLedger = async (req, res) => {
       summary: { totalVolume: totalVolume.totalVolume, totalWinnings: totalVolume.totalWinnings, netProfit, totalSessions: totalVolume.totalSessions }
     });
   } catch (error) {
-    console.error('Get Game Ledger Error:', error);
+    Logger.error('Get Game Ledger Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -330,7 +331,7 @@ exports.getGameLeaderboard = async (req, res) => {
 
     return res.status(200).json({ success: true, leaderboard, period });
   } catch (error) {
-    console.error('Get Game Leaderboard Error:', error);
+    Logger.error('Get Game Leaderboard Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

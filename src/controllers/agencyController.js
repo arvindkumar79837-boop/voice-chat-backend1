@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 const Agency = require('../models/Agency');
 const HostRequest = require('../models/HostRequest');
@@ -17,7 +18,7 @@ exports.getMyAgency = async (req, res) => {
       res.status(200).json({ success: true, agency: null, message: "Not part of an agency" });
     }
   } catch (error) {
-    console.error('Get Agency Error:', error);
+    Logger.error('Get Agency Error:', error);
     res.status(500).json({ success: false, message: 'Failed to load agency data' });
   }
 };
@@ -54,7 +55,7 @@ exports.createAgency = async (req, res) => {
     const populated = await Agency.findById(agency._id).populate('owner', 'name avatar');
 
     // Initialize agency in Redis rankings
-    redisRankingIntegration.onAgencyDiamondEarned(agency._id, 0).catch(err => console.error('Redis agency init failed:', err.message));
+    redisRankingIntegration.onAgencyDiamondEarned(agency._id, 0).catch(err => Logger.error('Redis agency init failed:', err.message));
 
     res.status(201).json({
       success: true,
@@ -62,7 +63,7 @@ exports.createAgency = async (req, res) => {
       message: 'Agency created successfully'
     });
   } catch (error) {
-    console.error('Create Agency Error:', error);
+    Logger.error('Create Agency Error:', error);
     if (error.code === 11000) {
       return res.status(400).json({ success: false, message: 'Agency name already exists' });
     }
@@ -104,7 +105,7 @@ exports.listHosts = async (req, res) => {
       count: hosts.length
     });
   } catch (error) {
-    console.error('List Hosts Error:', error);
+    Logger.error('List Hosts Error:', error);
     res.status(500).json({ success: false, message: 'Failed to list agency hosts' });
   }
 };
@@ -139,7 +140,7 @@ exports.getEarnings = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Earnings Error:', error);
+    Logger.error('Get Earnings Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch agency earnings' });
   }
 };
@@ -159,7 +160,7 @@ exports.getAgencies = async (req, res) => {
       .lean();
     return res.status(200).json({ success: true, data: agencies });
   } catch (error) {
-    console.error('Get Agencies Error:', error);
+    Logger.error('Get Agencies Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch agencies' });
   }
 };
@@ -177,7 +178,7 @@ exports.approveAgency = async (req, res) => {
     }
     return res.status(200).json({ success: true, message: 'Agency approved successfully', agency });
   } catch (error) {
-    console.error('Approve Agency Error:', error);
+    Logger.error('Approve Agency Error:', error);
     res.status(500).json({ success: false, message: 'Failed to approve agency' });
   }
 };
@@ -195,7 +196,7 @@ exports.revokeAgency = async (req, res) => {
     }
     return res.status(200).json({ success: true, message: 'Agency revoked successfully', agency });
   } catch (error) {
-    console.error('Revoke Agency Error:', error);
+    Logger.error('Revoke Agency Error:', error);
     res.status(500).json({ success: false, message: 'Failed to revoke agency' });
   }
 };
@@ -226,11 +227,11 @@ exports.applyForAgency = async (req, res) => {
     });
 
     // Update agency ranking
-    redisRankingIntegration.onAgencyDiamondEarned(agency._id, 0).catch(err => console.error('Redis agency join failed:', err.message));
+    redisRankingIntegration.onAgencyDiamondEarned(agency._id, 0).catch(err => Logger.error('Redis agency join failed:', err.message));
 
     res.status(200).json({ success: true, hostRequest, message: 'Agency application submitted, pending review' });
   } catch (error) {
-    console.error('Apply Agency Error:', error);
+    Logger.error('Apply Agency Error:', error);
     res.status(500).json({ success: false, message: 'Failed to apply to agency' });
   }
 };
@@ -271,7 +272,7 @@ exports.sendHostRequest = async (req, res) => {
 
     res.status(201).json({ success: true, hostRequest, message: 'Host request sent' });
   } catch (error) {
-    console.error('Send Host Request Error:', error);
+    Logger.error('Send Host Request Error:', error);
     res.status(500).json({ success: false, message: 'Failed to send host request' });
   }
 };
@@ -292,7 +293,7 @@ exports.getHostRequests = async (req, res) => {
 
     res.status(200).json({ success: true, data: requests, count: requests.length });
   } catch (error) {
-    console.error('Get Host Requests Error:', error);
+    Logger.error('Get Host Requests Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch host requests' });
   }
 };
@@ -330,11 +331,11 @@ exports.approveHostRequest = async (req, res) => {
     await User.findByIdAndUpdate(request.userId, { agencyId: agency._id, role: 'host' });
 
     // Update agency ranking with new host
-    redisRankingIntegration.onAgencyDiamondEarned(agency._id, 0).catch(err => console.error('Redis agency host add failed:', err.message));
+    redisRankingIntegration.onAgencyDiamondEarned(agency._id, 0).catch(err => Logger.error('Redis agency host add failed:', err.message));
 
     res.status(200).json({ success: true, message: 'Host request approved' });
   } catch (error) {
-    console.error('Approve Host Request Error:', error);
+    Logger.error('Approve Host Request Error:', error);
     res.status(500).json({ success: false, message: 'Failed to approve request' });
   }
 };
@@ -365,7 +366,7 @@ exports.rejectHostRequest = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Host request rejected' });
   } catch (error) {
-    console.error('Reject Host Request Error:', error);
+    Logger.error('Reject Host Request Error:', error);
     res.status(500).json({ success: false, message: 'Failed to reject request' });
   }
 };
@@ -393,11 +394,11 @@ exports.removeHost = async (req, res) => {
     await User.findByIdAndUpdate(hostId, { $unset: { agencyId: 1 }, role: 'user' });
 
     // Update agency ranking after host removal
-    redisRankingIntegration.onAgencyDiamondEarned(agency._id, 0).catch(err => console.error('Redis agency host remove failed:', err.message));
+    redisRankingIntegration.onAgencyDiamondEarned(agency._id, 0).catch(err => Logger.error('Redis agency host remove failed:', err.message));
 
     res.status(200).json({ success: true, message: 'Host removed from agency' });
   } catch (error) {
-    console.error('Remove Host Error:', error);
+    Logger.error('Remove Host Error:', error);
     res.status(500).json({ success: false, message: 'Failed to remove host' });
   }
 };

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // SERVICE: SchedulerService — Automated cycle scheduler for target audits
 // Weekly, 15-Day, Monthly cycle creation and audit
@@ -14,7 +15,7 @@ class SchedulerService {
    * Called by cron job (can be set to run daily at midnight)
    */
   static async auditAllTargets() {
-    console.log('🔄 [SchedulerService] Running target audit...');
+    Logger.info('🔄 [SchedulerService] Running target audit...');
     try {
       const activeTargets = await TargetManager.find({ isActive: true });
       let expiredCount = 0;
@@ -65,7 +66,7 @@ class SchedulerService {
         }
       }
 
-      console.log(`✅ [SchedulerService] Audit complete: ${expiredCount} expired, ${settledCount} auto-settled`);
+      Logger.info(`✅ [SchedulerService] Audit complete: ${expiredCount} expired, ${settledCount} auto-settled`);
 
       await AuditLog.create({
         action: 'SCHEDULER_AUDIT',
@@ -73,7 +74,7 @@ class SchedulerService {
         details: `Target audit: ${expiredCount} expired, ${settledCount} auto-settled`,
       });
     } catch (error) {
-      console.error('❌ [SchedulerService] Audit error:', error);
+      Logger.error('❌ [SchedulerService] Audit error:', error);
     }
   }
 
@@ -115,10 +116,10 @@ class SchedulerService {
         await TargetManager.insertMany(targets);
       }
 
-      console.log(`✅ [SchedulerService] Created ${targets.length} ${cycleType} cycles`);
+      Logger.info(`✅ [SchedulerService] Created ${targets.length} ${cycleType} cycles`);
       return targets.length;
     } catch (error) {
-      console.error('❌ [SchedulerService] Auto-create error:', error);
+      Logger.error('❌ [SchedulerService] Auto-create error:', error);
       return 0;
     }
   }
@@ -128,7 +129,7 @@ class SchedulerService {
    * @param {number} intervalMs - Interval in milliseconds (default: 24 hours)
    */
   static startScheduler(intervalMs = 24 * 60 * 60 * 1000) {
-    console.log(`⏰ [SchedulerService] Started (interval: ${intervalMs / 1000 / 60 / 60}h)`);
+    Logger.info(`⏰ [SchedulerService] Started (interval: ${intervalMs / 1000 / 60 / 60}h)`);
     
     // Run immediately on start
     setTimeout(() => {

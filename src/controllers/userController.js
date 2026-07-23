@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User'); // Pulls from your existing User Schema
 const badgeController = require('./badgeController');
 
@@ -25,7 +26,7 @@ exports.updateProfile = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Update Profile Error:', error);
+    Logger.error('Update Profile Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
@@ -39,7 +40,7 @@ exports.getUserCenter = async (req, res) => {
     try {
       await badgeController.checkAndAwardBadges(userId);
     } catch (error) {
-      console.log('Badge system not available, using fallback badges');
+      Logger.info('Badge system not available, using fallback badges');
     }
 
     // Try to get user badges with unlock status
@@ -47,7 +48,7 @@ exports.getUserCenter = async (req, res) => {
     try {
       badges = await badgeController.getUserBadges(userId);
     } catch (error) {
-      console.log('Using fallback badges');
+      Logger.info('Using fallback badges');
       // Fallback badges when MongoDB is not available
       badges = [
         { id: 'b1', name: 'Top Gifter', description: 'Gifted over 10k diamonds', iconPath: '💎', isUnlocked: false },
@@ -77,7 +78,7 @@ exports.getUserCenter = async (req, res) => {
       frames: frames
     });
   } catch (error) {
-    console.error('User Center Error:', error);
+    Logger.error('User Center Error:', error);
     res.status(500).json({ error: 'Failed to load user center data' });
   }
 };
@@ -91,7 +92,7 @@ exports.equipFrame = async (req, res) => {
     
     res.status(200).json({ message: 'Frame equipped successfully', frameId });
   } catch (error) {
-    console.error('Equip Frame Error:', error);
+    Logger.error('Equip Frame Error:', error);
     res.status(500).json({ error: 'Failed to equip frame' });
   }
 };
@@ -113,7 +114,7 @@ exports.getVipStatus = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('VIP Status Error:', error);
+    Logger.error('VIP Status Error:', error);
     res.status(500).json({ error: 'Failed to load VIP status' });
   }
 };
@@ -125,7 +126,7 @@ exports.getTransactionHistory = async (req, res) => {
     
     res.status(200).json({ success: true, transactions });
   } catch (error) {
-    console.error('Transaction History Error:', error);
+    Logger.error('Transaction History Error:', error);
     res.status(500).json({ error: 'Failed to load transaction history' });
   }
 };

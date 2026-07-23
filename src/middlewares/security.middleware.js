@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/middlewares/security.middleware.js
 // ARVIND PARTY - NETWORK & HARDWARE LOCKDOWN MIDDLEWARE
@@ -19,7 +20,7 @@ const networkLockdown = async (req, res, next) => {
     if (deviceId) {
       const isBanned = await BannedDevice.findOne({ deviceId });
       if (isBanned) {
-        console.warn(`[Security] Blocked request from banned device ID: ${deviceId}`);
+        Logger.warn(`[Security] Blocked request from banned device ID: ${deviceId}`);
         return res.status(403).json({
           success: false,
           code: 'DEVICE_BANNED',
@@ -38,7 +39,7 @@ const networkLockdown = async (req, res, next) => {
     req.ipInfo = ipInfo; // Attach IP info to the request for logging or other uses.
 
     if (ipInfo.isVpn) {
-      console.warn(`[Security] Blocked VPN request from IP: ${ipAddress} (${ipInfo.country})`);
+      Logger.warn(`[Security] Blocked VPN request from IP: ${ipAddress} (${ipInfo.country})`);
       return res.status(403).json({
         success: false,
         code: 'VPN_DETECTED',
@@ -50,7 +51,7 @@ const networkLockdown = async (req, res, next) => {
     next();
 
   } catch (error) {
-    console.error('[Security Middleware] An unexpected error occurred:', error);
+    Logger.error('[Security Middleware] An unexpected error occurred:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal security check failed. Please try again later.'

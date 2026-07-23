@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const RechargePlan = require('../models/RechargePlan');
 const AuditLog = require('../models/AuditLog');
 
@@ -7,7 +8,7 @@ exports.listPlans = async (req, res) => {
       .sort({ displayOrder: 1, priceINR: 1 });
     return res.status(200).json({ success: true, data: plans });
   } catch (error) {
-    console.error('List Recharge Plans Error:', error);
+    Logger.error('List Recharge Plans Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -18,7 +19,7 @@ exports.listAllPlans = async (req, res) => {
       .sort({ displayOrder: 1, priceINR: 1 });
     return res.status(200).json({ success: true, data: plans });
   } catch (error) {
-    console.error('List All Recharge Plans Error:', error);
+    Logger.error('List All Recharge Plans Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -50,7 +51,7 @@ exports.createPlan = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'Plan created', data: plan });
   } catch (error) {
-    console.error('Create Recharge Plan Error:', error);
+    Logger.error('Create Recharge Plan Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -83,7 +84,7 @@ exports.updatePlan = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Plan updated', data: plan });
   } catch (error) {
-    console.error('Update Recharge Plan Error:', error);
+    Logger.error('Update Recharge Plan Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -105,7 +106,7 @@ exports.deletePlan = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Plan deleted' });
   } catch (error) {
-    console.error('Delete Recharge Plan Error:', error);
+    Logger.error('Delete Recharge Plan Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

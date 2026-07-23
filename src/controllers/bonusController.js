@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const Bonus = require('../models/Bonus');
 const Agency = require('../models/Agency');
 const User = require('../models/User');
@@ -57,7 +58,7 @@ exports.awardBonus = async (req, res) => {
 
     res.status(201).json({ success: true, bonus, message: 'Bonus awarded successfully' });
   } catch (error) {
-    console.error('Award Bonus Error:', error);
+    Logger.error('Award Bonus Error:', error);
     res.status(500).json({ success: false, message: 'Failed to award bonus' });
   }
 };
@@ -83,7 +84,7 @@ exports.getHostBonuses = async (req, res) => {
 
     res.status(200).json({ success: true, data: bonuses, count: bonuses.length });
   } catch (error) {
-    console.error('Get Host Bonuses Error:', error);
+    Logger.error('Get Host Bonuses Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch bonuses' });
   }
 };
@@ -120,7 +121,7 @@ exports.getMonthlyBonusSummary = async (req, res) => {
       year: y,
     });
   } catch (error) {
-    console.error('Monthly Bonus Summary Error:', error);
+    Logger.error('Monthly Bonus Summary Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch bonus summary' });
   }
 };
@@ -157,7 +158,7 @@ exports.removeBonus = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Bonus removed successfully' });
   } catch (error) {
-    console.error('Remove Bonus Error:', error);
+    Logger.error('Remove Bonus Error:', error);
     res.status(500).json({ success: false, message: 'Failed to remove bonus' });
   }
 };

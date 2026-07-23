@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 /**
  * Arvind Party - Redis Ranking Service
  * High-performance leaderboard using Redis Sorted Sets
@@ -101,7 +102,7 @@ class RedisRankingService {
       await this.client.expire(key, this.TTL);
       return true;
     } catch (error) {
-      console.error(`Redis ZADD Error [${key}]:`, error.message);
+      Logger.error(`Redis ZADD Error [${key}]:`, error.message);
       return false;
     }
   }
@@ -135,7 +136,7 @@ class RedisRankingService {
 
       return parsed.reverse();
     } catch (error) {
-      console.error(`Redis ZRANGE Error [${key}]:`, error.message);
+      Logger.error(`Redis ZRANGE Error [${key}]:`, error.message);
       return [];
     }
   }
@@ -147,7 +148,7 @@ class RedisRankingService {
       if (rank === null) return -1;
       return rank + 1;
     } catch (error) {
-      console.error(`Redis ZREVRANK Error [${key}]:`, error.message);
+      Logger.error(`Redis ZREVRANK Error [${key}]:`, error.message);
       return -1;
     }
   }
@@ -409,7 +410,7 @@ class RedisRankingService {
       }
       return { success: true, flushed: 0 };
     } catch (error) {
-      console.error('Redis Flush Error:', error.message);
+      Logger.error('Redis Flush Error:', error.message);
       return { success: false, error: error.message };
     }
   }
@@ -428,7 +429,7 @@ class RedisRankingService {
       }
       return { success: true, flushed: 0 };
     } catch (error) {
-      console.error('Redis Flush All Error:', error.message);
+      Logger.error('Redis Flush All Error:', error.message);
       return { success: false, error: error.message };
     }
   }

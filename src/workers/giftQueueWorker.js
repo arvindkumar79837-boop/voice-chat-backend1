@@ -31,7 +31,7 @@ class GiftQueueWorker {
 
       // If queue creation failed due to Redis version, skip worker initialization
       if (!queue) {
-        console.warn('⚠️ Gift Queue Worker skipped: Queue not available');
+        Logger.warn('⚠️ Gift Queue Worker skipped: Queue not available');
         this.isRunning = false;
         return;
       }
@@ -69,20 +69,20 @@ class GiftQueueWorker {
         if (!err.message || !err.message.includes('Redis version needs to be greater')) {
           Logger.error('Worker error', { error: err.message });
         } else {
-          console.warn('⚠️ Gift Queue Worker: Redis version incompatible, worker limited');
+          Logger.warn('⚠️ Gift Queue Worker: Redis version incompatible, worker limited');
         }
       });
 
       this.isRunning = true;
       Logger.info('Gift Queue Worker started', { queue: this.queueName });
-      console.log('✅ Gift Queue Worker started');
+      Logger.info('✅ Gift Queue Worker started');
     } catch (error) {
       // Suppress Redis version errors during worker startup
       if (!error.message || !error.message.includes('Redis version needs to be greater')) {
         Logger.error('Failed to start Gift Queue Worker', { error: error.message });
-        console.error('❌ Gift Queue Worker failed to start:', error);
+        Logger.error('❌ Gift Queue Worker failed to start:', error);
       } else {
-        console.warn('⚠️ Gift Queue Worker skipped: Redis version incompatible (requires Redis 5+)');
+        Logger.warn('⚠️ Gift Queue Worker skipped: Redis version incompatible (requires Redis 5+)');
         this.isRunning = false;
       }
     }

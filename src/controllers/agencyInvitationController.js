@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const AgencyInvitation = require('../models/AgencyInvitation');
 const Agency = require('../models/Agency');
 const User = require('../models/User');
@@ -74,7 +75,7 @@ exports.sendInvitation = async (req, res) => {
       message: 'Invitation sent successfully'
     });
   } catch (error) {
-    console.error('Send Invitation Error:', error);
+    Logger.error('Send Invitation Error:', error);
     res.status(500).json({ success: false, message: 'Failed to send invitation' });
   }
 };
@@ -101,7 +102,7 @@ exports.getInbox = async (req, res) => {
       count: invitations.length
     });
   } catch (error) {
-    console.error('Get Inbox Error:', error);
+    Logger.error('Get Inbox Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch inbox' });
   }
 };
@@ -161,7 +162,7 @@ exports.acceptInvitation = async (req, res) => {
       message: 'Invitation accepted. Welcome to the agency!'
     });
   } catch (error) {
-    console.error('Accept Invitation Error:', error);
+    Logger.error('Accept Invitation Error:', error);
     res.status(500).json({ success: false, message: 'Failed to accept invitation' });
   }
 };
@@ -194,7 +195,7 @@ exports.rejectInvitation = async (req, res) => {
       message: 'Invitation rejected'
     });
   } catch (error) {
-    console.error('Reject Invitation Error:', error);
+    Logger.error('Reject Invitation Error:', error);
     res.status(500).json({ success: false, message: 'Failed to reject invitation' });
   }
 };
@@ -228,7 +229,7 @@ exports.searchUserByUid = async (req, res) => {
       data: populated
     });
   } catch (error) {
-    console.error('Search User Error:', error);
+    Logger.error('Search User Error:', error);
     res.status(500).json({ success: false, message: 'Failed to search user' });
   }
 };
@@ -253,7 +254,7 @@ exports.getNotifications = async (req, res) => {
       unreadCount
     });
   } catch (error) {
-    console.error('Get Notifications Error:', error);
+    Logger.error('Get Notifications Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch notifications' });
   }
 };
@@ -279,7 +280,7 @@ exports.markNotificationRead = async (req, res) => {
 
     res.status(200).json({ success: true, data: notification });
   } catch (error) {
-    console.error('Mark Read Error:', error);
+    Logger.error('Mark Read Error:', error);
     res.status(500).json({ success: false, message: 'Failed to mark notification as read' });
   }
 };
@@ -299,7 +300,7 @@ exports.markAllNotificationsRead = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'All notifications marked as read' });
   } catch (error) {
-    console.error('Mark All Read Error:', error);
+    Logger.error('Mark All Read Error:', error);
     res.status(500).json({ success: false, message: 'Failed to mark all notifications as read' });
   }
 };

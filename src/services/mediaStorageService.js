@@ -29,9 +29,9 @@ class MediaStorageService {
       });
 
       this.initialized = true;
-      console.log('✅ Media Storage Service Initialized');
+      Logger.info('✅ Media Storage Service Initialized');
     } catch (error) {
-      console.error('⚠️ Media Storage Service initialization failed:', error.message);
+      Logger.error('⚠️ Media Storage Service initialization failed:', error.message);
     }
   }
 

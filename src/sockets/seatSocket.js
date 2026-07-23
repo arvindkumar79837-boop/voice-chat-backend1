@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const Room = require('../models/Room');
 
 module.exports = (io, socket) => {
@@ -33,7 +34,7 @@ module.exports = (io, socket) => {
         userId: toUserId
       });
     } catch (error) {
-      console.error('Transfer Seat Error:', error);
+      Logger.error('Transfer Seat Error:', error);
     }
   });
 
@@ -60,7 +61,7 @@ module.exports = (io, socket) => {
 
       io.to(roomId).emit('seats_reordered', { seats: room.seats });
     } catch (error) {
-      console.error('Reorder Seats Error:', error);
+      Logger.error('Reorder Seats Error:', error);
     }
   });
 
@@ -75,7 +76,7 @@ module.exports = (io, socket) => {
         userId
       });
     } catch (error) {
-      console.error('[user_start_speaking] error:', error.message);
+      Logger.error('[user_start_speaking] error:', error.message);
     }
   });
 
@@ -89,7 +90,7 @@ module.exports = (io, socket) => {
         userId
       });
     } catch (error) {
-      console.error('[user_stop_speaking] error:', error.message);
+      Logger.error('[user_stop_speaking] error:', error.message);
     }
   });
 };

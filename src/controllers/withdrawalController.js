@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const Agency = require('../models/Agency');
 const AgencyWallet = require('../models/AgencyWallet');
@@ -62,7 +63,7 @@ exports.requestWithdrawal = async (req, res) => {
 
     res.status(201).json({ success: true, withdrawal, message: 'Withdrawal request submitted' });
   } catch (error) {
-    console.error('Withdrawal Request Error:', error);
+    Logger.error('Withdrawal Request Error:', error);
     res.status(500).json({ success: false, message: 'Failed to process withdrawal request' });
   }
 };
@@ -88,7 +89,7 @@ exports.getWithdrawalHistory = async (req, res) => {
 
     res.status(200).json({ success: true, data: withdrawals, count: withdrawals.length });
   } catch (error) {
-    console.error('Withdrawal History Error:', error);
+    Logger.error('Withdrawal History Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch withdrawal history' });
   }
 };
@@ -133,7 +134,7 @@ exports.approveWithdrawal = async (req, res) => {
 
     res.status(200).json({ success: true, withdrawal, message: 'Withdrawal approved' });
   } catch (error) {
-    console.error('Approve Withdrawal Error:', error);
+    Logger.error('Approve Withdrawal Error:', error);
     res.status(500).json({ success: false, message: 'Failed to approve withdrawal' });
   }
 };
@@ -176,7 +177,7 @@ exports.rejectWithdrawal = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Withdrawal rejected' });
   } catch (error) {
-    console.error('Reject Withdrawal Error:', error);
+    Logger.error('Reject Withdrawal Error:', error);
     res.status(500).json({ success: false, message: 'Failed to reject withdrawal' });
   }
 };

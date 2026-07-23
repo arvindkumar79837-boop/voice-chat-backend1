@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const os = require('os');
 const { EventEmitter } = require('events');
 
@@ -35,7 +36,7 @@ class MonitoringService extends EventEmitter {
     this.collectionInterval = setInterval(() => {
       this.collectMetrics();
     }, intervalMs);
-    console.log('📊 [MonitoringService] Started');
+    Logger.info('📊 [MonitoringService] Started');
   }
 
   stopCollection() {

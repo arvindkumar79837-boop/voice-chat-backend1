@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/controllers/firebaseAuth.controller.js
 // ARVIND PARTY - FIREBASE AUTH CONTROLLER (Multi-Platform Login)
@@ -171,7 +172,7 @@ exports.verifyFirebaseToken = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('❌ Firebase Token Verification Error:', error);
+    Logger.error('❌ Firebase Token Verification Error:', error);
     next(error);
   }
 };
@@ -257,7 +258,7 @@ exports.linkFirebaseAccount = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('❌ Firebase Account Link Error:', error);
+    Logger.error('❌ Firebase Account Link Error:', error);
     next(error);
   }
 };
@@ -406,7 +407,7 @@ exports.verifyAppleToken = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('❌ Apple Token Verification Error:', error);
+    Logger.error('❌ Apple Token Verification Error:', error);
     next(error);
   }
 };

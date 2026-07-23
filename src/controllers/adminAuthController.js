@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/controllers/adminAuthController.js
 // ARVIND PARTY - ADVANCED ADMIN AUTH CONTROLLER
@@ -95,7 +96,7 @@ exports.login = async (req, res) => {
       message: 'Please provide a Firebase UID or ID token.'
     });
   } catch (e) {
-    console.error('Admin Login Error:', e);
+    Logger.error('Admin Login Error:', e);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -145,7 +146,7 @@ exports.verifyTwoFactor = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Admin 2FA Verification Error:', error);
+        Logger.error('Admin 2FA Verification Error:', error);
         return res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 };
@@ -186,7 +187,7 @@ exports.refreshToken = async (req, res) => {
       role: staff.role,
     });
   } catch (e) {
-    console.error('Admin Refresh Token Error:', e);
+    Logger.error('Admin Refresh Token Error:', e);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };

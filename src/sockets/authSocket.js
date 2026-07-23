@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/sockets/authSocket.js
 // ARVIND PARTY — Authentication Real-time Socket Events
@@ -5,14 +6,14 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 module.exports = (io, socket) => {
-    console.log(`🔌 Auth Socket connected: ${socket.id}`);
+    Logger.info(`🔌 Auth Socket connected: ${socket.id}`);
 
     // Backward-compatible alias for Flutter client
     socket.on('heartbeat', (data, callback) => {
       try {
         socket.emit('auth:heartbeat', data, callback);
       } catch (error) {
-        console.error('[heartbeat] error:', error.message);
+        Logger.error('[heartbeat] error:', error.message);
       }
     });
 
@@ -47,7 +48,7 @@ module.exports = (io, socket) => {
 
         callback({ success: true, message: 'Socket authenticated', userId });
       } catch (error) {
-        console.error('❌ Socket auth error:', error);
+        Logger.error('❌ Socket auth error:', error);
         callback({ success: false, message: 'Authentication failed' });
       }
     });
@@ -68,7 +69,7 @@ module.exports = (io, socket) => {
           );
         }
       } catch (error) {
-        console.error('❌ Socket disconnect error:', error);
+        Logger.error('❌ Socket disconnect error:', error);
       }
     });
 
@@ -110,9 +111,9 @@ module.exports = (io, socket) => {
     socket.on('auth:force-logout-ack', async (data) => {
       try {
         const { sessionId } = data;
-        console.log(`🔌 Force logout ack from ${socket.id} for session ${sessionId}`);
+        Logger.info(`🔌 Force logout ack from ${socket.id} for session ${sessionId}`);
       } catch (error) {
-        console.error('❌ Force logout ack error:', error);
+        Logger.error('❌ Force logout ack error:', error);
       }
     });
 
@@ -127,7 +128,7 @@ module.exports = (io, socket) => {
           io.to(`user:${userId}`).emit('notification:new', notification);
         }
       } catch (error) {
-        console.error('[notification:new] error:', error.message);
+        Logger.error('[notification:new] error:', error.message);
       }
     });
 
@@ -136,5 +137,5 @@ module.exports = (io, socket) => {
     // Can be called from REST controllers via io.to(`user:${userId}`)
     // ─────────────────────────────────────────────────────────────────────
 
-    console.log('✅ Auth socket events registered');
+    Logger.info('✅ Auth socket events registered');
 };

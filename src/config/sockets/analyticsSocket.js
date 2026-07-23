@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const jwt = require('jsonwebtoken');
 const analyticsService = require('../../services/analytics.service');
 
@@ -37,7 +38,7 @@ const setupAnalyticsSocket = (io) => {
   });
 
   analyticsNamespace.on('connection', (socket) => {
-    console.log(`📊 Analytics Socket connected: ${socket.userId} (role: ${socket.userRole})`);
+    Logger.info(`📊 Analytics Socket connected: ${socket.userId} (role: ${socket.userRole})`);
 
     // Send initial data snapshot on connection
     Promise.all([
@@ -54,7 +55,7 @@ const setupAnalyticsSocket = (io) => {
         timestamp: new Date().toISOString()
       });
     }).catch((error) => {
-      console.error('Error sending initial analytics data:', error.message);
+      Logger.error('Error sending initial analytics data:', error.message);
     });
 
     // Client requests revenue summary refresh
@@ -127,7 +128,7 @@ const setupAnalyticsSocket = (io) => {
     });
 
     socket.on('disconnect', () => {
-      console.log(`📊 Analytics Socket disconnected: ${socket.userId}`);
+      Logger.info(`📊 Analytics Socket disconnected: ${socket.userId}`);
     });
   });
 
@@ -139,7 +140,7 @@ const setupAnalyticsSocket = (io) => {
       const summary = await analyticsService.getRevenueSummary();
       analyticsNamespace.emit('revenue_summary_updated', summary);
     } catch (error) {
-      console.error('Analytics broadcast (revenue):', error.message);
+      Logger.error('Analytics broadcast (revenue):', error.message);
     }
   }, 60000);
 
@@ -149,7 +150,7 @@ const setupAnalyticsSocket = (io) => {
       const liveData = await analyticsService.getLiveAnalytics();
       analyticsNamespace.emit('live_analytics_updated', liveData);
     } catch (error) {
-      console.error('Analytics broadcast (live):', error.message);
+      Logger.error('Analytics broadcast (live):', error.message);
     }
   }, 30000);
 
@@ -159,7 +160,7 @@ const setupAnalyticsSocket = (io) => {
       const chartData = await analyticsService.getLiveChartData();
       analyticsNamespace.emit('chart_data_updated', chartData);
     } catch (error) {
-      console.error('Analytics broadcast (chart):', error.message);
+      Logger.error('Analytics broadcast (chart):', error.message);
     }
   }, 60000);
 
@@ -169,7 +170,7 @@ const setupAnalyticsSocket = (io) => {
       const giftData = await analyticsService.getGiftAnalytics();
       analyticsNamespace.emit('gift_analytics_updated', giftData);
     } catch (error) {
-      console.error('Analytics broadcast (gift):', error.message);
+      Logger.error('Analytics broadcast (gift):', error.message);
     }
   }, 120000);
 
@@ -183,7 +184,7 @@ const setupAnalyticsSocket = (io) => {
       analyticsNamespace.emit('agency_analytics_updated', agencyData);
       analyticsNamespace.emit('family_analytics_updated', familyData);
     } catch (error) {
-      console.error('Analytics broadcast (departmental):', error.message);
+      Logger.error('Analytics broadcast (departmental):', error.message);
     }
   }, 300000);
 
@@ -193,11 +194,11 @@ const setupAnalyticsSocket = (io) => {
       const heatMapData = await analyticsService.getHeatMapData({});
       analyticsNamespace.emit('heatmap_data_updated', heatMapData);
     } catch (error) {
-      console.error('Analytics broadcast (heatmap):', error.message);
+      Logger.error('Analytics broadcast (heatmap):', error.message);
     }
   }, 300000);
 
-  console.log('📊 Analytics Socket Namespace initialized with auto-broadcast intervals');
+  Logger.info('📊 Analytics Socket Namespace initialized with auto-broadcast intervals');
 };
 
 module.exports = setupAnalyticsSocket;

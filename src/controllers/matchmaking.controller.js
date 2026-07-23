@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 
 // In-memory matchmaking queue (Use Redis in production for horizontal scaling)
@@ -27,7 +28,7 @@ exports.searchMatch = async (req, res) => {
       res.status(200).json({ match });
     }, 3000); // 3 seconds search delay
   } catch (error) {
-    console.error('Matchmaking Search Error:', error);
+    Logger.error('Matchmaking Search Error:', error);
     res.status(500).json({ message: 'Failed to search for match' });
   }
 };

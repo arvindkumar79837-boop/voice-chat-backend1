@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 
 function agencySocket(io, socket) {
@@ -20,7 +21,7 @@ function agencySocket(io, socket) {
 
         socket.join(`agency_${agencyId}`);
       } catch (error) {
-        console.error('Join agency room error:', error);
+        Logger.error('Join agency room error:', error);
       }
     });
 
@@ -39,7 +40,7 @@ function agencySocket(io, socket) {
           });
         }
       } catch (error) {
-        console.error('Attendance heartbeat error:', error);
+        Logger.error('Attendance heartbeat error:', error);
       }
     });
 
@@ -61,7 +62,7 @@ function agencySocket(io, socket) {
 
         io.to(`agency_${agencyId}`).emit('live_attendance_update', { attendance: todayAttendance });
       } catch (error) {
-        console.error('Live update request error:', error);
+        Logger.error('Live update request error:', error);
       }
     });
 
@@ -69,7 +70,7 @@ function agencySocket(io, socket) {
       try {
         socket.leave(`agency_${agencyId}`);
       } catch (error) {
-        console.error('Leave agency room error:', error);
+        Logger.error('Leave agency room error:', error);
       }
     });
 }

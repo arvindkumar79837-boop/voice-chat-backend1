@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 const LoginHistory = require('../models/LoginHistory');
 const DeviceSession = require('../models/DeviceSession');
@@ -61,7 +62,7 @@ exports.enable2FA = async (req, res, next) => {
     if (!twoFactor) { await TwoFactorAuth.create(twoFactorData); } else { Object.assign(twoFactor, twoFactorData); await twoFactor.save(); }
 
     res.status(200).json({ success: true, message: '2FA configured. Please verify to enable.', data: { totpSecret, totpQrCode, method: method || 'totp' } });
-  } catch (error) { console.error('❌ Enable 2FA Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Enable 2FA Error:', error); next(error); }
 };
 
 exports.verifyAndEnable2FA = async (req, res, next) => {
@@ -107,7 +108,7 @@ exports.verifyAndEnable2FA = async (req, res, next) => {
     await twoFactor.save();
 
     res.status(200).json({ success: true, message: '2FA enabled successfully', backupCodes: backupCodes.map(c => c.code) });
-  } catch (error) { console.error('❌ Verify 2FA Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Verify 2FA Error:', error); next(error); }
 };
 
 exports.disable2FA = async (req, res, next) => {
@@ -132,7 +133,7 @@ exports.disable2FA = async (req, res, next) => {
     await User.findByIdAndUpdate(userId, { twoFactorEnabled: false, twoFactorMethod: 'totp' });
 
     res.status(200).json({ success: true, message: '2FA disabled successfully' });
-  } catch (error) { console.error('❌ Disable 2FA Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Disable 2FA Error:', error); next(error); }
 };
 
 exports.get2FAStatus = async (req, res, next) => {
@@ -150,7 +151,7 @@ exports.get2FAStatus = async (req, res, next) => {
         remainingBackupCodes: twoFactor?.backupCodes?.filter(c => !c.isUsed).length || 0,
       },
     });
-  } catch (error) { console.error('❌ Get 2FA Status Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Get 2FA Status Error:', error); next(error); }
 };
 
 exports.getActiveSessions = async (req, res, next) => {
@@ -173,7 +174,7 @@ exports.getActiveSessions = async (req, res, next) => {
     }));
 
     res.status(200).json({ success: true, data: { sessions: formatted } });
-  } catch (error) { console.error('❌ Get Sessions Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Get Sessions Error:', error); next(error); }
 };
 
 exports.getLoginHistory = async (req, res, next) => {
@@ -194,7 +195,7 @@ exports.getLoginHistory = async (req, res, next) => {
         pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) },
       },
     });
-  } catch (error) { console.error('❌ Get Login History Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Get Login History Error:', error); next(error); }
 };
 
 exports.logoutDevice = async (req, res, next) => {
@@ -216,7 +217,7 @@ exports.logoutDevice = async (req, res, next) => {
     }
 
     res.status(200).json({ success: true, message: 'Device logged out successfully' });
-  } catch (error) { console.error('❌ Logout Device Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Logout Device Error:', error); next(error); }
 };
 
 exports.trustDevice = async (req, res, next) => {
@@ -237,7 +238,7 @@ exports.trustDevice = async (req, res, next) => {
     }
 
     res.status(200).json({ success: true, message: 'Device trusted successfully' });
-  } catch (error) { console.error('❌ Trust Device Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Trust Device Error:', error); next(error); }
 };
 
 exports.forgotPassword = async (req, res, next) => {
@@ -253,7 +254,7 @@ exports.forgotPassword = async (req, res, next) => {
     await user.save();
 
     res.status(200).json({ success: true, message: 'Password reset link sent', data: { resetToken } });
-  } catch (error) { console.error('❌ Forgot Password Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Forgot Password Error:', error); next(error); }
 };
 
 exports.resetPassword = async (req, res, next) => {
@@ -276,7 +277,7 @@ exports.resetPassword = async (req, res, next) => {
     await user.save();
 
     res.status(200).json({ success: true, message: 'Password reset successful' });
-  } catch (error) { console.error('❌ Reset Password Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Reset Password Error:', error); next(error); }
 };
 
 exports.changePassword = async (req, res, next) => {
@@ -294,7 +295,7 @@ exports.changePassword = async (req, res, next) => {
     await user.save();
 
     res.status(200).json({ success: true, message: 'Password changed successfully' });
-  } catch (error) { console.error('❌ Change Password Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Change Password Error:', error); next(error); }
 };
 
 exports.getSuspiciousAlerts = async (req, res, next) => {
@@ -306,7 +307,7 @@ exports.getSuspiciousAlerts = async (req, res, next) => {
       success: true,
       data: { alerts: alerts.map(a => ({ alertId: a._id, loginAt: a.loginAt, ipAddress: a.ipAddress, location: a.location, deviceInfo: a.deviceInfo, status: a.status, suspiciousReason: a.suspiciousReason, loginType: a.loginType })) },
     });
-  } catch (error) { console.error('❌ Get Alerts Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Get Alerts Error:', error); next(error); }
 };
 
 exports.setupRecovery = async (req, res, next) => {
@@ -321,7 +322,7 @@ exports.setupRecovery = async (req, res, next) => {
     await user.save();
 
     res.status(200).json({ success: true, message: 'Recovery information updated', data: { recoveryEmail: user.accountRecoveryEmail, recoveryPhone: user.accountRecoveryPhone } });
-  } catch (error) { console.error('❌ Setup Recovery Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Setup Recovery Error:', error); next(error); }
 };
 
 exports.acceptTerms = async (req, res, next) => {
@@ -329,7 +330,7 @@ exports.acceptTerms = async (req, res, next) => {
     const userId = req.user?.id || req.user?.userId;
     const user = await User.findByIdAndUpdate(userId, { termsAcceptedAt: new Date(), privacyPolicyAcceptedAt: new Date() }, { new: true });
     res.status(200).json({ success: true, message: 'Terms accepted', data: { termsAcceptedAt: user.termsAcceptedAt, privacyPolicyAcceptedAt: user.privacyPolicyAcceptedAt } });
-  } catch (error) { console.error('❌ Accept Terms Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Accept Terms Error:', error); next(error); }
 };
 
 exports.socialLogin = async (req, res, next) => {
@@ -420,7 +421,7 @@ exports.socialLogin = async (req, res, next) => {
       message: 'Social login successful',
       data: { token, refreshToken, user: { _id: user._id, uid: user.uid, username: user.username, name: user.name, avatar: user.avatar, email: user.email, arvindId: user.arvindId, provider: user.provider, isProfileComplete: user.isProfileComplete } },
     });
-  } catch (error) { console.error('❌ Social Login Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Social Login Error:', error); next(error); }
 };
 
 exports.linkSocialAccount = async (req, res, next) => {
@@ -468,7 +469,7 @@ exports.linkSocialAccount = async (req, res, next) => {
     await user.save();
 
     res.status(200).json({ success: true, message: `${provider} account linked successfully` });
-  } catch (error) { console.error('❌ Link Social Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Link Social Error:', error); next(error); }
 };
 
 exports.unlinkSocialAccount = async (req, res, next) => {
@@ -486,7 +487,7 @@ exports.unlinkSocialAccount = async (req, res, next) => {
     await user.save();
 
     res.status(200).json({ success: true, message: `${provider} account unlinked` });
-  } catch (error) { console.error('❌ Unlink Social Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Unlink Social Error:', error); next(error); }
 };
 
 exports.guestLogin = async (req, res, next) => {
@@ -517,5 +518,5 @@ exports.guestLogin = async (req, res, next) => {
       message: 'Guest login successful',
       data: { token, refreshToken, user: { _id: user._id, uid: user.uid, arvindId: user.arvindId, name: user.name, provider: user.provider, isGuest: user.isGuest, coins: user.coins, diamonds: user.diamonds, level: user.level } },
     });
-  } catch (error) { console.error('❌ Guest Login Error:', error); next(error); }
+  } catch (error) { Logger.error('❌ Guest Login Error:', error); next(error); }
 };

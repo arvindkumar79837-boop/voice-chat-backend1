@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const Attendance = require('../models/Attendance');
 const SalaryRecord = require('../models/SalaryRecord');
@@ -87,7 +88,7 @@ exports.getRealtimeAnalytics = async (req, res) => {
 
     res.status(200).json({ success: true, data: stats });
   } catch (error) {
-    console.error('Realtime Analytics Error:', error);
+    Logger.error('Realtime Analytics Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch analytics' });
   }
 };
@@ -177,7 +178,7 @@ exports.getMonthlyReport = async (req, res) => {
 
     res.status(200).json({ success: true, data: report });
   } catch (error) {
-    console.error('Monthly Report Error:', error);
+    Logger.error('Monthly Report Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch monthly report' });
   }
 };
@@ -220,7 +221,7 @@ exports.getDailyChartData = async (req, res) => {
       data: { labels, values: dailyData, month: m, year: y },
     });
   } catch (error) {
-    console.error('Daily Chart Error:', error);
+    Logger.error('Daily Chart Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch chart data' });
   }
 };
@@ -283,7 +284,7 @@ exports.getHostRanking = async (req, res) => {
 
     res.status(200).json({ success: true, data: sorted, count: sorted.length });
   } catch (error) {
-    console.error('Host Ranking Error:', error);
+    Logger.error('Host Ranking Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch host ranking' });
   }
 };

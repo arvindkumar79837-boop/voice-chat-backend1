@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: arvind-party-backend/src/controllers/youtube.controller.js
 // ARVIND PARTY - YOUTUBE CONTROLLER
@@ -56,7 +57,7 @@ const youtubeController = {
 
       res.json({ success: true, videos });
     } catch (error) {
-      console.error('YouTube Search Error:', error.response?.data || error.message);
+      Logger.error('YouTube Search Error:', error.response?.data || error.message);
       res.status(500).json({ success: false, message: 'Failed to search YouTube videos' });
     }
   },

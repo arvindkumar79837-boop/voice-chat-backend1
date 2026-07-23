@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const DealerWallet = require('../models/DealerWallet');
@@ -94,7 +95,7 @@ exports.createDealerWallet = async (req, res) => {
     });
   } catch (error) {
     await session.abortTransaction();
-    console.error('Create Dealer Wallet Error:', error);
+    Logger.error('Create Dealer Wallet Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   } finally {
     session.endSession();
@@ -140,7 +141,7 @@ exports.getDealerWallet = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Dealer Wallet Error:', error);
+    Logger.error('Get Dealer Wallet Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -280,7 +281,7 @@ exports.transferCoinsToUser = async (req, res) => {
     });
   } catch (error) {
     await session.abortTransaction();
-    console.error('Transfer Coins Error:', error);
+    Logger.error('Transfer Coins Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   } finally {
     session.endSession();
@@ -368,7 +369,7 @@ exports.requestRefund = async (req, res) => {
       data: refund
     });
   } catch (error) {
-    console.error('Request Refund Error:', error);
+    Logger.error('Request Refund Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -500,7 +501,7 @@ exports.processRefund = async (req, res) => {
     });
   } catch (error) {
     await session.abortTransaction();
-    console.error('Process Refund Error:', error);
+    Logger.error('Process Refund Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   } finally {
     session.endSession();
@@ -534,7 +535,7 @@ exports.getDealerTransactions = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Dealer Transactions Error:', error);
+    Logger.error('Get Dealer Transactions Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -621,7 +622,7 @@ exports.getDealerStats = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Dealer Stats Error:', error);
+    Logger.error('Get Dealer Stats Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -676,7 +677,7 @@ exports.getAllDealerWallets = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get All Dealers Error:', error);
+    Logger.error('Get All Dealers Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -732,7 +733,7 @@ exports.updateDealerLevel = async (req, res) => {
       data: dealerWallet
     });
   } catch (error) {
-    console.error('Update Dealer Level Error:', error);
+    Logger.error('Update Dealer Level Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -778,7 +779,7 @@ exports.toggleDealerStatus = async (req, res) => {
       data: dealerWallet
     });
   } catch (error) {
-    console.error('Toggle Dealer Status Error:', error);
+    Logger.error('Toggle Dealer Status Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -855,7 +856,7 @@ exports.creditDealerWallet = async (req, res) => {
     });
   } catch (error) {
     await session.abortTransaction();
-    console.error('Credit Dealer Wallet Error:', error);
+    Logger.error('Credit Dealer Wallet Error:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   } finally {
     session.endSession();

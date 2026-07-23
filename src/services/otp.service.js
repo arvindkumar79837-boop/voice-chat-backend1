@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/services/otp.service.js
 // ARVIND PARTY - OTP SERVICE (REDIS/MEMORY FALLBACK)
@@ -12,9 +13,9 @@ const initRedis = async () => {
   const client = getRedisClient();
   isRedisConnected = client !== null && client.isOpen;
   if (isRedisConnected) {
-    console.log('✅ OTP service using shared Redis client');
+    Logger.info('✅ OTP service using shared Redis client');
   } else {
-    console.log('⚠️ Shared Redis not available, OTP will use in-memory storage');
+    Logger.info('⚠️ Shared Redis not available, OTP will use in-memory storage');
   }
 };
 
@@ -35,18 +36,18 @@ const storeOTP = async (phone, otp, expiryMinutes = 5) => {
       const key = `otp:${phone}`;
       const expirySeconds = expiryMinutes * 60;
       await client.setEx(key, expirySeconds, otp);
-      console.log(`✅ OTP stored in Redis for ${phone}`);
+      Logger.info(`✅ OTP stored in Redis for ${phone}`);
     } else {
       // Fallback to memory
       otpMemoryStore.set(phone, {
         otp,
         expiresAt: Date.now() + expiryMinutes * 60 * 1000
       });
-      console.log(`⚠️ OTP stored in memory for ${phone}`);
+      Logger.info(`⚠️ OTP stored in memory for ${phone}`);
     }
     return true;
   } catch (error) {
-    console.error('❌ Failed to store OTP:', error.message);
+    Logger.error('❌ Failed to store OTP:', error.message);
     return false;
   }
 };
@@ -87,7 +88,7 @@ const verifyOTP = async (phone, otp) => {
 
     return { valid: true, message: 'OTP verified successfully' };
   } catch (error) {
-    console.error('❌ OTP verification failed:', error.message);
+    Logger.error('❌ OTP verification failed:', error.message);
     return { valid: false, message: 'Verification error' };
   }
 };
@@ -112,7 +113,7 @@ const sendOTP = async (phone) => {
       ...(process.env.NODE_ENV === 'development' && { otp })
     };
   } catch (error) {
-    console.error('❌ Error in sendOTP:', error);
+    Logger.error('❌ Error in sendOTP:', error);
     return { success: false, message: 'Failed to send OTP' };
   }
 };

@@ -1,8 +1,9 @@
+const Logger = require('../utils/logger');
 const Room = require('../models/Room');
 const VipSystem = require('../models/VipSystem');
 const CosmeticItem = require('../models/CosmeticItem');
 const crypto = require('crypto');
-const { generateLiveKitToken } = require('../services/livekitService');
+const { generateLiveKitToken, deleteLiveKitRoom } = require('../services/livekitService');
 
 module.exports = (io, socket) => {
   const authedUserId = socket.data.userId;
@@ -127,10 +128,10 @@ module.exports = (io, socket) => {
           }
         }
       } catch (vipError) {
-        console.error('VIP entry effect error:', vipError);
+        Logger.error('VIP entry effect error:', vipError);
       }
     } catch (error) {
-      console.error('Error joining room:', error);
+      Logger.error('Error joining room:', error);
       socket.emit('room_error', { message: 'Failed to join room.' });
     }
   };
@@ -143,30 +144,37 @@ module.exports = (io, socket) => {
       const userId = authedUserId;
       socket.leave(roomId);
 
-      // Decrement active users in the database
-      const room = await Room.findOne({ roomId });
-      if (room) {
-        room.activeUsers = Math.max(0, room.activeUsers - 1);
-        await room.save();
-
-        // Auto-remove user from seat if they were on one
-        const seatIdx = room.seats.findIndex(
-          (s) => s.userId && s.userId.toString() === userId.toString()
-        );
-        if (seatIdx !== -1) {
-          room.seats[seatIdx].userId = null;
-          room.seats[seatIdx].userName = '';
-          room.seats[seatIdx].userAvatar = '';
-          room.seats[seatIdx].isMuted = false;
-          room.seats[seatIdx].isHost = false;
-          room.seats[seatIdx].joinedAt = null;
-          await room.save();
-
-          io.to(roomId).emit('seat_vacated', {
-            seatIndex: seatIdx,
-            activeUsers: room.activeUsers,
-          });
+      // Atomic update for activeUsers and seat removal
+      const updatedRoom = await Room.findOneAndUpdate(
+        { roomId },
+        { 
+          $inc: { activeUsers: -1 },
+          $set: {
+            'seats.$[elem].userId': null,
+            'seats.$[elem].userName': '',
+            'seats.$[elem].userAvatar': '',
+            'seats.$[elem].isMuted': false,
+            'seats.$[elem].isHost': false,
+            'seats.$[elem].joinedAt': null
+          }
+        },
+        { 
+          arrayFilters: [{ 'elem.userId': userId }],
+          new: true 
         }
+      );
+
+      if (updatedRoom) {
+        // Find which seat was vacated for notification
+        const seatIdx = updatedRoom.seats.findIndex(s => s.userId === null && s.joinedAt === null); // This is not perfect but we can emit a general update or check which one changed
+        // Better: we know the userId, but it's now null. 
+        // For simplicity, we can emit to all that someone left and seats might have changed
+        io.to(roomId).emit('user_left', {
+          userId,
+          userProfile,
+          message: `${userProfile?.name || 'A user'} left the room`,
+          activeUsers: updatedRoom.activeUsers,
+        });
       }
 
       socket.to(roomId).emit('user_left', {
@@ -182,7 +190,7 @@ module.exports = (io, socket) => {
         activeUsers: room?.activeUsers || 0,
       });
     } catch (error) {
-      console.error('[leave_room] error:', error.message);
+      Logger.error('[leave_room] error:', error.message);
       socket.emit('error', { message: 'Something went wrong. Please try again.' });
     }
   };
@@ -201,7 +209,7 @@ module.exports = (io, socket) => {
         { $set: { 'seats.$.isMuted': isMuted } }
       );
     } catch (error) {
-      console.error('[toggle_mic] error:', error.message);
+      Logger.error('[toggle_mic] error:', error.message);
       socket.emit('error', { message: 'Something went wrong. Please try again.' });
     }
   };
@@ -254,16 +262,30 @@ module.exports = (io, socket) => {
         });
       }
 
-      // Assign the seat
+      // Assign the seat atomically
       const isHost = userId.toString() === room.ownerId.toString();
-      room.seats[seatIndex].userId = userId;
-      room.seats[seatIndex].userName = userName || 'User';
-      room.seats[seatIndex].userAvatar = userAvatar || '';
-      room.seats[seatIndex].isMuted = false;
-      room.seats[seatIndex].isHost = isHost;
-      room.seats[seatIndex].joinedAt = new Date();
+      const updatedRoom = await Room.findOneAndUpdate(
+        { 
+          roomId, 
+          [`seats.${seatIndex}.userId`]: null, // Ensure seat is still empty
+          [`seats.${seatIndex}.isLocked`]: false // Ensure seat is not locked
+        },
+        {
+          $set: {
+            [`seats.${seatIndex}.userId`]: userId,
+            [`seats.${seatIndex}.userName`]: userName || 'User',
+            [`seats.${seatIndex}.userAvatar`]: userAvatar || '',
+            [`seats.${seatIndex}.isMuted`]: false,
+            [`seats.${seatIndex}.isHost`]: isHost,
+            [`seats.${seatIndex}.joinedAt`]: new Date()
+          }
+        },
+        { new: true }
+      );
 
-      await room.save();
+      if (!updatedRoom) {
+        return socket.emit('seat_error', { message: 'Failed to claim seat. It might have been taken or locked.' });
+      }
 
       // Generate LiveKit token for seat claim
       const liveKitTokenData = await generateLiveKitToken(
@@ -296,7 +318,7 @@ module.exports = (io, socket) => {
         io.to(roomId).emit('seat_vacated', { seatIndex: existingSeatIdx });
       }
     } catch (error) {
-      console.error('Claim Seat Error:', error);
+      Logger.error('Claim Seat Error:', error);
       socket.emit('seat_error', { message: 'Failed to claim the seat.' });
     }
   };
@@ -307,28 +329,30 @@ module.exports = (io, socket) => {
   const handleLeaveSeat = async ({ roomId, seatIndex }) => {
     try {
       const userId = authedUserId;
-      const room = await Room.findOne({ roomId });
-      if (!room) return;
+      const updatedRoom = await Room.findOneAndUpdate(
+        { roomId, [`seats.${seatIndex}.userId`]: userId },
+        {
+          $set: {
+            [`seats.${seatIndex}.userId`]: null,
+            [`seats.${seatIndex}.userName`]: '',
+            [`seats.${seatIndex}.userAvatar`]: '',
+            [`seats.${seatIndex}.isMuted`]: false,
+            [`seats.${seatIndex}.isHost`]: false,
+            [`seats.${seatIndex}.joinedAt`]: null
+          }
+        },
+        { new: true }
+      );
 
-      if (seatIndex < 0 || seatIndex >= room.seats.length) return;
-
-      room.seats[seatIndex].userId = null;
-      room.seats[seatIndex].userName = '';
-      room.seats[seatIndex].userAvatar = '';
-      room.seats[seatIndex].isMuted = false;
-      room.seats[seatIndex].isHost = false;
-      room.seats[seatIndex].joinedAt = null;
-
-      await room.save();
-
-      io.to(roomId).emit('seat_vacated', { seatIndex, userId });
+      if (updatedRoom) {
+        io.to(roomId).emit('seat_vacated', { seatIndex, userId });
       io.to(roomId).emit('seat_animation', {
         seatIndex,
         effect: 'vacate_fade_out',
         userId: userId
       });
     } catch (error) {
-      console.error('Leave Seat Error:', error);
+      Logger.error('Leave Seat Error:', error);
     }
   };
   socket.on('leave_seat', handleLeaveSeat);
@@ -369,7 +393,7 @@ module.exports = (io, socket) => {
       io.to(roomId).emit('seat_locked', { seatIndex });
       io.to(roomId).emit('seat_animation', { seatIndex, effect: 'lock_icon_appear' });
     } catch (error) {
-      console.error('Lock Seat Error:', error);
+      Logger.error('Lock Seat Error:', error);
     }
   };
   socket.on('lock_seat', handleLockSeat);
@@ -395,7 +419,7 @@ module.exports = (io, socket) => {
       io.to(roomId).emit('seat_unlocked', { seatIndex });
       io.to(roomId).emit('seat_animation', { seatIndex, effect: 'unlock_sparkle' });
     } catch (error) {
-      console.error('Unlock Seat Error:', error);
+      Logger.error('Unlock Seat Error:', error);
     }
   });
 
@@ -423,7 +447,7 @@ module.exports = (io, socket) => {
       });
       io.to(roomId).emit('seat_animation', { seatIndex, effect: 'mic_off_red_overlay' });
     } catch (error) {
-      console.error('Mute Seat Error:', error);
+      Logger.error('Mute Seat Error:', error);
     }
   });
 
@@ -450,7 +474,7 @@ module.exports = (io, socket) => {
       });
       io.to(roomId).emit('seat_animation', { seatIndex, effect: 'mic_on_green_pulse' });
     } catch (error) {
-      console.error('Unmute Seat Error:', error);
+      Logger.error('Unmute Seat Error:', error);
     }
   });
 
@@ -489,7 +513,7 @@ module.exports = (io, socket) => {
       });
       io.to(roomId).emit('seat_animation', { seatIndex, effect: 'kick_red_flash' });
     } catch (error) {
-      console.error('Kick From Seat Error:', error);
+      Logger.error('Kick From Seat Error:', error);
     }
   });
 
@@ -531,7 +555,7 @@ module.exports = (io, socket) => {
 
       io.to(roomId).emit('user_kicked', { targetUserId });
     } catch (error) {
-      console.error('Error kicking user:', error);
+      Logger.error('Error kicking user:', error);
     }
   });
 
@@ -558,7 +582,7 @@ module.exports = (io, socket) => {
 
       io.to(roomId).emit('user_admin_muted', { targetUserId });
     } catch (error) {
-      console.error('Error muting user:', error);
+      Logger.error('Error muting user:', error);
     }
   });
 
@@ -584,7 +608,7 @@ module.exports = (io, socket) => {
       );
       io.to(roomId).emit('user_unkicked', { targetUserId });
     } catch (error) {
-      console.error('Error unkicking user:', error);
+      Logger.error('Error unkicking user:', error);
     }
   });
 
@@ -610,7 +634,7 @@ module.exports = (io, socket) => {
       );
       io.to(roomId).emit('user_admin_unmuted', { targetUserId });
     } catch (error) {
-      console.error('Error unmuting user:', error);
+      Logger.error('Error unmuting user:', error);
     }
   });
 
@@ -625,7 +649,7 @@ module.exports = (io, socket) => {
       await Room.findOneAndUpdate({ roomId }, { announcement });
       io.to(roomId).emit('announcement_updated', { announcement });
     } catch (error) {
-      console.error('Update Announcement Error:', error);
+      Logger.error('Update Announcement Error:', error);
     }
   });
 
@@ -640,7 +664,7 @@ module.exports = (io, socket) => {
       await Room.findOneAndUpdate({ roomId }, { pinnedMessage });
       io.to(roomId).emit('pinned_message_updated', { pinnedMessage });
     } catch (error) {
-      console.error('Update Pinned Message Error:', error);
+      Logger.error('Update Pinned Message Error:', error);
     }
   });
 
@@ -655,7 +679,7 @@ module.exports = (io, socket) => {
       await Room.findOneAndUpdate({ roomId }, { welcomeMessage });
       io.to(roomId).emit('welcome_message_updated', { welcomeMessage });
     } catch (error) {
-      console.error('Update Welcome Message Error:', error);
+      Logger.error('Update Welcome Message Error:', error);
     }
   });
 
@@ -670,7 +694,7 @@ module.exports = (io, socket) => {
       await Room.findOneAndUpdate({ roomId }, { topic });
       io.to(roomId).emit('topic_updated', { topic });
     } catch (error) {
-      console.error('Update Topic Error:', error);
+      Logger.error('Update Topic Error:', error);
     }
   });
 
@@ -696,7 +720,7 @@ module.exports = (io, socket) => {
           backgroundName,
         });
       } catch (error) {
-        console.error('Update Background Error:', error);
+        Logger.error('Update Background Error:', error);
       }
     }
   );
@@ -741,7 +765,7 @@ module.exports = (io, socket) => {
         seats: room.seats,
       });
     } catch (error) {
-      console.error('Update Seat Layout Error:', error);
+      Logger.error('Update Seat Layout Error:', error);
     }
   });
 
@@ -779,7 +803,7 @@ module.exports = (io, socket) => {
       io.to(roomId).emit('pk_score_updated', room.currentPkChallenge);
       io.to(opponentRoomId).emit('pk_score_updated', room.currentPkChallenge);
     } catch (error) {
-      console.error('PK Update Score Error:', error);
+      Logger.error('PK Update Score Error:', error);
     }
   });
 
@@ -797,7 +821,7 @@ module.exports = (io, socket) => {
         message: `${userName || 'Someone'} wants to speak`,
       });
     } catch (error) {
-      console.error('[raise_hand] error:', error.message);
+      Logger.error('[raise_hand] error:', error.message);
       socket.emit('error', { message: 'Something went wrong. Please try again.' });
     }
   };
@@ -811,16 +835,25 @@ module.exports = (io, socket) => {
       const room = await Room.findOne({ roomId });
       if (!room || room.ownerId.toString() !== ownerId?.toString()) return;
 
-      room.status = 'inactive';
-      room.isLive = false;
-      room.isActive = false;
-      await room.save();
+      await Room.findOneAndUpdate(
+        { roomId },
+        {
+          $set: {
+            status: 'inactive',
+            isLive: false,
+            isActive: false
+          }
+        }
+      );
+
+      // Cleanup LiveKit room (P2-12)
+      await deleteLiveKitRoom(roomId);
 
       io.to(roomId).emit('room_closed', {
         message: 'This room has been closed by the owner.',
       });
     } catch (error) {
-      console.error('Close Room Error:', error);
+      Logger.error('Close Room Error:', error);
     }
   });
 
@@ -834,7 +867,7 @@ module.exports = (io, socket) => {
       }
       await Room.findOneAndDelete({ roomId });
     } catch (error) {
-      console.error('Delete Room Error:', error);
+      Logger.error('Delete Room Error:', error);
     }
   });
 

@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const jwt = require('jsonwebtoken');
 const RoomLevel = require('../models/RoomLevel');
 const RoomFollower = require('../models/RoomFollower');
@@ -23,7 +24,7 @@ function setupRoomFeaturesSocket(io) {
   });
 
   roomFeaturesNamespace.on('connection', (socket) => {
-    console.log(`[RoomFeaturesSocket] Client connected: ${socket.id}`);
+    Logger.info(`[RoomFeaturesSocket] Client connected: ${socket.id}`);
 
     let currentUserId = null;
     let currentRoomId = null;
@@ -71,7 +72,7 @@ function setupRoomFeaturesSocket(io) {
           });
         }
       } catch (error) {
-        console.error('[RoomFeaturesSocket] join-room error:', error.message);
+        Logger.error('[RoomFeaturesSocket] join-room error:', error.message);
       }
     });
 
@@ -99,7 +100,7 @@ function setupRoomFeaturesSocket(io) {
           currentUserId = null;
         }
       } catch (error) {
-        console.error('[leave-room] error:', error.message);
+        Logger.error('[leave-room] error:', error.message);
         socket.emit('error', { message: 'Something went wrong. Please try again.' });
       }
     });
@@ -135,7 +136,7 @@ function setupRoomFeaturesSocket(io) {
           roomFeaturesNamespace.to(`room:${roomId}`).emit('new-chat-message', chatPayload);
         }
       } catch (error) {
-        console.error('[RoomFeaturesSocket] send-chat-message error:', error.message);
+        Logger.error('[RoomFeaturesSocket] send-chat-message error:', error.message);
       }
     });
 
@@ -164,7 +165,7 @@ function setupRoomFeaturesSocket(io) {
           timestamp: new Date().toISOString()
         });
       } catch (error) {
-        console.error('[RoomFeaturesSocket] send-gift error:', error.message);
+        Logger.error('[RoomFeaturesSocket] send-gift error:', error.message);
       }
     });
 
@@ -190,7 +191,7 @@ function setupRoomFeaturesSocket(io) {
           timestamp: new Date().toISOString()
         });
       } catch (error) {
-        console.error('[RoomFeaturesSocket] notice-update error:', error.message);
+        Logger.error('[RoomFeaturesSocket] notice-update error:', error.message);
       }
     });
 
@@ -212,7 +213,7 @@ function setupRoomFeaturesSocket(io) {
           timestamp: new Date().toISOString()
         });
       } catch (error) {
-        console.error('[RoomFeaturesSocket] level-up-broadcast error:', error.message);
+        Logger.error('[RoomFeaturesSocket] level-up-broadcast error:', error.message);
       }
     });
 
@@ -226,7 +227,7 @@ function setupRoomFeaturesSocket(io) {
           timestamp: new Date().toISOString()
         });
       } catch (error) {
-        console.error('[privacy-changed] error:', error.message);
+        Logger.error('[privacy-changed] error:', error.message);
         socket.emit('error', { message: 'Something went wrong. Please try again.' });
       }
     });
@@ -255,7 +256,7 @@ function setupRoomFeaturesSocket(io) {
           minutes
         });
       } catch (error) {
-        console.error('[RoomFeaturesSocket] track-time error:', error.message);
+        Logger.error('[RoomFeaturesSocket] track-time error:', error.message);
       }
     });
 
@@ -266,7 +267,7 @@ function setupRoomFeaturesSocket(io) {
           socket.emit('online-count-update', { roomId, onlineCount: onlineUsersInRooms[roomId].size });
         }
       } catch (error) {
-        console.error('[request-online-count] error:', error.message);
+        Logger.error('[request-online-count] error:', error.message);
       }
     });
 
@@ -289,7 +290,7 @@ function setupRoomFeaturesSocket(io) {
           track: room.currentTrack,
           serverTimestamp: Date.now(),
         });
-      } catch (error) { console.error('[RoomFeaturesSocket] music:play error:', error.message); }
+      } catch (error) { Logger.error('[RoomFeaturesSocket] music:play error:', error.message); }
     });
 
     socket.on('music:pause', async (data) => {
@@ -304,7 +305,7 @@ function setupRoomFeaturesSocket(io) {
           track: room.currentTrack,
           serverTimestamp: Date.now(),
         });
-      } catch (error) { console.error('[RoomFeaturesSocket] music:pause error:', error.message); }
+      } catch (error) { Logger.error('[RoomFeaturesSocket] music:pause error:', error.message); }
     });
 
     socket.on('music:stop', async (data) => {
@@ -319,7 +320,7 @@ function setupRoomFeaturesSocket(io) {
           track: room.currentTrack,
           serverTimestamp: Date.now(),
         });
-      } catch (error) { console.error('[RoomFeaturesSocket] music:stop error:', error.message); }
+      } catch (error) { Logger.error('[RoomFeaturesSocket] music:stop error:', error.message); }
     });
 
     socket.on('music:request-sync', async (data) => {
@@ -332,7 +333,7 @@ function setupRoomFeaturesSocket(io) {
           track: room.currentTrack,
           serverTimestamp: Date.now(),
         });
-      } catch (error) { console.error('[RoomFeaturesSocket] music:request-sync error:', error.message); }
+      } catch (error) { Logger.error('[RoomFeaturesSocket] music:request-sync error:', error.message); }
     });
 
     // ─── SINGING ROOM ──────────────────────────────────────────────
@@ -347,7 +348,7 @@ function setupRoomFeaturesSocket(io) {
         await room.save();
         socket.emit('singing:queue-joined', { position: room.micQueue.indexOf(currentUserId) + 1, queueLength: room.micQueue.length });
         roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:queue-updated', { queueLength: room.micQueue.length });
-      } catch (e) { console.error('[SingingSocket] join-queue error:', e.message); }
+      } catch (e) { Logger.error('[SingingSocket] join-queue error:', e.message); }
     });
 
     socket.on('singing:leave-queue', async (data) => {
@@ -361,7 +362,7 @@ function setupRoomFeaturesSocket(io) {
         room.micQueueSongs.splice(idx, 1);
         await room.save();
         roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:queue-updated', { queueLength: room.micQueue.length });
-      } catch (e) { console.error('[SingingSocket] leave-queue error:', e.message); }
+      } catch (e) { Logger.error('[SingingSocket] leave-queue error:', e.message); }
     });
 
     socket.on('singing:start', async (data) => {
@@ -386,7 +387,7 @@ function setupRoomFeaturesSocket(io) {
         roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:next-performer', {
           performerId, song, startedAt: room.performanceStartedAt, serverTimestamp: Date.now(), queueLength: room.micQueue.length
         });
-      } catch (e) { console.error('[SingingSocket] start error:', e.message); }
+      } catch (e) { Logger.error('[SingingSocket] start error:', e.message); }
     });
 
     socket.on('singing:end', async (data) => {
@@ -406,7 +407,7 @@ function setupRoomFeaturesSocket(io) {
         room.singingLikeCount = 0;
         await room.save();
         roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:performance-ended', { endedPerformerId, totalLikes, queueLength: room.micQueue.length });
-      } catch (e) { console.error('[SingingSocket] end error:', e.message); }
+      } catch (e) { Logger.error('[SingingSocket] end error:', e.message); }
     });
 
     socket.on('singing:like', async (data) => {
@@ -417,7 +418,7 @@ function setupRoomFeaturesSocket(io) {
         room.singingLikeCount = (room.singingLikeCount || 0) + 1;
         await room.save();
         roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:like-count', { likeCount: room.singingLikeCount, fromUserId: currentUserId });
-      } catch (e) { console.error('[SingingSocket] like error:', e.message); }
+      } catch (e) { Logger.error('[SingingSocket] like error:', e.message); }
     });
 
     socket.on('singing:sync', async (data) => {
@@ -432,7 +433,7 @@ function setupRoomFeaturesSocket(io) {
           serverTimestamp: Date.now(),
           queueLength: room.micQueue.length,
         });
-      } catch (e) { console.error('[SingingSocket] sync error:', e.message); }
+      } catch (e) { Logger.error('[SingingSocket] sync error:', e.message); }
     });
 
     socket.on('singing:remove-from-queue', async (data) => {
@@ -449,12 +450,12 @@ function setupRoomFeaturesSocket(io) {
         room.micQueueSongs.splice(idx, 1);
         await room.save();
         roomFeaturesNamespace.to(`room:${roomId}`).emit('singing:queue-updated', { queueLength: room.micQueue.length, removedUserId: targetUserId });
-      } catch (e) { console.error('[SingingSocket] remove-from-queue error:', e.message); }
+      } catch (e) { Logger.error('[SingingSocket] remove-from-queue error:', e.message); }
     });
 
     socket.on('disconnect', () => {
       try {
-        console.log(`[RoomFeaturesSocket] Client disconnected: ${socket.id}`);
+        Logger.info(`[RoomFeaturesSocket] Client disconnected: ${socket.id}`);
         if (currentRoomId && currentUserId) {
           if (onlineUsersInRooms[currentRoomId]) {
             onlineUsersInRooms[currentRoomId].delete(currentUserId);
@@ -471,7 +472,7 @@ function setupRoomFeaturesSocket(io) {
           });
         }
       } catch (error) {
-        console.error('[RoomFeaturesSocket] disconnect error:', error.message);
+        Logger.error('[RoomFeaturesSocket] disconnect error:', error.message);
       }
     });
   });

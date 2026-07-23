@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 /**
  * Arvind Party - Event Scheduler Service
  * Cron Job based engine that auto-activates/expires events
@@ -21,20 +22,20 @@ class EventSchedulerService {
   }
 
   start(cronIntervalMs = 60000) {
-    console.log(`${this.LOG_PREFIX} Starting event scheduler (check every ${cronIntervalMs / 1000}s)`);
+    Logger.info(`${this.LOG_PREFIX} Starting event scheduler (check every ${cronIntervalMs / 1000}s)`);
     this.checkInterval = setInterval(() => {
       this.runSchedulerCycle().catch(err => {
-        console.error(`${this.LOG_PREFIX} Scheduler cycle error:`, err.message);
+        Logger.error(`${this.LOG_PREFIX} Scheduler cycle error:`, err.message);
       });
     }, cronIntervalMs);
-    console.log(`${this.LOG_PREFIX} Event scheduler started`);
+    Logger.info(`${this.LOG_PREFIX} Event scheduler started`);
   }
 
   stop() {
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
       this.checkInterval = null;
-      console.log(`${this.LOG_PREFIX} Event scheduler stopped`);
+      Logger.info(`${this.LOG_PREFIX} Event scheduler stopped`);
     }
   }
 
@@ -66,7 +67,7 @@ class EventSchedulerService {
 
       for (const event of eventsToActivate) {
         if (event.metadata?.theme_color) {
-          console.log(`${this.LOG_PREFIX} 🎉 Event ACTIVE: ${event.event_name} (theme: ${event.metadata.theme_color})`);
+          Logger.info(`${this.LOG_PREFIX} 🎉 Event ACTIVE: ${event.event_name} (theme: ${event.metadata.theme_color})`);
         }
       }
 
@@ -79,10 +80,10 @@ class EventSchedulerService {
       for (const event of upcomingNowActive) {
         event.is_active = true;
         await event.save();
-        console.log(`${this.LOG_PREFIX} ✅ Auto-activated event: ${event.event_name}`);
+        Logger.info(`${this.LOG_PREFIX} ✅ Auto-activated event: ${event.event_name}`);
       }
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Activate events error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Activate events error:`, error.message);
     }
   }
 
@@ -96,10 +97,10 @@ class EventSchedulerService {
       for (const event of expiredEvents) {
         event.is_active = false;
         await event.save();
-        console.log(`${this.LOG_PREFIX} ⏰ Expired event: ${event.event_name}`);
+        Logger.info(`${this.LOG_PREFIX} ⏰ Expired event: ${event.event_name}`);
       }
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Expire events error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Expire events error:`, error.message);
     }
   }
 
@@ -114,7 +115,7 @@ class EventSchedulerService {
       for (const t of tournamentsToOpen) {
         t.status = 'registration_open';
         await t.save();
-        console.log(`${this.LOG_PREFIX} 🏆 Registration OPEN: ${t.tournament_name}`);
+        Logger.info(`${this.LOG_PREFIX} 🏆 Registration OPEN: ${t.tournament_name}`);
       }
 
       const tournamentsToStart = await Tournament.find({
@@ -128,10 +129,10 @@ class EventSchedulerService {
         t.status = 'live';
         t.current_round = 1;
         await t.save();
-        console.log(`${this.LOG_PREFIX} 🏆 Tournament LIVE: ${t.tournament_name}`);
+        Logger.info(`${this.LOG_PREFIX} 🏆 Tournament LIVE: ${t.tournament_name}`);
       }
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Activate tournaments error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Activate tournaments error:`, error.message);
     }
   }
 
@@ -150,10 +151,10 @@ class EventSchedulerService {
         });
         await t.save();
         await this.distributeTournamentRewards(t);
-        console.log(`${this.LOG_PREFIX} 🏆 Tournament COMPLETED: ${t.tournament_name}`);
+        Logger.info(`${this.LOG_PREFIX} 🏆 Tournament COMPLETED: ${t.tournament_name}`);
       }
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Advance tournaments error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Advance tournaments error:`, error.message);
     }
   }
 
@@ -191,9 +192,9 @@ class EventSchedulerService {
 
         await user.save();
       }
-      console.log(`${this.LOG_PREFIX} ✅ Rewards distributed for ${tournament.tournament_name}`);
+      Logger.info(`${this.LOG_PREFIX} ✅ Rewards distributed for ${tournament.tournament_name}`);
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Distribute rewards error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Distribute rewards error:`, error.message);
     }
   }
 
@@ -208,7 +209,7 @@ class EventSchedulerService {
       for (const c of qualifyOpen) {
         c.status = 'qualification';
         await c.save();
-        console.log(`${this.LOG_PREFIX} 👑 Championship Qualification OPEN: ${c.championship_name}`);
+        Logger.info(`${this.LOG_PREFIX} 👑 Championship Qualification OPEN: ${c.championship_name}`);
       }
 
       const qualifyEnded = await Championship.find({
@@ -221,7 +222,7 @@ class EventSchedulerService {
       for (const c of qualifyEnded) {
         c.status = 'live';
         await c.save();
-        console.log(`${this.LOG_PREFIX} 👑 Championship LIVE: ${c.championship_name}`);
+        Logger.info(`${this.LOG_PREFIX} 👑 Championship LIVE: ${c.championship_name}`);
       }
 
       const completed = await Championship.find({
@@ -239,10 +240,10 @@ class EventSchedulerService {
         }
         await c.save();
         await this.distributeChampionshipRewards(c);
-        console.log(`${this.LOG_PREFIX} 👑 Championship COMPLETED: ${c.championship_name} (Winner: ${c.winner_username})`);
+        Logger.info(`${this.LOG_PREFIX} 👑 Championship COMPLETED: ${c.championship_name} (Winner: ${c.winner_username})`);
       }
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Activate championships error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Activate championships error:`, error.message);
     }
   }
 
@@ -289,7 +290,7 @@ class EventSchedulerService {
 
       await championship.save();
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Distribute championship rewards error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Distribute championship rewards error:`, error.message);
     }
   }
 
@@ -310,11 +311,11 @@ class EventSchedulerService {
           event.end_time = nextEnd;
           event.is_active = true;
           await event.save();
-          console.log(`${this.LOG_PREFIX} 🔄 Renewed recurring event: ${event.event_name}`);
+          Logger.info(`${this.LOG_PREFIX} 🔄 Renewed recurring event: ${event.event_name}`);
         }
       }
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Auto-renew events error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Auto-renew events error:`, error.message);
     }
   }
 
@@ -379,10 +380,10 @@ class EventSchedulerService {
       for (const draw of drawsToActivate) {
         draw.is_active = true;
         await draw.save();
-        console.log(`${this.LOG_PREFIX} 🍀 Lucky Draw ACTIVE: ${draw.draw_name}`);
+        Logger.info(`${this.LOG_PREFIX} 🍀 Lucky Draw ACTIVE: ${draw.draw_name}`);
       }
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Activate lucky draws error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Activate lucky draws error:`, error.message);
     }
   }
 
@@ -395,10 +396,10 @@ class EventSchedulerService {
       for (const draw of expiredDraws) {
         draw.is_active = false;
         await draw.save();
-        console.log(`${this.LOG_PREFIX} 🍀 Lucky Draw EXPIRED: ${draw.draw_name}`);
+        Logger.info(`${this.LOG_PREFIX} 🍀 Lucky Draw EXPIRED: ${draw.draw_name}`);
       }
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Expire lucky draws error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Expire lucky draws error:`, error.message);
     }
   }
 
@@ -412,10 +413,10 @@ class EventSchedulerService {
         invite.is_active = false;
         invite.status = 'expired';
         await invite.save();
-        console.log(`${this.LOG_PREFIX} 📨 Invite Event EXPIRED: ${invite.invite_code}`);
+        Logger.info(`${this.LOG_PREFIX} 📨 Invite Event EXPIRED: ${invite.invite_code}`);
       }
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Expire invite events error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Expire invite events error:`, error.message);
     }
   }
 
@@ -438,10 +439,10 @@ class EventSchedulerService {
         // For now, we'll reset status and progress.
 
         this._lastDailyTaskResetDate = now;
-        console.log(`${this.LOG_PREFIX} 🔄 Daily tasks reset for new day.`);
+        Logger.info(`${this.LOG_PREFIX} 🔄 Daily tasks reset for new day.`);
       }
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Reset daily tasks error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Reset daily tasks error:`, error.message);
     }
   }
 
@@ -465,13 +466,13 @@ class EventSchedulerService {
         streak.current_streak = 0;
         // Potentially reset day 7/30 rewards here if desired, or keep them claimed indefinitely
         await streak.save();
-        console.log(`${this.LOG_PREFIX} 💔 Login streak broken for user ${streak.userId}`);
+        Logger.info(`${this.LOG_PREFIX} 💔 Login streak broken for user ${streak.userId}`);
       }
 
       // No need to activate/expire login streaks, as they are managed by user action (claimDailyLogin)
 
     } catch (error) {
-      console.error(`${this.LOG_PREFIX} Process login streaks error:`, error.message);
+      Logger.error(`${this.LOG_PREFIX} Process login streaks error:`, error.message);
     }
   }
 

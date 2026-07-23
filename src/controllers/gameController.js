@@ -1,10 +1,11 @@
+const Logger = require('../utils/logger');
 const User = require('../models/User');
 const GameRecord = require('../models/GameRecord');
 let cron = null;
 try {
   cron = require('node-cron');
 } catch (e) {
-  console.warn('⚠️ node-cron package not available. Weekly champion cron disabled.');
+  Logger.warn('⚠️ node-cron package not available. Weekly champion cron disabled.');
 }
 const MissionProgress = require('../models/MissionProgress');
 
@@ -78,7 +79,7 @@ exports.playLuckyWheel = async (req, res) => {
 
     res.status(200).json({ success: true, reward: selectedReward, balance: { coins: user.coins, diamonds: user.diamonds }});
   } catch (error) {
-    console.error('Lucky Wheel Error:', error);
+    Logger.error('Lucky Wheel Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
@@ -147,7 +148,7 @@ exports.playScratchCard = async (req, res) => {
 
     res.status(200).json({ success: true, reward: selectedReward, balance: { coins: user.coins, diamonds: user.diamonds }});
   } catch (error) {
-    console.error('Scratch Card Error:', error);
+    Logger.error('Scratch Card Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
@@ -188,7 +189,7 @@ exports.getLeaderboard = async (req, res) => {
 
     res.status(200).json({ success: true, leaderboard });
   } catch (error) {
-    console.error('Leaderboard Error:', error);
+    Logger.error('Leaderboard Error:', error);
     res.status(500).json({ error: 'Failed to load leaderboard' });
   }
 };
@@ -225,7 +226,7 @@ exports.processWeeklyChampion = async (io) => {
         $addToSet: { unlockedBadges: 'WEEKLY_CHAMPION_BADGE_ID' }
       });
       
-      console.log(`🏆 Weekly Champion Badge awarded to user ID: ${topPlayerId}`);
+      Logger.info(`🏆 Weekly Champion Badge awarded to user ID: ${topPlayerId}`);
 
       // Emit real-time notification to the app via Socket.IO
       if (io) {
@@ -233,14 +234,14 @@ exports.processWeeklyChampion = async (io) => {
       }
     }
   } catch (error) {
-    console.error('Weekly Champion Cron Error:', error);
+    Logger.error('Weekly Champion Cron Error:', error);
   }
 };
 
 exports.initGameCronJobs = (io) => {
   // Runs every Sunday at 23:59 (11:59 PM)
   cron.schedule('59 23 * * 0', async () => {
-    console.log('Running Weekly Champion Cron Job...');
+    Logger.info('Running Weekly Champion Cron Job...');
     await exports.processWeeklyChampion(io);
   });
 };

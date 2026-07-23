@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: lib/arvind-party-backend/src/config/firebase-admin.js
 // ARVIND PARTY - FIREBASE ADMIN SDK INITIALIZATION
@@ -10,20 +11,31 @@ const fs = require('fs');
 // Initialize Firebase Admin SDK
 const initializeFirebaseAdmin = () => {
   try {
-    const credentialPath = process.env.FIREBASE_SERVICE_ACCOUNT;
+    const firebaseAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-    if (!credentialPath) {
-      throw new Error("FIREBASE_SERVICE_ACCOUNT path is not defined in .env");
+    if (!firebaseAccount) {
+      throw new Error("FIREBASE_SERVICE_ACCOUNT is not defined in .env");
     }
 
-    // Resolve absolute path from root
-    const absolutePath = path.resolve(process.cwd(), credentialPath);
-
-    if (!fs.existsSync(absolutePath)) {
-      throw new Error(`Service account file not found at: ${absolutePath}`);
+    let serviceAccount;
+    
+    // Check if it's a JSON string
+    if (firebaseAccount.trim().startsWith('{')) {
+      try {
+        serviceAccount = JSON.parse(firebaseAccount);
+        Logger.info("✅ Firebase Admin initializing from JSON string.");
+      } catch (parseError) {
+        throw new Error("Failed to parse FIREBASE_SERVICE_ACCOUNT as JSON string");
+      }
+    } else {
+      // Treat as file path
+      const absolutePath = path.resolve(process.cwd(), firebaseAccount);
+      if (!fs.existsSync(absolutePath)) {
+        throw new Error(`Service account file not found at: ${absolutePath}`);
+      }
+      serviceAccount = require(absolutePath);
+      Logger.info("✅ Firebase Admin initializing from JSON file path.");
     }
-
-    const serviceAccount = require(absolutePath);
 
     // Initialize Firebase Admin
     if (!admin.apps.length) {
@@ -32,12 +44,12 @@ const initializeFirebaseAdmin = () => {
         databaseURL: process.env.FIREBASE_DATABASE_URL,
       });
 
-      console.log("✅ Firebase Admin SDK initialized successfully using JSON file path.");
+      Logger.info("✅ Firebase Admin SDK initialized successfully.");
     }
 
     return admin;
   } catch (error) {
-    console.error("❌ Firebase Admin initialization error:", error);
+    Logger.error("❌ Firebase Admin initialization error:", error);
     throw error;
   }
 };
@@ -48,7 +60,7 @@ const verifyIdToken = async (token) => {
     const decodedToken = await admin.auth().verifyIdToken(token);
     return decodedToken;
   } catch (error) {
-    console.error('❌ Token verification error:', error);
+    Logger.error('❌ Token verification error:', error);
     throw error;
   }
 };
@@ -59,7 +71,7 @@ const createCustomToken = async (uid, customClaims = {}) => {
     const token = await admin.auth().createCustomToken(uid, customClaims);
     return token;
   } catch (error) {
-    console.error('❌ Custom token creation error:', error);
+    Logger.error('❌ Custom token creation error:', error);
     throw error;
   }
 };
@@ -70,7 +82,7 @@ const revokeRefreshTokens = async (uid) => {
     await admin.auth().revokeRefreshTokens(uid);
     return true;
   } catch (error) {
-    console.error('❌ Token revocation error:', error);
+    Logger.error('❌ Token revocation error:', error);
     throw error;
   }
 };
@@ -81,7 +93,7 @@ const getUserById = async (uid) => {
     const user = await admin.auth().getUser(uid);
     return user;
   } catch (error) {
-    console.error('❌ Error fetching user:', error);
+    Logger.error('❌ Error fetching user:', error);
     throw error;
   }
 };
@@ -93,7 +105,7 @@ const sendPasswordResetEmail = async (email) => {
     // You would send this link via email service
     return link;
   } catch (error) {
-    console.error('❌ Error sending password reset:', error);
+    Logger.error('❌ Error sending password reset:', error);
     throw error;
   }
 };
@@ -112,10 +124,10 @@ const sendNotification = async (fcmToken, notification) => {
     };
 
     const response = await admin.messaging().send(message);
-    console.log('✅ Notification sent:', response);
+    Logger.info('✅ Notification sent:', response);
     return response;
   } catch (error) {
-    console.error('❌ Error sending notification:', error);
+    Logger.error('❌ Error sending notification:', error);
     throw error;
   }
 };
@@ -137,10 +149,10 @@ const sendMulticastNotification = async (fcmTokens, notification) => {
       tokens: fcmTokens,
     });
 
-    console.log(`✅ Notifications sent: ${response.successCount} successful, ${response.failureCount} failed`);
+    Logger.info(`✅ Notifications sent: ${response.successCount} successful, ${response.failureCount} failed`);
     return response;
   } catch (error) {
-    console.error('❌ Error sending multicast notification:', error);
+    Logger.error('❌ Error sending multicast notification:', error);
     throw error;
   }
 };
@@ -149,9 +161,9 @@ const sendMulticastNotification = async (fcmTokens, notification) => {
 const subscribeToTopic = async (fcmTokens, topic) => {
   try {
     await admin.messaging().subscribeToTopic(fcmTokens, topic);
-    console.log(`✅ Subscribed to topic: ${topic}`);
+    Logger.info(`✅ Subscribed to topic: ${topic}`);
   } catch (error) {
-    console.error('❌ Error subscribing to topic:', error);
+    Logger.error('❌ Error subscribing to topic:', error);
     throw error;
   }
 };
@@ -160,9 +172,9 @@ const subscribeToTopic = async (fcmTokens, topic) => {
 const unsubscribeFromTopic = async (fcmTokens, topic) => {
   try {
     await admin.messaging().unsubscribeFromTopic(fcmTokens, topic);
-    console.log(`✅ Unsubscribed from topic: ${topic}`);
+    Logger.info(`✅ Unsubscribed from topic: ${topic}`);
   } catch (error) {
-    console.error('❌ Error unsubscribing from topic:', error);
+    Logger.error('❌ Error unsubscribing from topic:', error);
     throw error;
   }
 };
