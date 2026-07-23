@@ -4,16 +4,22 @@ module.exports = (io, socket) => {
   // Send a text message in the room
   socket.on('send_room_message', async (data) => {
     try {
+      const senderId = socket.data.userId;
+      if (!senderId) {
+        return socket.emit('error', { message: 'Authentication required.' });
+      }
+
       // Save message to MongoDB for history/admin review
       const newMessage = await RoomMessage.create({
         roomId: data.roomId,
-        senderId: data.senderId,
+        senderId,
         message: data.message,
       });
 
       // Broadcast to everyone in the room
       io.to(data.roomId).emit('receive_room_message', {
         ...data,
+        senderId,
         messageId: newMessage._id,
       });
     } catch (error) {

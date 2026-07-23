@@ -21,6 +21,8 @@ module.exports = (io, socket) => {
         });
       }
 
+      const userId = authedUserId;
+
       // Check if user was previously kicked
       const isKicked =
         room.kickedUsers &&
@@ -32,7 +34,6 @@ module.exports = (io, socket) => {
         });
       }
 
-      const userId = authedUserId;
       socket.join(roomId);
 
       // Increment active users in the MongoDB database
@@ -496,27 +497,36 @@ module.exports = (io, socket) => {
   socket.on('kick_user', async ({ roomId, targetUserId }) => {
     const adminId = authedUserId;
     try {
+      const room = await Room.findOne({ roomId });
+      if (!room) return;
+
+      const isAuthorized =
+        room.ownerId.toString() === adminId?.toString() ||
+        room.coHosts.some((id) => id.toString() === adminId?.toString()) ||
+        room.admins.some((id) => id.toString() === adminId?.toString());
+
+      if (!isAuthorized) {
+        return socket.emit('room_error', { message: 'Not authorized to kick users.' });
+      }
+
       await Room.findOneAndUpdate(
         { roomId },
         { $addToSet: { kickedUsers: targetUserId } }
       );
 
       // Also remove them from seat if seated
-      const room = await Room.findOne({ roomId });
-      if (room) {
-        const seatIdx = room.seats.findIndex(
-          (s) => s.userId && s.userId.toString() === targetUserId.toString()
-        );
-        if (seatIdx !== -1) {
-          room.seats[seatIdx].userId = null;
-          room.seats[seatIdx].userName = '';
-          room.seats[seatIdx].userAvatar = '';
-          room.seats[seatIdx].isMuted = false;
-          room.seats[seatIdx].isHost = false;
-          room.seats[seatIdx].joinedAt = null;
-          await room.save();
-          io.to(roomId).emit('seat_vacated', { seatIndex: seatIdx });
-        }
+      const seatIdx = room.seats.findIndex(
+        (s) => s.userId && s.userId.toString() === targetUserId.toString()
+      );
+      if (seatIdx !== -1) {
+        room.seats[seatIdx].userId = null;
+        room.seats[seatIdx].userName = '';
+        room.seats[seatIdx].userAvatar = '';
+        room.seats[seatIdx].isMuted = false;
+        room.seats[seatIdx].isHost = false;
+        room.seats[seatIdx].joinedAt = null;
+        await room.save();
+        io.to(roomId).emit('seat_vacated', { seatIndex: seatIdx });
       }
 
       io.to(roomId).emit('user_kicked', { targetUserId });
@@ -529,6 +539,18 @@ module.exports = (io, socket) => {
   socket.on('admin_mute_user', async ({ roomId, targetUserId }) => {
     const adminId = authedUserId;
     try {
+      const room = await Room.findOne({ roomId });
+      if (!room) return;
+
+      const isAuthorized =
+        room.ownerId.toString() === adminId?.toString() ||
+        room.coHosts.some((id) => id.toString() === adminId?.toString()) ||
+        room.admins.some((id) => id.toString() === adminId?.toString());
+
+      if (!isAuthorized) {
+        return socket.emit('room_error', { message: 'Not authorized to mute users.' });
+      }
+
       await Room.findOneAndUpdate(
         { roomId },
         { $addToSet: { mutedUsers: targetUserId } }
@@ -544,6 +566,18 @@ module.exports = (io, socket) => {
   socket.on('unkick_user', async ({ roomId, targetUserId }) => {
     const adminId = authedUserId;
     try {
+      const room = await Room.findOne({ roomId });
+      if (!room) return;
+
+      const isAuthorized =
+        room.ownerId.toString() === adminId?.toString() ||
+        room.coHosts.some((id) => id.toString() === adminId?.toString()) ||
+        room.admins.some((id) => id.toString() === adminId?.toString());
+
+      if (!isAuthorized) {
+        return socket.emit('room_error', { message: 'Not authorized to unkick users.' });
+      }
+
       await Room.findOneAndUpdate(
         { roomId },
         { $pull: { kickedUsers: targetUserId } }
@@ -558,6 +592,18 @@ module.exports = (io, socket) => {
   socket.on('admin_unmute_user', async ({ roomId, targetUserId }) => {
     const adminId = authedUserId;
     try {
+      const room = await Room.findOne({ roomId });
+      if (!room) return;
+
+      const isAuthorized =
+        room.ownerId.toString() === adminId?.toString() ||
+        room.coHosts.some((id) => id.toString() === adminId?.toString()) ||
+        room.admins.some((id) => id.toString() === adminId?.toString());
+
+      if (!isAuthorized) {
+        return socket.emit('room_error', { message: 'Not authorized to unmute users.' });
+      }
+
       await Room.findOneAndUpdate(
         { roomId },
         { $pull: { mutedUsers: targetUserId } }
@@ -571,6 +617,11 @@ module.exports = (io, socket) => {
   // ─── Room Announcement Update ────────────────────────────────
   socket.on('update_announcement', async ({ roomId, announcement }) => {
     try {
+      const ownerId = authedUserId;
+      const room = await Room.findOne({ roomId });
+      if (!room || room.ownerId.toString() !== ownerId?.toString()) {
+        return socket.emit('room_error', { message: 'Only the room owner can update announcements.' });
+      }
       await Room.findOneAndUpdate({ roomId }, { announcement });
       io.to(roomId).emit('announcement_updated', { announcement });
     } catch (error) {
@@ -581,6 +632,11 @@ module.exports = (io, socket) => {
   // ─── Room Pinned Message Update ──────────────────────────────
   socket.on('update_pinned_message', async ({ roomId, pinnedMessage }) => {
     try {
+      const ownerId = authedUserId;
+      const room = await Room.findOne({ roomId });
+      if (!room || room.ownerId.toString() !== ownerId?.toString()) {
+        return socket.emit('room_error', { message: 'Only the room owner can update pinned messages.' });
+      }
       await Room.findOneAndUpdate({ roomId }, { pinnedMessage });
       io.to(roomId).emit('pinned_message_updated', { pinnedMessage });
     } catch (error) {
@@ -591,6 +647,11 @@ module.exports = (io, socket) => {
   // ─── Room Welcome Message Update ─────────────────────────────
   socket.on('update_welcome_message', async ({ roomId, welcomeMessage }) => {
     try {
+      const ownerId = authedUserId;
+      const room = await Room.findOne({ roomId });
+      if (!room || room.ownerId.toString() !== ownerId?.toString()) {
+        return socket.emit('room_error', { message: 'Only the room owner can update welcome messages.' });
+      }
       await Room.findOneAndUpdate({ roomId }, { welcomeMessage });
       io.to(roomId).emit('welcome_message_updated', { welcomeMessage });
     } catch (error) {
@@ -601,6 +662,11 @@ module.exports = (io, socket) => {
   // ─── Room Topic Update ───────────────────────────────────────
   socket.on('update_topic', async ({ roomId, topic }) => {
     try {
+      const ownerId = authedUserId;
+      const room = await Room.findOne({ roomId });
+      if (!room || room.ownerId.toString() !== ownerId?.toString()) {
+        return socket.emit('room_error', { message: 'Only the room owner can update the topic.' });
+      }
       await Room.findOneAndUpdate({ roomId }, { topic });
       io.to(roomId).emit('topic_updated', { topic });
     } catch (error) {
@@ -779,6 +845,11 @@ module.exports = (io, socket) => {
   // ─── Room: Delete Room ───────────────────────────────────────
   socket.on('delete_room', async ({ roomId }) => {
     try {
+      const ownerId = authedUserId;
+      const room = await Room.findOne({ roomId });
+      if (!room || room.ownerId.toString() !== ownerId?.toString()) {
+        return socket.emit('room_error', { message: 'Only the room owner can delete a room.' });
+      }
       await Room.findOneAndDelete({ roomId });
     } catch (error) {
       console.error('Delete Room Error:', error);

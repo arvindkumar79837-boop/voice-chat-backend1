@@ -216,9 +216,14 @@ exports.sendNotification = async (req, res) => {
 
 exports.getNotificationHistory = async (req, res) => {
   try {
-    const notifications = await Notification.find()
+    const { page = 1, limit = 100 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const query = { userId: req.user.userId };
+
+    const notifications = await Notification.find(query)
       .sort({ createdAt: -1 })
-      .limit(100);
+      .skip(skip)
+      .limit(parseInt(limit));
 
     return res.status(200).json({ success: true, data: notifications });
   } catch (error) {

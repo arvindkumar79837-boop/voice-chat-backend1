@@ -21,14 +21,23 @@ module.exports = (io, socket) => {
           return socket.emit('gift_error', { message: 'Gift not available.' });
         }
 
-        const sender = await User.findById(senderId);
-        if (!sender || sender.coins < cost) {
+        if (!gift.coinPrice || gift.coinPrice <= 0) {
+          return socket.emit('gift_error', { message: 'Invalid gift price.' });
+        }
+
+        const actualCost = gift.coinPrice * (parseInt(quantity) || 1);
+
+        // Atomic coin deduction — prevents double-spend race condition
+        const updatedSender = await User.findOneAndUpdate(
+          { _id: senderId, coins: { $gte: actualCost } },
+          { $inc: { coins: -actualCost } },
+          { new: true }
+        );
+        if (!updatedSender) {
           return socket.emit('gift_error', { message: 'Insufficient coins.' });
         }
 
-        // Deduct coins
-        sender.coins -= cost;
-        await sender.save();
+        const cost = actualCost;
 
         // Update room gift points
         if (roomId) {
@@ -53,8 +62,8 @@ module.exports = (io, socket) => {
           giftType: gift.giftType,
           category: gift.category,
           senderId,
-          senderName: senderName || sender.name || 'User',
-          senderAvatar: sender.avatar || '',
+          senderName: senderName || updatedSender.name || 'User',
+          senderAvatar: updatedSender.avatar || '',
           receiverId,
           quantity: parseInt(quantity) || 1,
           comboMultiplier: 1,
@@ -86,7 +95,7 @@ module.exports = (io, socket) => {
           giftType: gift.giftType,
           animationUrl: gift.animationUrl || gift.svgaUrl || gift.animationJsonUrl || '',
           senderId,
-          senderName: senderName || sender.name || 'User',
+          senderName: senderName || updatedSender.name || 'User',
           receiverId,
           quantity: parseInt(quantity) || 1,
           coinCost: cost,
@@ -98,7 +107,7 @@ module.exports = (io, socket) => {
           io.to(roomId).emit('svga_animation_play', {
             svgaUrl: gift.svgaUrl,
             duration: 5000,
-            senderName: senderName || sender.name || 'User'
+            senderName: senderName || updatedSender.name || 'User'
           });
         }
 
@@ -107,7 +116,7 @@ module.exports = (io, socket) => {
           io.to(roomId).emit('3d_animation_play', {
             jsonUrl: gift.animationJsonUrl,
             duration: 8000,
-            senderName: senderName || sender.name || 'User'
+            senderName: senderName || updatedSender.name || 'User'
           });
         }
 
@@ -118,15 +127,22 @@ module.exports = (io, socket) => {
             : 1;
           const winAmount = cost * multiplier;
           if (multiplier > 1) {
-            sender.coins += winAmount;
-            await sender.save();
+            // Atomic coin credit — prevents double-credit race condition
+            const luckySender = await User.findByIdAndUpdate(
+              senderId,
+              { $inc: { coins: winAmount } },
+              { new: true }
+            );
             io.to(roomId).emit('lucky_jackpot', {
               senderId,
-              senderName: senderName || sender.name || 'User',
+              senderName: senderName || updatedSender.name || 'User',
               multiplier,
               winAmount,
               totalWin: winAmount
             });
+            if (luckySender) {
+              socket.emit('gift_balance_updated', { balance: luckySender.coins });
+            }
           }
         }
 
@@ -139,14 +155,14 @@ module.exports = (io, socket) => {
             durationSeconds: gift.treasureDurationSeconds || 30,
             maxClaimers: gift.treasureMaxClaimers || 10,
             spawnerId: senderId,
-            spawnerName: senderName || sender.name || 'User'
+            spawnerName: senderName || updatedSender.name || 'User'
           });
         }
 
         // Castle animation spawn
         if (gift.giftType === 'CASTLE' && gift.castleModelUrl) {
           io.to(roomId).emit('castle_spawned', {
-            senderName: senderName || sender.name || 'User',
+            senderName: senderName || updatedSender.name || 'User',
             castleModelUrl: gift.castleModelUrl,
             displayDurationSeconds: gift.displayDurationSeconds || 10
           });
@@ -155,7 +171,7 @@ module.exports = (io, socket) => {
         // Vehicle animation spawn
         if (gift.giftType === 'VEHICLE' && gift.vehicleModelUrl) {
           io.to(roomId).emit('vehicle_spawned', {
-            senderName: senderName || sender.name || 'User',
+            senderName: senderName || updatedSender.name || 'User',
             vehicleModelUrl: gift.vehicleModelUrl,
             displayDurationSeconds: gift.displayDurationSeconds || 8
           });
@@ -165,7 +181,7 @@ module.exports = (io, socket) => {
         if (parseInt(quantity) > 1) {
           io.to(roomId).emit('combo_counter_update', {
             senderId,
-            senderName: senderName || sender.name || 'User',
+            senderName: senderName || updatedSender.name || 'User',
             comboMultiplier: parseInt(quantity),
             totalQuantity: parseInt(quantity),
             giftName: gift.giftName || giftName,
@@ -181,7 +197,7 @@ module.exports = (io, socket) => {
             frameImageUrl: gift.frameImageUrl,
             frameDurationDays: gift.frameDurationDays,
             avatarCustomizationId: gift.avatarCustomizationId,
-            senderName: senderName || sender.name || 'User'
+            senderName: senderName || updatedSender.name || 'User'
           });
         }
 
@@ -190,13 +206,13 @@ module.exports = (io, socket) => {
           io.to(roomId).emit('festival_gift_effect', {
             festivalName: gift.festivalName || 'Special Event',
             giftName: gift.giftName || giftName,
-            senderName: senderName || sender.name || 'User',
+            senderName: senderName || updatedSender.name || 'User',
             isLimitedEdition: gift.isLimitedEdition,
             previewImageUrl: gift.previewImageUrl
           });
         }
 
-        socket.emit('gift_balance_updated', { balance: sender.coins });
+        socket.emit('gift_balance_updated', { balance: updatedSender.coins });
 
       } catch (error) {
         console.error('Send Gift Socket Error:', error);
@@ -222,13 +238,16 @@ module.exports = (io, socket) => {
         if (!gift) return socket.emit('gift_error', { message: 'Gift not found.' });
 
         const totalCost = gift.coinPrice * totalQty;
-        const sender = await User.findById(senderId);
-        if (!sender || sender.coins < totalCost) {
+
+        // Atomic coin deduction — prevents double-spend race condition
+        const comboSender = await User.findOneAndUpdate(
+          { _id: senderId, coins: { $gte: totalCost } },
+          { $inc: { coins: -totalCost } },
+          { new: true }
+        );
+        if (!comboSender) {
           return socket.emit('gift_error', { message: 'Insufficient coins for combo.' });
         }
-
-        sender.coins -= totalCost;
-        await sender.save();
 
         // Update room
         if (roomId) {
@@ -248,7 +267,7 @@ module.exports = (io, socket) => {
         // Emit combo burst to room
         io.to(roomId).emit('combo_burst', {
           senderId,
-          senderName: senderName || sender.name || 'User',
+          senderName: senderName || comboSender.name || 'User',
           giftId: gift._id.toString(),
           giftName: gift.giftName || giftName,
           comboMultiplier: multiplier,
@@ -264,7 +283,7 @@ module.exports = (io, socket) => {
         for (let i = 1; i <= multiplier; i++) {
           io.to(roomId).emit('combo_counter_update', {
             senderId,
-            senderName: senderName || sender.name || 'User',
+            senderName: senderName || comboSender.name || 'User',
             comboMultiplier: i,
             totalQuantity: multiplier,
             giftName: gift.giftName || giftName,
@@ -278,13 +297,13 @@ module.exports = (io, socket) => {
         // Final burst effect
         io.to(roomId).emit('combo_burst_final', {
           senderId,
-          senderName: senderName || sender.name || 'User',
+          senderName: senderName || comboSender.name || 'User',
           multiplier,
           totalCost,
           giftName: gift.giftName || giftName
         });
 
-        socket.emit('gift_balance_updated', { balance: sender.coins });
+        socket.emit('gift_balance_updated', { balance: comboSender.coins });
 
       } catch (error) {
         console.error('Combo Gift Socket Error:', error);
