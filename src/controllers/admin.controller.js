@@ -25,7 +25,7 @@ exports.getStats = async (req, res) => {
       Room.countDocuments({ status: 'active' }),
       Moment.countDocuments({ isDeleted: false }),
       Event.countDocuments(),
-      Withdrawal.countDocuments({ status: 'pending_level_1' }),
+      Withdrawal.countDocuments({ status: 'PENDING' }),
       WalletTransaction.aggregate([
         { $match: { type: 'recharge', status: 'completed' } },
         { $group: { _id: null, total: { $sum: '$amountInr' } } }

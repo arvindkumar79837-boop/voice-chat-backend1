@@ -71,7 +71,7 @@ exports.spinLuckyWheel = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `Congratulations! You won ${selectedReward.name}`,
-      data: { reward: selectedReward, newBalance: user.coins }
+      data: { reward: selectedReward, newBalance: updatedUser.coins }
     });
   } catch (error) {
     console.error('spinLuckyWheel Error:', error);

@@ -115,6 +115,11 @@ exports.sendGift = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Sender not found.' });
     }
 
+    const receiver = await User.findById(receiverId);
+    if (!receiver) {
+      return res.status(404).json({ success: false, message: 'Receiver not found.' });
+    }
+
     // Validate VIP level requirement
     if (gift.requiredVipLevel > 0) {
       const senderVipLevel = sender.vipLevel || 0;
@@ -265,7 +270,7 @@ exports.sendGift = async (req, res) => {
       festivalName: gift.festivalName,
       isLimitedEdition: gift.isLimitedEdition,
       coinCost: totalCost,
-      diamondEarned: finalReceiverCoins,
+      diamondEarned: finalReceiverDiamonds,
       timestamp: Date.now()
     };
 

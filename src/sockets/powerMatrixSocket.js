@@ -6,7 +6,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
   socket.on('power:check_authority', async (data) => {
     try {
       const { targetUserId, action, roomId } = data;
-      const actorId = socket.userId;
+      const actorId = socket.data.userId;
 
       if (!targetUserId || !action) {
         return socket.emit('power:error', { message: 'targetUserId and action are required.' });
@@ -83,7 +83,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
     try {
       const { roomId, targetUserId } = data;
 
-      const powerResult = await validateSocketPower(io, socket, socket.userId, targetUserId, 'mute', roomId);
+      const powerResult = await validateSocketPower(io, socket, socket.data.userId, targetUserId, 'mute', roomId);
       if (!powerResult.allowed) {
         return socket.emit('room:error', {
           message: powerResult.reason,
@@ -107,13 +107,13 @@ function setupPowerMatrixSocketHandlers(io, socket) {
       io.to(roomId).emit('room:user_muted', {
         userId: targetUserId,
         seatIndex,
-        mutedBy: socket.userId,
+        mutedBy: socket.data.userId,
         timestamp: new Date()
       });
 
       const actionLog = {
         action: 'mute',
-        actorId: socket.userId,
+        actorId: socket.data.userId,
         targetUserId,
         roomId,
         allowed: true,
@@ -130,7 +130,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
     try {
       const { roomId, targetUserId } = data;
 
-      const powerResult = await validateSocketPower(io, socket, socket.userId, targetUserId, 'kick', roomId);
+      const powerResult = await validateSocketPower(io, socket, socket.data.userId, targetUserId, 'kick', roomId);
       if (!powerResult.allowed) {
         return socket.emit('room:error', {
           message: powerResult.reason,
@@ -165,14 +165,14 @@ function setupPowerMatrixSocketHandlers(io, socket) {
       io.to(targetUserId).emit('room:kicked', {
         roomId,
         reason: 'You have been removed from the room.',
-        kickedBy: socket.userId,
+        kickedBy: socket.data.userId,
         timestamp: new Date()
       });
 
       io.to(roomId).emit('room:user_kicked', {
         userId: targetUserId,
         seatIndex,
-        kickedBy: socket.userId,
+        kickedBy: socket.data.userId,
         timestamp: new Date()
       });
 
@@ -184,7 +184,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
 
       const actionLog = {
         action: 'kick',
-        actorId: socket.userId,
+        actorId: socket.data.userId,
         targetUserId,
         roomId,
         allowed: true,
@@ -206,8 +206,8 @@ function setupPowerMatrixSocketHandlers(io, socket) {
         return socket.emit('room:error', { message: 'Room not found.' });
       }
 
-      const isOwner = room.ownerId.toString() === socket.userId.toString();
-      const isAdmin = room.admins.includes(socket.userId) || room.coHosts.includes(socket.userId);
+      const isOwner = room.ownerId.toString() === socket.data.userId.toString();
+      const isAdmin = room.admins.includes(socket.data.userId) || room.coHosts.includes(socket.data.userId);
 
       if (!isOwner && !isAdmin) {
         return socket.emit('room:error', { message: 'Only owner or admin can unmute users.' });
@@ -224,7 +224,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
       io.to(roomId).emit('room:user_unmuted', {
         userId: targetUserId,
         seatIndex,
-        unmutedBy: socket.userId,
+        unmutedBy: socket.data.userId,
         timestamp: new Date()
       });
     } catch (error) {
@@ -236,7 +236,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
   socket.on('admin:update_power_matrix', async (data) => {
     try {
       const { rules, globalSettings } = data;
-      const userId = socket.userId;
+      const userId = socket.data.userId;
 
       const user = await User.findById(userId).select('role').lean();
       if (!user || (user.role !== 'admin' && user.role !== 'owner')) {
@@ -277,7 +277,7 @@ function setupPowerMatrixSocketHandlers(io, socket) {
 
   socket.on('admin:reset_power_matrix', async (data) => {
     try {
-      const userId = socket.userId;
+      const userId = socket.data.userId;
 
       const user = await User.findById(userId).select('role').lean();
       if (!user || user.role !== 'owner') {

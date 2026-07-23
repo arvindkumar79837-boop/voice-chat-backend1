@@ -127,21 +127,39 @@ module.exports = (io, socket) => {
             : 1;
           const winAmount = cost * multiplier;
           if (multiplier > 1) {
-            // Atomic coin credit — prevents double-credit race condition
-            const luckySender = await User.findByIdAndUpdate(
-              senderId,
-              { $inc: { coins: winAmount } },
-              { new: true }
-            );
-            io.to(roomId).emit('lucky_jackpot', {
-              senderId,
-              senderName: senderName || updatedSender.name || 'User',
-              multiplier,
-              winAmount,
-              totalWin: winAmount
-            });
-            if (luckySender) {
-              socket.emit('gift_balance_updated', { balance: luckySender.coins });
+            // Idempotency: prevent double-credit if socket handler fires twice
+            const luckyKey = `LUCKY_${senderId}_${giftId}_${Date.now()}`;
+            const existingLucky = await GiftEvent.findOne({ idempotencyKey: luckyKey });
+            if (!existingLucky) {
+              const luckySender = await User.findByIdAndUpdate(
+                senderId,
+                { $inc: { coins: winAmount } },
+                { new: true }
+              );
+              await GiftEvent.create({
+                eventId: `LKY-${Date.now().toString(36).toUpperCase()}`,
+                idempotencyKey: luckyKey,
+                giftId: gift._id,
+                giftName: `Lucky Win: ${gift.giftName}`,
+                senderId,
+                receiverId: senderId,
+                coinCostToSender: 0,
+                diamondValueToReceiver: 0,
+                quantity: 1,
+                totalCoinsCost: 0,
+                totalDiamondsEarned: 0,
+                status: 'COMPLETED'
+              });
+              io.to(roomId).emit('lucky_jackpot', {
+                senderId,
+                senderName: senderName || updatedSender.name || 'User',
+                multiplier,
+                winAmount,
+                totalWin: winAmount
+              });
+              if (luckySender) {
+                socket.emit('gift_balance_updated', { balance: luckySender.coins });
+              }
             }
           }
         }

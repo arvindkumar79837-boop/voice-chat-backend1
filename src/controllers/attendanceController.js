@@ -83,13 +83,16 @@ exports.endSession = async (req, res) => {
     await attendance.save();
 
     const agency = await Agency.findOne({ hosts: userId });
-    if (agency && ioInstance) {
-      ioInstance.to(`agency_${agency._id}`).emit('attendance_update', {
-        userId,
-        date: dayStart.toISOString(),
-        totalDailyMinutes: attendance.totalDailyMinutes,
-        isValidDay: attendance.isValidDay,
-      });
+    if (agency) {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`agency_${agency._id}`).emit('attendance_update', {
+          userId,
+          date: dayStart.toISOString(),
+          totalDailyMinutes: attendance.totalDailyMinutes,
+          isValidDay: attendance.isValidDay,
+        });
+      }
     }
 
     res.status(200).json({
@@ -214,5 +217,3 @@ exports.getHostAttendanceHistory = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch host history' });
   }
 };
-
-module.exports.ioInstance = null;

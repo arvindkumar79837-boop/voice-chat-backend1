@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Agency = require('../models/Agency');
+const HostRequest = require('../models/HostRequest');
 const redisRankingIntegration = require('../services/redisRankingIntegration');
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -219,24 +220,15 @@ exports.applyForAgency = async (req, res) => {
     const hostRequest = await HostRequest.create({
       agencyId,
       userId,
-      status: 'approved',
+      status: 'pending',
       requestedBy: userId,
       applicationMessage: '',
-      reviewedBy: agency.owner,
-      reviewedAt: new Date(),
-      reviewNotes: 'Auto-approved via apply flow',
     });
-
-    agency.hosts.push(userId);
-    agency.totalHosts = agency.hosts.length;
-    await agency.save();
-
-    await User.findByIdAndUpdate(userId, { agencyId: agency._id, role: 'host' });
 
     // Update agency ranking
     redisRankingIntegration.onAgencyDiamondEarned(agency._id, 0).catch(err => console.error('Redis agency join failed:', err.message));
 
-    res.status(200).json({ success: true, agency, message: 'Joined agency successfully' });
+    res.status(200).json({ success: true, hostRequest, message: 'Agency application submitted, pending review' });
   } catch (error) {
     console.error('Apply Agency Error:', error);
     res.status(500).json({ success: false, message: 'Failed to apply to agency' });

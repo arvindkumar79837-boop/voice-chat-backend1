@@ -665,9 +665,15 @@ exports.purchaseBackground = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Background already owned.' });
     }
 
-    // Deduct coins from user (implement coin deduction logic here)
-    // const user = await User.findById(userId);
-    // if (user.coins < costCoins) return res.status(400).json({ ... });
+    // Deduct coins from user — ATOMIC
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: userId, coins: { $gte: costCoins } },
+      { $inc: { coins: -costCoins } },
+      { new: true }
+    );
+    if (!updatedUser) {
+      return res.status(400).json({ success: false, message: 'Insufficient coins.' });
+    }
 
     room.cosmetics.purchasedBackgrounds.push({
       backgroundId,
@@ -681,7 +687,7 @@ exports.purchaseBackground = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Background purchased successfully.',
-      purchasedBackgrounds: room.cosmetics.purchagedBackgrounds
+      purchasedBackgrounds: room.cosmetics.purchasedBackgrounds
     });
   } catch (error) {
     console.error('Purchase Background Error:', error);
@@ -757,9 +763,15 @@ exports.sendGiftToRoom = async (req, res) => {
     const points = parseInt(giftPoints) || 1;
     const coinCost = parseInt(coins) || 0;
 
-    // Deduct coins from sender (implement your wallet logic)
-    // const sender = await User.findById(userId);
-    // if (sender.coins < coinCost) return res.status(400).json({ ... });
+    // Deduct coins from sender — ATOMIC
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: userId, coins: { $gte: coinCost } },
+      { $inc: { coins: -coinCost } },
+      { new: true }
+    );
+    if (!updatedUser) {
+      return res.status(400).json({ success: false, message: 'Insufficient coins.' });
+    }
 
     // Add to room's gift points and loot box
     room.totalGiftPoints += points;
