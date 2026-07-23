@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const jwt = require('jsonwebtoken');
 const authSocket = require('./authSocket');
 const roomSocket = require('./roomSocket');
@@ -16,15 +17,25 @@ const matchmakingSocket = require('./matchmakingSocket');
 const youtubeSocket = require('./youtubeSocket');
 
 // Shared JWT auth middleware for socket namespaces
-const socketAuthMiddleware = (socket, next) => {
+const User = require('../models/User');
+const socketAuthMiddleware = async (socket, next) => {
   const token = socket.handshake.auth?.token || socket.handshake.query?.token || socket.handshake.headers.authorization?.split(' ')[1];
   if (!token) {
     return next(new Error('Authentication required'));
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    socket.data.userId = decoded.id || decoded.userId || decoded.uid;
+    const userId = decoded.id || decoded.userId || decoded.uid;
+
+    // ── Banned User Check (P1-5) ──────────────────────────────────────
+    const user = await User.findById(userId).select('_id name isBanned isActive').lean();
+    if (!user) return next(new Error('User not found'));
+    if (user.isBanned) return next(new Error('Account has been banned'));
+    if (!user.isActive) return next(new Error('Account is inactive'));
+
+    socket.data.userId = userId;
     socket.data.userRole = decoded.role;
+    socket.data.userName = user.name;
     next();
   } catch (err) {
     next(new Error('Invalid or expired token'));
@@ -49,13 +60,13 @@ const initializeSockets = (io) => {
     const youtubeNamespace = io.of('/youtube');
     youtubeNamespace.use(socketAuthMiddleware);
     youtubeNamespace.on('connection', (socket) => {
-      console.log('YouTube namespace client connected:', socket.id);
+      Logger.info('YouTube namespace client connected:', socket.id);
       youtubeSocket(io, socket);
     });
 
     // ─── Default namespace — existing handlers ──────────────────────
     io.on('connection', (socket) => {
-      console.log('A user connected');
+      Logger.info('A user connected');
 
       authSocket(io, socket);
       roomSocket(io, socket);
@@ -72,7 +83,7 @@ const initializeSockets = (io) => {
       matchmakingSocket(io, socket);
 
       socket.on('disconnect', (reason) => {
-        console.log(`User disconnected: ${socket.data.userId || 'unknown'} (reason: ${reason})`);
+        Logger.info(`User disconnected: ${socket.data.userId || 'unknown'} (reason: ${reason})`);
 
         // Cleanup: leave all rooms this socket was in
         if (socket.rooms && socket.rooms.size > 0) {
@@ -90,7 +101,7 @@ const initializeSockets = (io) => {
       });
     });
   } catch (err) {
-    console.error('❌ Socket initialization failed:', err);
+    Logger.error('❌ Socket initialization failed:', err);
   }
 };
 

@@ -24,9 +24,15 @@ const transactionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['SUCCESS', 'FAILED', 'PENDING'],
+    enum: ['pending', 'completed', 'failed', 'refunded', 'SUCCESS', 'FAILED', 'PENDING'],
     default: 'SUCCESS'
   }
 }, { timestamps: true });
+
+
+// ─── Compound Indexes (P1-2) ─────────────────────────────────────────────
+transactionSchema.index({ user: 1, createdAt: -1 });
+transactionSchema.index({ status: 1, createdAt: -1 });
+transactionSchema.index({ razorpayPaymentId: 1 }, { sparse: true });
 
 module.exports = mongoose.model('Transaction', transactionSchema);

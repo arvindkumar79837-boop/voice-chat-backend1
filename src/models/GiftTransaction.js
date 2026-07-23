@@ -24,4 +24,10 @@ const schema = new mongoose.Schema({
     timestamps: true
 });
 
+
+// ─── Compound Indexes (P1-2) ─────────────────────────────────────────────
+schema.index({ roomId: 1, createdAt: -1 });
+schema.index({ senderId: 1, createdAt: -1 });
+schema.index({ receiverId: 1, createdAt: -1 });
+
 module.exports = mongoose.model('GiftTransaction', schema);

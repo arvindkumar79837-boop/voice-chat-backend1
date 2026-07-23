@@ -48,7 +48,6 @@ const singingRoutes = require('./routes/singingRoutes');
 const livekitRoutes = require('./routes/livekit.routes');
 const appUserRoutes = require('./routes/appUserRoutes');
 const levelRoutes = require('./routes/level.routes');
-const agoraRoutes = require('./controllers/agoraController');
 const inventoryRoutes = require('./routes/inventory.routes');
 const creatorRoutes = require('./routes/creator.routes');
 const supportRoutes = require('./routes/support.routes');
@@ -204,7 +203,6 @@ app.use('/api/moderation', moderationRoutes);   // Reports & Moderation
 app.use('/api/referral', referralRoutes);       // Referral System
 app.use('/api/room', livekitRoutes);              // LiveKit token generation
 app.use('/api/livekit', livekitRoutes);            // LiveKit token fallback
-app.use('/api/room', agoraRoutes);              // Agora token & seat management
 app.use('/api/moments', momentRoutes);          // Moments / Posts Feed
 app.use('/api/notifications', notificationRoutes); // Notifications
 app.use('/api/agency/invitations', agencyInvitationRoutes); // Agency Invitations & Inbox

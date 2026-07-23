@@ -7,6 +7,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 const { verifyAccessToken, isTokenBlacklisted } = require('../utils/jwt');
+const TwoFactorSession = require('../models/TwoFactorSession');
 
 /**
  * Primary auth middleware used on all protected routes.
@@ -75,21 +76,47 @@ const requireRole = (...roles) => (req, res, next) => {
 
 /**
  * 2FA enforcement middleware for ultra-sensitive admin routes.
- * Checks that the request carries the X-2FA-Verified header set by
- * the admin panel after successful OTP / Google Authenticator verification.
- * This is an honour-based server check — the actual TOTP/OTP validation
- * happens in the /auth/verify-2fa endpoint.
+ * Uses SERVER-SIDE session check (DB) — NOT a client header.
+ * This prevents any client from spoofing 2FA by sending x-2fa-verified: true.
+ *
+ * Flow:
+ *   1. Client completes OTP/TOTP at POST /auth/verify-2fa
+ *   2. Server creates TwoFactorSession with 1-hour expiry
+ *   3. This middleware looks up that session by userId
  */
-const require2FA = (req, res, next) => {
-  const verified = req.headers['x-2fa-verified'];
-  if (verified !== 'true') {
-    return res.status(403).json({
+const require2FA = async (req, res, next) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        code: '2FA_AUTH_MISSING',
+        message: 'Authentication required before 2FA check.',
+      });
+    }
+
+    const session = await TwoFactorSession.findOne({
+      userId: req.user.id,
+      verified: true,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!session) {
+      return res.status(403).json({
+        success: false,
+        code: '2FA_REQUIRED',
+        message: 'Two-Factor Authentication is required. Please verify via /auth/verify-2fa.',
+      });
+    }
+
+    req.is2faVerified = true;
+    next();
+  } catch (err) {
+    return res.status(500).json({
       success: false,
-      code: '2FA_REQUIRED',
-      message: 'Two-Factor Authentication is required to access this resource.',
+      code: '2FA_ERROR',
+      message: 'Failed to verify 2FA session.',
     });
   }
-  next();
 };
 
 module.exports = { authMiddleware, requireRole, require2FA };

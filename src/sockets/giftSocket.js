@@ -2,6 +2,10 @@ const Gift = require('../models/Gift');
 const User = require('../models/User');
 const GiftEvent = require('../models/GiftEvent');
 const Room = require('../models/Room');
+const { createClient } = require('../config/redis');
+let redisClient;
+const getRedis = () => { try { return require('../config/redis').client || null; } catch { return null; } };
+
 
 module.exports = (io, socket) => {
     const authedUserId = socket.data.userId;
@@ -343,6 +347,17 @@ module.exports = (io, socket) => {
     socket.on('claim_treasure', async ({ roomId, userName, giftEventId }) => {
       const userId = authedUserId;
       try {
+        // ── Redis Distributed Lock (P0-2) ─────────────────────────────────
+        // Prevents concurrent duplicate claims from same user
+        const rc = getRedis();
+        if (rc) {
+          const lockKey = `lock:treasure:${userId}:${roomId}:${giftEventId || 'open'}`;
+          const locked = await rc.set(lockKey, '1', { EX: 30, NX: true });
+          if (!locked) {
+            return socket.emit('error', { message: 'Treasure already claimed or claim in progress' });
+          }
+        }
+
         const claimAmount = Math.floor(Math.random() * 490) + 10;
 
         // Atomic coin increment — no read-modify-write race

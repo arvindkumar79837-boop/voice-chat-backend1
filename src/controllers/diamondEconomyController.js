@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const UsedPurchaseToken = require('../models/UsedPurchaseToken');
 const User = require('../models/User');
 const SystemSettings = require('../models/SystemSettings');
 const AuditLog = require('../models/AuditLog');
@@ -49,7 +50,15 @@ exports.verifyGooglePlayRecharge = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No matching plan found for this productId' });
     }
 
-    const duplicate = await Recharge.findOne({ 'metadata.purchaseToken': purchaseToken });
+    // ── IAP Token Replay Prevention (P0-5) ───────────────────────────────────
+      const usedToken = await UsedPurchaseToken.findOne({ token: purchaseToken });
+      if (usedToken) {
+        return res.status(409).json({
+          success: false,
+          message: 'This purchase token has already been used. Contact support if you believe this is an error.',
+        });
+      }
+      const duplicate = await Recharge.findOne({ 'metadata.purchaseToken': purchaseToken });
     if (duplicate) {
       return res.status(400).json({ success: false, message: 'This purchase has already been processed' });
     }
@@ -84,7 +93,14 @@ exports.verifyGooglePlayRecharge = async (req, res) => {
       session.endSession();
     }
 
-    await AuditLog.create({
+    // Save used token to prevent replay
+      await UsedPurchaseToken.create({
+        token: purchaseToken,
+        userId: user._id,
+        productId,
+        coinsAwarded: plan.coinsAwarded,
+      });
+      await AuditLog.create({
       action: 'GOOGLE_PLAY_RECHARGE_SUCCESS',
       executorId: userId,
       reason: `Credited ${plan.coinsAwarded} coins (+${plan.diamondsAwarded || 0} diamonds) via Google Play`,

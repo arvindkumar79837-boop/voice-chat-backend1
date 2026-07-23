@@ -2,6 +2,7 @@ const User = require('../models/User');
 const LoginHistory = require('../models/LoginHistory');
 const DeviceSession = require('../models/DeviceSession');
 const TwoFactorAuth = require('../models/TwoFactorAuth');
+const TwoFactorSession = require('../models/TwoFactorSession');
 const RefreshToken = require('../models/RefreshToken');
 const BannedDevice = require('../models/BannedDevice');
 const BlockedIp = require('../models/BlockedIp');
@@ -85,6 +86,12 @@ exports.verifyAndEnable2FA = async (req, res, next) => {
     }
 
     twoFactor.isEnabled = true;
+    // Create server-side 2FA session (P0-4) — used by require2FA middleware
+    await TwoFactorSession.findOneAndUpdate(
+      { userId },
+      { $set: { verified: true, verifiedAt: new Date(), expiresAt: new Date(Date.now() + 60 * 60 * 1000), ipAddress: req.ip } },
+      { upsert: true, new: true }
+    );
     twoFactor.failedAttempts = 0;
     twoFactor.lastVerifiedAt = new Date();
     await twoFactor.save();

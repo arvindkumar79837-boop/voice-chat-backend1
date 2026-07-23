@@ -1,88 +1,94 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: src/utils/logger.js
-// ARVIND PARTY - STRUCTURED LOGGING UTILITY
+// ARVIND PARTY — Structured Logging (Winston)
 // ═══════════════════════════════════════════════════════════════════════════
 
 const fs = require('fs');
 const path = require('path');
 
-// Create logs directory if it doesn't exist
+// Create logs directory
 const logsDir = path.join(__dirname, '../../logs');
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 
-class Logger {
-  static _formatTimestamp() {
-    return new Date().toISOString();
-  }
+let logger;
 
-  static _writeToFile(level, message, data) {
-    if (process.env.NODE_ENV === 'production' && process.env.LOG_TO_FILE === 'true') {
-      const logFile = path.join(logsDir, `${level.toLowerCase()}-${new Date().toISOString().split('T')[0]}.log`);
-      const logEntry = `[${this._formatTimestamp()}] [${level}] ${message} ${data ? JSON.stringify(data) : ''}\n`;
-      fs.appendFileSync(logFile, logEntry);
-    }
-  }
+try {
+  const winston = require('winston');
 
-  static info(message, data = null) {
-    const timestamp = this._formatTimestamp();
-    const output = `[${timestamp}] ✅ [INFO] ${message}`;
-    console.log(output, data || '');
-    this._writeToFile('INFO', message, data);
-  }
-
-  static error(message, data = null) {
-    const timestamp = this._formatTimestamp();
-    const output = `[${timestamp}] ❌ [ERROR] ${message}`;
-    console.error(output, data || '');
-    this._writeToFile('ERROR', message, data);
-  }
-
-  static warn(message, data = null) {
-    const timestamp = this._formatTimestamp();
-    const output = `[${timestamp}] ⚠️ [WARN] ${message}`;
-    console.warn(output, data || '');
-    this._writeToFile('WARN', message, data);
-  }
-
-  static debug(message, data = null) {
-    if (process.env.DEBUG_LOGS === 'true' || !process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
-      const timestamp = this._formatTimestamp();
-      const output = `[${timestamp}] 🔍 [DEBUG] ${message}`;
-      console.log(output, data || '');
-    }
-  }
-
-  static http(method, path, statusCode, duration, ip) {
-    if (process.env.HTTP_LOGS === 'true' || process.env.DEBUG_LOGS === 'true') {
-      const timestamp = this._formatTimestamp();
-      const color = statusCode >= 500 ? '❌' : statusCode >= 400 ? '⚠️' : '✅';
-      console.log(`[${timestamp}] 📡 [HTTP] ${color} ${method} ${path} - ${statusCode} (${duration}ms) from ${ip}`);
-    }
-  }
-
-  static api(action, endpoint, userId = null, result = 'success') {
-    if (process.env.API_LOGS === 'true' || process.env.DEBUG_LOGS === 'true') {
-      const timestamp = this._formatTimestamp();
-      const icon = result === 'success' ? '✅' : '❌';
-      const userInfo = userId ? ` [User: ${userId}]` : '';
-      console.log(`[${timestamp}] ${icon} [API] ${action} ${endpoint}${userInfo}`);
-    }
-  }
-
-  static socket(event, action, userId = null) {
-    const timestamp = this._formatTimestamp();
-    console.log(`[${timestamp}] 🔌 [SOCKET] ${event} - ${action} ${userId ? `[User: ${userId}]` : ''}`);
-  }
-
-  static database(query, duration, success = true) {
-    if (process.env.DB_LOGS === 'true' || process.env.DEBUG_LOGS === 'true') {
-      const timestamp = this._formatTimestamp();
-      const icon = success ? '✅' : '❌';
-      console.log(`[${timestamp}] ${icon} [DB] ${query} (${duration}ms)`);
-    }
-  }
+  logger = winston.createLogger({
+    level: process.env.LOG_LEVEL || 'info',
+    format: winston.format.combine(
+      winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
+      winston.format.errors({ stack: true }),
+      process.env.NODE_ENV === 'production'
+        ? winston.format.json()
+        : winston.format.combine(
+            winston.format.colorize(),
+            winston.format.printf(({ timestamp, level, message, ...meta }) => {
+              const extras = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+              return `[${timestamp}] ${level}: ${message}${extras}`;
+            })
+          )
+    ),
+    transports: [
+      new winston.transports.Console({
+        silent: process.env.NODE_ENV === 'test',
+      }),
+      new winston.transports.File({
+        filename: path.join(logsDir, 'error.log'),
+        level: 'error',
+        maxsize: 10 * 1024 * 1024, // 10MB
+        maxFiles: 5,
+      }),
+      new winston.transports.File({
+        filename: path.join(logsDir, 'combined.log'),
+        maxsize: 20 * 1024 * 1024, // 20MB
+        maxFiles: 10,
+      }),
+    ],
+    exceptionHandlers: [
+      new winston.transports.File({ filename: path.join(logsDir, 'exceptions.log') }),
+    ],
+    rejectionHandlers: [
+      new winston.transports.File({ filename: path.join(logsDir, 'rejections.log') }),
+    ],
+  });
+} catch (e) {
+  // Fallback if winston not installed yet
+  const noop = () => {};
+  logger = {
+    info: (msg, meta) => console.log(`[INFO] ${msg}`, meta || ''),
+    error: (msg, meta) => console.error(`[ERROR] ${msg}`, meta || ''),
+    warn: (msg, meta) => console.warn(`[WARN] ${msg}`, meta || ''),
+    debug: (msg, meta) => {
+      if (process.env.DEBUG_LOGS === 'true') console.log(`[DEBUG] ${msg}`, meta || '');
+    },
+    http: noop,
+  };
 }
 
-module.exports = Logger;
+// Backward-compat static helpers (matches old Logger.info / Logger.error style)
+logger.socket = (event, action, userId = null) =>
+  logger.debug(`[SOCKET] ${event} - ${action}`, userId ? { userId } : undefined);
+
+logger.api = (action, endpoint, userId = null, result = 'success') => {
+  if (process.env.API_LOGS === 'true' || process.env.DEBUG_LOGS === 'true') {
+    logger.debug(`[API] ${action} ${endpoint}`, { userId, result });
+  }
+};
+
+logger.database = (query, duration, success = true) => {
+  if (process.env.DB_LOGS === 'true' || process.env.DEBUG_LOGS === 'true') {
+    logger.debug(`[DB] ${query} (${duration}ms)`, { success });
+  }
+};
+
+logger.http = (method, pathStr, statusCode, duration, ip) => {
+  if (process.env.HTTP_LOGS === 'true' || process.env.DEBUG_LOGS === 'true') {
+    logger.debug(`[HTTP] ${method} ${pathStr} ${statusCode} (${duration}ms)`, { ip });
+  }
+};
+
+module.exports = logger;

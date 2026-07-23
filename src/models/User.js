@@ -169,4 +169,13 @@ userSchema.index({ familyRole: 1 });
 userSchema.index({ familyContribution: -1 });
 userSchema.index({ phone: 1 }, { sparse: true });
 
+
+// ─── Compound Indexes (P1-2) ─────────────────────────────────────────────
+userSchema.index({ isOnline: 1, lastSeen: -1 });
+userSchema.index({ coins: -1 });
+userSchema.index({ diamonds: -1 });
+userSchema.index({ createdAt: -1 });
+userSchema.index({ agencyId: 1, isActive: 1 });
+userSchema.index({ familyId: 1, isActive: 1 });
+
 module.exports = mongoose.model('User', userSchema);

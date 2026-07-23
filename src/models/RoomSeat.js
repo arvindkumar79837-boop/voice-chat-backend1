@@ -32,4 +32,10 @@ const schema = new mongoose.Schema({
     }
 });
 
+
+// ─── Compound Indexes (P1-2) ─────────────────────────────────────────────
+schema.index({ roomId: 1, isActive: 1 });
+schema.index({ roomId: 1, userId: 1 });
+schema.index({ userId: 1, isActive: 1 });
+
 module.exports = mongoose.model('RoomSeat', schema);

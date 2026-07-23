@@ -65,4 +65,26 @@ router.post('/check-power', authMiddleware, checkPowerMiddleware, asyncHandler(p
 // GET /api/rooms/power-matrix/history
 router.get('/power-matrix/history', authMiddleware, verifyStaff, asyncHandler(powerMatrixController.getPowerMatrixHistory));
 
+
+// ─── Room Members (migrated from agoraController) (P0-1) ──────────────────
+router.get('/:roomId/members', authMiddleware, asyncHandler(async (req, res) => {
+  const { roomId } = req.params;
+  const RoomSeat = require('../models/RoomSeat');
+  const seats = await RoomSeat.find({ roomId, isActive: true })
+    .populate('userId', 'name avatar uid');
+
+  const members = seats.map((seat) => ({
+    userId: seat.userId?._id || seat.userId,
+    userName: seat.userId?.name || 'Unknown',
+    userAvatar: seat.userId?.avatar || null,
+    uid: seat.userId?.uid || null,
+    seat: seat.seatNumber,
+    isHost: seat.isHost,
+    isActive: seat.isActive,
+    joinedAt: seat.joinedAt,
+  }));
+
+  res.json({ success: true, data: { members, total: members.length } });
+}));
+
 module.exports = router;

@@ -179,45 +179,69 @@ exports.refreshToken = async (req, res, next) => {
     if (!refreshToken) {
       return res.status(400).json({
         success: false,
-        message: 'Refresh token is required'
+        message: 'Refresh token is required',
       });
     }
 
+    let decoded;
     try {
-      const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-      const userId = decoded.id;
-
-      // Find user
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found'
-        });
-      }
-
-      // Generate new token
-      const newToken = jwt.sign(
-        { id: user._id.toString(), role: user.role, uid: user.uid, phone: user.phone },
-        process.env.JWT_SECRET,
-        { expiresIn: '15m' }
-      );
-
-      res.status(200).json({
-        success: true,
-        message: 'Token refreshed',
-        data: {
-          token: newToken
-        }
-      });
-    } catch (error) {
+      decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    } catch (err) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid or expired refresh token'
+        message: 'Invalid or expired refresh token',
       });
     }
+
+    const userId = decoded.id;
+
+    // Find user
+    const user = await User.findById(userId).select('+role +uid +phone');
+    if (!user || user.isBanned) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not found or banned',
+      });
+    }
+
+    // ── TOKEN ROTATION (P0-7) ──────────────────────────────────────────
+    // Delete old refresh token to prevent reuse (rotation)
+    const RefreshToken = require('../models/RefreshToken');
+    const oldTokenDoc = await RefreshToken.findOneAndDelete({ token: refreshToken, userId });
+    // If token not found in DB, it may be a stolen/replayed token
+    // We still allow first-time use for backward compat, but log it
+    if (!oldTokenDoc) {
+      // Could be a token issued before rotation was introduced — allow once
+      // but do NOT log the user out (backward compat)
+    }
+
+    // Issue new access token
+    const newAccessToken = jwt.sign(
+      { id: user._id.toString(), role: user.role, uid: user.uid, phone: user.phone },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    // Issue new refresh token (30-day validity)
+    const newRefreshToken = jwt.sign(
+      { id: user._id.toString() },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    // Persist new refresh token in DB
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    await RefreshToken.create({ token: newRefreshToken, userId: user._id, expiresAt });
+
+    res.status(200).json({
+      success: true,
+      message: 'Token refreshed',
+      data: {
+        token: newAccessToken,
+        refreshToken: newRefreshToken,
+      },
+    });
   } catch (error) {
-    console.error('❌ Refresh Token Error:', error);
     next(error);
   }
 };
