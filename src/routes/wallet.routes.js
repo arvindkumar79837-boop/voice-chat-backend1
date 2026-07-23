@@ -9,8 +9,8 @@ const { validateBody, validateObjectId } = require('../middlewares/validation.mi
 // ===================== USER WALLET =====================
 
 // Main Wallet - 4 Core Wallets in one endpoint
-router.get('/wallet', auth, asyncHandler(walletController.getWallet));
-router.get('/wallet/transactions', auth, asyncHandler(walletController.getTransactionHistory));
+router.get('/', auth, asyncHandler(walletController.getWallet));
+router.get('/transactions', auth, asyncHandler(walletController.getTransactionHistory));
 
 // ===================== COIN WALLET - RECHARGE =====================
 // NOTE: Razorpay coin-purchase routes removed. Coins are purchased via
@@ -18,7 +18,7 @@ router.get('/wallet/transactions', auth, asyncHandler(walletController.getTransa
 
 // ===================== SEND GIFT =====================
 
-router.post('/wallet/gift/send', auth, validateBody({
+router.post('/gift/send', auth, validateBody({
   recipientId: { required: true },
   giftId: { required: true },
   quantity: { isNumeric: true }
@@ -27,51 +27,51 @@ router.post('/wallet/gift/send', auth, validateBody({
 // ===================== DIAMOND EXCHANGE =====================
 
 // Wallet Exchange (Diamond to Coin)
-router.post('/wallet/exchange', auth, validateBody({
+router.post('/exchange', auth, validateBody({
   diamondsToExchange: { required: true, isNumeric: true }
 }), asyncHandler(walletController.exchangeDiamondsToCoins));
 
 // ===================== DIAMOND WITHDRAWAL =====================
 
 // Withdrawal Routes
-router.post('/wallet/withdraw/request', auth, validateBody({
+router.post('/withdraw/request', auth, validateBody({
   amount: { isNumeric: true },
   diamonds: { isNumeric: true }
 }), asyncHandler(walletController.requestWithdrawal));
-router.get('/wallet/withdraw/status', auth, asyncHandler(walletController.getWithdrawalStatus));
+router.get('/withdraw/status', auth, asyncHandler(walletController.getWithdrawalStatus));
 
 // ===================== FAMILY WALLET =====================
 
 // Family Wallet Routes
-router.get('/wallet/family', auth, asyncHandler(walletController.getFamilyWallet));
-router.post('/wallet/family/contribute', auth, asyncHandler(walletController.contributeToFamilyWallet));
-router.post('/wallet/family/task-reward', auth, adminAuth, asyncHandler(walletController.addFamilyTaskReward));
-router.get('/wallet/family/transactions', auth, asyncHandler(walletController.getFamilyWalletTransactions));
+router.get('/family', auth, asyncHandler(walletController.getFamilyWallet));
+router.post('/family/contribute', auth, asyncHandler(walletController.contributeToFamilyWallet));
+router.post('/family/task-reward', auth, adminAuth, asyncHandler(walletController.addFamilyTaskReward));
+router.get('/family/transactions', auth, asyncHandler(walletController.getFamilyWalletTransactions));
 
 // ===================== AGENCY WALLET & COMMISSION =====================
 
 // Agency Wallet Routes
-router.get('/wallet/agency', auth, asyncHandler(walletController.getAgencyWallet));
-router.post('/wallet/agency/commission/credit', auth, adminAuth, asyncHandler(walletController.creditAgencyCommission));
-router.post('/wallet/agency/withdraw/request', auth, asyncHandler(walletController.requestAgencyWithdrawal));
-router.get('/wallet/agency/transactions', auth, asyncHandler(walletController.getAgencyWalletTransactions));
+router.get('/agency', auth, asyncHandler(walletController.getAgencyWallet));
+router.post('/agency/commission/credit', auth, adminAuth, asyncHandler(walletController.creditAgencyCommission));
+router.post('/agency/withdraw/request', auth, asyncHandler(walletController.requestAgencyWithdrawal));
+router.get('/agency/transactions', auth, asyncHandler(walletController.getAgencyWalletTransactions));
 
 // Agency Master Wallet - Host Dashboard
-router.get('/wallet/agency/host-dashboard', auth, asyncHandler(walletController.getHostAgencyDashboard));
+router.get('/agency/host-dashboard', auth, asyncHandler(walletController.getHostAgencyDashboard));
 
 // Agency Master Wallet - Owner Dashboard
-router.get('/wallet/agency/owner-dashboard', auth, asyncHandler(walletController.getOwnerAgencyDashboard));
+router.get('/agency/owner-dashboard', auth, asyncHandler(walletController.getOwnerAgencyDashboard));
 
 // Agency Master Wallet - Monthly History
-router.get('/wallet/agency/monthly-history', auth, asyncHandler(walletController.getAgencyMonthlyHistory));
+router.get('/agency/monthly-history', auth, asyncHandler(walletController.getAgencyMonthlyHistory));
 
 // Agency Master Wallet - Update Monthly Stats (Admin/System)
-router.post('/wallet/agency/monthly-stats/update', auth, adminAuth, asyncHandler(walletController.updateAgencyMonthlyStats));
+router.post('/agency/monthly-stats/update', auth, adminAuth, asyncHandler(walletController.updateAgencyMonthlyStats));
 
 // ===================== INCOME ANALYTICS =====================
 
 // Income Analytics
-router.get('/wallet/income-analytics', auth, asyncHandler(walletController.getIncomeAnalytics));
+router.get('/income-analytics', auth, asyncHandler(walletController.getIncomeAnalytics));
 
 // ===================== ADMIN ROUTES =====================
 
