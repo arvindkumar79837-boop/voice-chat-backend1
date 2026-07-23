@@ -388,7 +388,8 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (err) => {
   console.error('❌ UNCAUGHT EXCEPTION:', err.message);
   console.error(err.stack);
-  console.error('⚠️ Continuing to run after uncaughtException (handler now catches via try/catch)');
+  console.error('⚠️ Server exiting after uncaughtException — must restart with clean state');
+  process.exit(1);
 });
 
 // ─── START SERVER ───────────────────────────────────────────────────────────

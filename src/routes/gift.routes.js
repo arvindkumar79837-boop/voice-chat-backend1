@@ -3,7 +3,7 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const asyncHandler = require('../utils/asyncHandler');
 const giftProductionController = require('../controllers/gift.production.controller');
-const { authMiddleware } = require('../middlewares/auth.middleware');
+const { authMiddleware, verifyStaff } = require('../middlewares/adminMiddleware');
 const Gift = require('../models/Gift');
 const GiftEvent = require('../models/GiftEvent');
 
@@ -61,9 +61,9 @@ router.post('/goals', authMiddleware, asyncHandler(giftProductionController.setG
 router.post('/festival', authMiddleware, asyncHandler(giftProductionController.createFestivalGift));
 
 // ─── Admin Gift Management ─────────────────────────────────────
-router.put('/:giftId/toggle', authMiddleware, asyncHandler(giftProductionController.toggleGiftAvailability));
-router.post('/admin/create', authMiddleware, asyncHandler(giftProductionController.adminCreateGift));
-router.put('/admin/:giftId', authMiddleware, asyncHandler(giftProductionController.adminUpdateGift));
-router.delete('/admin/:giftId', authMiddleware, asyncHandler(giftProductionController.adminDeleteGift));
+router.put('/:giftId/toggle', authMiddleware, verifyStaff, asyncHandler(giftProductionController.toggleGiftAvailability));
+router.post('/admin/create', authMiddleware, verifyStaff, asyncHandler(giftProductionController.adminCreateGift));
+router.put('/admin/:giftId', authMiddleware, verifyStaff, asyncHandler(giftProductionController.adminUpdateGift));
+router.delete('/admin/:giftId', authMiddleware, verifyStaff, asyncHandler(giftProductionController.adminDeleteGift));
 
 module.exports = router;

@@ -11,7 +11,7 @@ router.get('/:familyId/messages', authMiddleware, async (req, res) => {
   try {
     const { familyId } = req.params;
     const { page = 1, limit = 50, before } = req.query;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const user = await User.findById(userId);
     if (!user || user.familyId !== familyId) {
@@ -43,7 +43,7 @@ router.post('/:familyId/messages', authMiddleware, async (req, res) => {
   try {
     const { familyId } = req.params;
     const { content, messageType = 'text', replyTo, mentions, attachments } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const user = await User.findById(userId);
     if (!user || user.familyId !== familyId) {
@@ -85,7 +85,7 @@ router.post('/:familyId/messages', authMiddleware, async (req, res) => {
 router.delete('/:familyId/messages/:messageId', authMiddleware, async (req, res) => {
   try {
     const { familyId, messageId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const user = await User.findById(userId);
     if (!user || user.familyId !== familyId) {
@@ -123,7 +123,7 @@ router.delete('/:familyId/messages/:messageId', authMiddleware, async (req, res)
 router.post('/:familyId/messages/:messageId/pin', authMiddleware, async (req, res) => {
   try {
     const { familyId, messageId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const user = await User.findById(userId);
     if (!user || user.familyId !== familyId) {
@@ -155,7 +155,7 @@ router.post('/:familyId/messages/:messageId/react', authMiddleware, async (req, 
   try {
     const { familyId, messageId } = req.params;
     const { emoji } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const user = await User.findById(userId);
     if (!user || user.familyId !== familyId) {
@@ -200,7 +200,7 @@ router.post('/:familyId/messages/:messageId/react', authMiddleware, async (req, 
 router.get('/:familyId/pinned', authMiddleware, async (req, res) => {
   try {
     const { familyId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const user = await User.findById(userId);
     if (!user || user.familyId !== familyId) {

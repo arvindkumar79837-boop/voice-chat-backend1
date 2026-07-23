@@ -24,6 +24,6 @@ router.get('/me', verifyStaff, staffController.getMyProfile);
 router.post('/change-password/:id', verifyAdmin, staffController.changeStaffPassword);
 
 // GET /api/admin/staff/roles - Get role hierarchy
-router.get('/roles', staffController.getAdminRoles);
+router.get('/roles', verifyStaff, staffController.getAdminRoles);
 
 module.exports = router;

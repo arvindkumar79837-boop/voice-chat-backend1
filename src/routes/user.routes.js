@@ -12,9 +12,11 @@ router.post('/equip-frame', authMiddleware, asyncHandler(userController.equipFra
 router.get('/search', authMiddleware, asyncHandler(async (req, res) => {
   const { q, limit = 20 } = req.query;
   if (!q) return res.status(400).json({ success: false, message: 'Query required' });
+  if (q.length < 2) return res.status(400).json({ success: false, message: 'Query must be at least 2 characters' });
 
+  const sanitized = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const users = await User.find({
-    username: { $regex: q, $options: 'i' }
+    username: { $regex: sanitized, $options: 'i' }
   }).limit(parseInt(limit)).select('username avatar arvindId');
 
   res.json({ success: true, users });

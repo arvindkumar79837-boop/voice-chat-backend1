@@ -156,7 +156,7 @@ app.use('/api/health', healthRoutes);
 // ─── AUTH ROUTES ──────────────────────────────────────────────────────────
 app.use('/api/auth', authLimiter, authRoutes);
 // Firebase + secure auth (refresh rotation, session revocation)
-app.use('/api/auth', authLimiter, require('./routes/authSecure.routes'));
+app.use('/api/auth-secure', authLimiter, require('./routes/authSecure.routes'));
 app.use('/api/auth/social', require('./routes/googleAuthRoutes')); // Google + Apple OAuth
 app.use('/api/auth/social', socialAuthRoutes); // Social Login (Google, Apple, Facebook, Snapchat, Instagram, Guest)
 app.use('/api/auth', authLimiter, firebaseAuthRoutes); // Firebase ID Token + Apple Sign-In

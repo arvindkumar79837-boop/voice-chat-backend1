@@ -6,7 +6,7 @@ const { authMiddleware, verifyStaff } = require('../middlewares/adminMiddleware'
 
 // ─── ROOM LOCK ────────────────────────────────────────────────────
 router.post('/rooms/:roomId/lock',         authMiddleware, lockCtrl.lockRoom);
-router.post('/rooms/:roomId/unlock-attempt', lockCtrl.unlockAttempt);
+router.post('/rooms/:roomId/unlock-attempt', authMiddleware, lockCtrl.unlockAttempt);
 router.post('/rooms/:roomId/unlock',       authMiddleware, lockCtrl.unlockRoom);
 
 // ─── ROOM DISCOVERY ───────────────────────────────────────────────

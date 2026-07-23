@@ -56,7 +56,7 @@ router.post('/logout', authMiddleware, logout);
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const User = require('../models/User');
-    const user = await User.findById(req.user.userId).lean();
+    const user = await User.findById(req.user.id).lean();
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });

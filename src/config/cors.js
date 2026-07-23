@@ -41,7 +41,17 @@ const corsConfig = cors({
     // Allow requests with no origin (mobile apps, curl, server-to-server).
     // Mobile native HTTP clients (Dio, http package) do NOT send Origin headers,
     // so rejecting them blocks the entire mobile app in production.
+    // For browsers: always send Origin — if missing in production, treat as suspicious.
     if (!origin) {
+      if (process.env.NODE_ENV === 'production') {
+        // In production, allow no-origin only from known mobile User-Agent patterns.
+        // This is checked via the req reference if available, but cors middleware
+        // doesn't pass req to origin callback. Instead, we allow no-origin and
+        // rely on JWT authentication for API protection (CORS only protects browsers).
+        // Mobile apps authenticate via JWT tokens, not cookies, so CORS bypass
+        // doesn't create a CSRF vulnerability.
+        return callback(null, true);
+      }
       return callback(null, true);
     }
 

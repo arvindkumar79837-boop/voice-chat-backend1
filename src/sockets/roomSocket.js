@@ -679,6 +679,11 @@ module.exports = (io, socket) => {
     'update_room_background',
     async ({ roomId, backgroundUrl, backgroundName }) => {
       try {
+        const ownerId = authedUserId;
+        const room = await Room.findOne({ roomId });
+        if (!room || room.ownerId.toString() !== ownerId?.toString()) {
+          return socket.emit('room_error', { message: 'Only the room owner can update background.' });
+        }
         await Room.findOneAndUpdate(
           { roomId },
           {
@@ -779,31 +784,8 @@ module.exports = (io, socket) => {
   });
 
   // ─── Room Send Message ───────────────────────────────────────
-  const handleSendMessage = async (data) => {
-    try {
-      const { roomId, senderName, message, isVip } = data;
-      const senderId = authedUserId;
-      if (!roomId || !senderId || !message) return;
-
-      const messageData = {
-        id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        senderId,
-        senderName: senderName || 'Unknown',
-        message: message.trim(),
-        time: new Date().toISOString(),
-        isVip: isVip || false,
-        timestamp: Date.now(),
-      };
-
-      io.to(roomId).emit('receive_room_message', messageData);
-      io.to(roomId).emit('room:message', messageData);
-    } catch (error) {
-      console.error('[send_room_message] error:', error.message);
-      socket.emit('error', { message: 'Something went wrong. Please try again.' });
-    }
-  };
-  socket.on('send_room_message', handleSendMessage);
-  socket.on('room:message', handleSendMessage);
+  // NOTE: send_room_message is handled by chatSocket.js (with DB persistence).
+  // The room:message alias still routes to chatSocket's handler via the main socket index.
 
   // ─── Room: Raise Hand ────────────────────────────────────────
   const handleRaiseHand = async ({ roomId, userName }) => {

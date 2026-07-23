@@ -12,6 +12,19 @@ const initRewardSocket = (io) => {
   // Namespace for game-specific events
   const gameNamespace = io.of('/game');
 
+  gameNamespace.use((socket, next) => {
+    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+    if (!token) return next(new Error('Authentication required for /game namespace'));
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      socket.data.userId = decoded.id;
+      next();
+    } catch {
+      next(new Error('Invalid token'));
+    }
+  });
+
   gameNamespace.on('connection', (socket) => {
     console.log(`Client connected to game socket: ${socket.id}`);
 

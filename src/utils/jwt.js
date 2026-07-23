@@ -22,9 +22,11 @@ const TOKEN_BLACKLIST_PREFIX = 'blacklist:';
  * Generate a short-lived Access Token (15 minutes).
  * Used for every API call.
  */
+const crypto = require('crypto');
+
 const generateAccessToken = (payload) => {
   return jwt.sign(
-    { id: payload.id, role: payload.role, uid: payload.uid },
+    { id: payload.id, role: payload.role, uid: payload.uid, jti: crypto.randomUUID() },
     process.env.JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_EXPIRY }
   );
@@ -36,7 +38,7 @@ const generateAccessToken = (payload) => {
  */
 const generateRefreshToken = (payload) => {
   return jwt.sign(
-    { id: payload.id, uid: payload.uid },
+    { id: payload.id, uid: payload.uid, jti: crypto.randomUUID() },
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: REFRESH_TOKEN_EXPIRY }
   );
@@ -92,10 +94,12 @@ const isTokenBlacklisted = async (token) => {
 };
 
 /**
- * Legacy helper kept for backward-compatible usage in older controllers.
- * Emits an access token with extended 30-day expiry (for routes not yet migrated).
+ * @deprecated Use generateAccessToken() + generateRefreshToken() instead.
+ * Legacy helper: signs with only { id }, 30-day expiry, no role, no jti.
+ * Kept for backward-compatible usage in older controllers.
  */
 const generateToken = (userId) => {
+  console.warn('[jwt] DEPRECATED: generateToken() called — migrate to generateAccessToken()+generateRefreshToken()');
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 

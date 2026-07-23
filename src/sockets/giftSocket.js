@@ -41,16 +41,25 @@ module.exports = (io, socket) => {
 
         // Update room gift points
         if (roomId) {
-          const room = await Room.findOne({ roomId });
-          if (room) {
-            room.totalGiftPoints += cost;
-            room.lootBoxPoints += Math.floor(cost * 0.1);
-            room.rankPoints += Math.floor(cost * 0.5);
-            if (room.lootBoxPoints >= room.lootBoxLevel * 100) {
-              room.lootBoxLevel += 1;
-              room.lootBoxPoints = 0;
+          const lootBoxIncrement = Math.floor(cost * 0.1);
+          const rankIncrement = Math.floor(cost * 0.5);
+          // Atomic room points update — prevents race condition on concurrent gifts
+          await Room.findOneAndUpdate(
+            { roomId },
+            {
+              $inc: {
+                totalGiftPoints: cost,
+                lootBoxPoints: lootBoxIncrement,
+                rankPoints: rankIncrement,
+              },
             }
-            await room.save();
+          );
+          // Check loot box level-up (read after atomic increment)
+          const updatedRoom = await Room.findOne({ roomId });
+          if (updatedRoom && updatedRoom.lootBoxPoints >= updatedRoom.lootBoxLevel * 100) {
+            updatedRoom.lootBoxLevel += 1;
+            updatedRoom.lootBoxPoints = 0;
+            await updatedRoom.save();
           }
         }
 
@@ -329,16 +338,20 @@ module.exports = (io, socket) => {
     });
 
     // ─── Treasure Chest Tap (claim coins) ──────────────────────
+    // Atomic claim — prevents race condition where multiple rapid claims
+    // could award coins multiple times.
     socket.on('claim_treasure', async ({ roomId, userName, giftEventId }) => {
       const userId = authedUserId;
       try {
-        // Random claim amount between 10-500
         const claimAmount = Math.floor(Math.random() * 490) + 10;
-        const user = await User.findById(userId);
-        if (!user) return;
 
-        user.coins += claimAmount;
-        await user.save();
+        // Atomic coin increment — no read-modify-write race
+        const user = await User.findByIdAndUpdate(
+          userId,
+          { $inc: { coins: claimAmount } },
+          { new: true }
+        );
+        if (!user) return;
 
         io.to(roomId).emit('treasure_claimed', {
           userId,

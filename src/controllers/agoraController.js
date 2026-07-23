@@ -8,8 +8,11 @@ const { Agora } = require('../services/agoraService');
 const Room = require('../models/Room');
 const RoomSeat = require('../models/RoomSeat');
 const User = require('../models/User');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
+
+router.use(authMiddleware);
 
 // ═══════ AGORA TOKEN GENERATION ══════════════════════════════════════════
 

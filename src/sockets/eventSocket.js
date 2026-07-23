@@ -105,52 +105,36 @@ class EventSocket {
 
       socket.on('claim_event_reward', async (eventId) => {
         try {
-          const progress = await UserEventProgress.findOne({ userId, eventId });
-          
-          if (!progress || !progress.is_completed) {
-            socket.emit('error', { message: 'Event task not completed yet' });
-            return;
-          }
+          // Atomic claim — prevent double-claim race condition
+          const progress = await UserEventProgress.findOneAndUpdate(
+            { userId, eventId, is_completed: true, is_claimed: false },
+            { $set: { is_claimed: true, claimed_at: new Date() } },
+            { new: true }
+          );
 
-          if (progress.is_claimed) {
-            socket.emit('error', { message: 'Reward already claimed' });
+          if (!progress) {
+            socket.emit('error', { message: 'Event task not completed or already claimed' });
             return;
           }
 
           const event = await Event.findById(eventId);
-          const User = mongoose.model('User');
-          const user = await User.findById(userId);
+          if (!event) {
+            socket.emit('error', { message: 'Event not found' });
+            return;
+          }
+
           const rewards = event.reward_details;
+          const updateOps = {};
 
-          if (rewards.coins > 0) {
-            user.coins += rewards.coins;
-          }
+          if (rewards.coins > 0) updateOps.$inc = { ...(updateOps.$inc || {}), coins: rewards.coins };
+          if (rewards.diamonds > 0) updateOps.$inc = { ...(updateOps.$inc || {}), diamonds: rewards.diamonds };
+          if (rewards.xp > 0) updateOps.$inc = { ...(updateOps.$inc || {}), xp: rewards.xp };
+          if (rewards.badges && rewards.badges.length > 0) updateOps.$push = { ...(updateOps.$push || {}), badges: { $each: rewards.badges } };
+          if (rewards.frames && rewards.frames.length > 0) updateOps.$push = { ...(updateOps.$push || {}), frames: { $each: rewards.frames } };
+          if (rewards.vipDays > 0) updateOps.$set = { ...(updateOps.$set || {}), vipExpiry: new Date(Date.now() + rewards.vipDays * 24 * 60 * 60 * 1000) };
 
-          if (rewards.diamonds > 0) {
-            user.diamonds += rewards.diamonds;
-          }
-
-          if (rewards.xp > 0) {
-            user.xp += rewards.xp;
-          }
-
-          if (rewards.badges && rewards.badges.length > 0) {
-            user.badges = [...(user.badges || []), ...rewards.badges];
-          }
-
-          if (rewards.frames && rewards.frames.length > 0) {
-            user.frames = [...(user.frames || []), ...rewards.frames];
-          }
-
-          if (rewards.vipDays > 0) {
-            user.vipExpiry = new Date(Date.now() + rewards.vipDays * 24 * 60 * 60 * 1000);
-          }
-
-          await user.save();
-
-          progress.is_claimed = true;
-          progress.claimed_at = new Date();
-          await progress.save();
+          const User = mongoose.model('User');
+          await User.findByIdAndUpdate(userId, updateOps);
 
           socket.emit('reward_claimed', {
             eventId,
