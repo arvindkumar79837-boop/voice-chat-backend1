@@ -1,8 +1,5 @@
 const User = require('../models/User'); // Pulls from your existing User Schema
 const badgeController = require('./badgeController');
-const crypto = require('crypto');
-const Razorpay = require('razorpay');
-const Transaction = require('../models/Transaction');
 
 exports.updateProfile = async (req, res) => {
   try {
@@ -121,167 +118,14 @@ exports.getVipStatus = async (req, res) => {
   }
 };
 
-exports.createPaymentOrder = async (req, res) => {
-  try {
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
-    if (!keyId || !keySecret || keyId === 'YOUR_RAZORPAY_KEY_ID') {
-      return res.status(503).json({ success: false, error: 'Payment gateway not configured' });
-    }
-    const instance = new Razorpay({ key_id: keyId, key_secret: keySecret });
-
-    const options = {
-      amount: 50000, // Amount is in subunits (e.g., 50000 paise = ₹500)
-      currency: 'INR',
-      receipt: `receipt_${req.user.userId}_${Date.now()}`,
-      notes: {
-        userId: req.user.userId // Added so webhooks know who this payment belongs to
-      }
-    };
-
-    const order = await instance.orders.create(options);
-    res.status(200).json({ success: true, order_id: order.id, amount: order.amount });
-  } catch (error) {
-    console.error('Create Order Error:', error);
-    res.status(500).json({ error: 'Failed to create Razorpay order' });
-  }
-};
-
-exports.verifyPayment = async (req, res) => {
-  try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-    const userId = req.user.userId;
-
-    const secret = process.env.RAZORPAY_KEY_SECRET;
-    if (!secret || secret === 'YOUR_RAZORPAY_SECRET') {
-      return res.status(503).json({ success: false, error: 'Payment gateway not configured' });
-    }
-
-    // Generate the expected signature
-    const generated_signature = crypto
-      .createHmac('sha256', secret)
-      .update(razorpay_order_id + '|' + razorpay_payment_id)
-      .digest('hex');
-
-    if (generated_signature === razorpay_signature) {
-      // Idempotency check: Ensure we don't grant VIP twice if webhook already processed it
-      const existingTx = await Transaction.findOne({ razorpayOrderId: razorpay_order_id });
-      if (existingTx && existingTx.status === 'SUCCESS') {
-        return res.status(200).json({ success: true, message: 'Payment already verified & VIP granted' });
-      }
-
-      // Signature matches! Grant VIP status securely in the database
-      const user = await User.findById(userId);
-      
-      const now = new Date();
-      user.vipExpiry = new Date(now.setDate(now.getDate() + 30)); // Grant 30 days
-      user.vipLevel = (user.vipLevel || 0) + 1; // Bump VIP level
-      await user.save();
-
-      // Record the successful transaction in the database
-      const transaction = new Transaction({
-        user: userId,
-        razorpayOrderId: razorpay_order_id,
-        razorpayPaymentId: razorpay_payment_id,
-        amount: 50000, // Matches the amount created in createPaymentOrder
-        type: 'VIP_UPGRADE',
-        status: 'SUCCESS'
-      });
-      await transaction.save();
-
-      return res.status(200).json({ success: true, message: 'Payment verified & VIP granted' });
-    } else {
-      return res.status(400).json({ success: false, error: 'Invalid payment signature' });
-    }
-  } catch (error) {
-    console.error('Payment Verification Error:', error);
-    res.status(500).json({ error: 'Failed to verify payment' });
-  }
-};
-
 exports.getTransactionHistory = async (req, res) => {
   try {
     const userId = req.user.userId;
-    // Find all transactions for this user and sort by newest first
-    const transactions = await Transaction.find({ user: userId }).sort({ createdAt: -1 });
+    const transactions = await require('../models/Transaction').find({ user: userId }).sort({ createdAt: -1 });
     
     res.status(200).json({ success: true, transactions });
   } catch (error) {
     console.error('Transaction History Error:', error);
     res.status(500).json({ error: 'Failed to load transaction history' });
-  }
-};
-
-exports.razorpayWebhook = async (req, res) => {
-  try {
-    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    if (!secret) {
-      return res.status(503).json({ success: false, error: 'Webhook secret not configured' });
-    }
-    const signature = req.headers['x-razorpay-signature'];
-
-    // Use the raw body buffer if available, as JSON.stringify can alter formatting and break signatures!
-    const payload = req.rawBody ? req.rawBody : JSON.stringify(req.body);
-
-    // Generate the expected signature to ensure the request genuinely came from Razorpay
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(payload)
-      .digest('hex');
-
-    if (expectedSignature !== signature) {
-      return res.status(400).json({ success: false, error: 'Invalid webhook signature' });
-    }
-
-    const event = req.body.event;
-    const paymentEntity = req.body.payload.payment.entity;
-    const razorpay_order_id = paymentEntity.order_id;
-    const razorpay_payment_id = paymentEntity.id;
-    const userId = paymentEntity.notes?.userId; // Read the userId we injected earlier
-
-    if (!userId) {
-      return res.status(200).json({ success: true, message: 'Ignored: No userId found in notes' });
-    }
-
-    let transaction = await Transaction.findOne({ razorpayOrderId: razorpay_order_id });
-
-    if (event === 'payment.captured' || event === 'order.paid') {
-      if (!transaction) {
-        // The Webhook beat the frontend app! Grant the user their VIP status.
-        transaction = new Transaction({
-          user: userId,
-          razorpayOrderId: razorpay_order_id,
-          razorpayPaymentId: razorpay_payment_id,
-          amount: paymentEntity.amount,
-          type: 'VIP_UPGRADE',
-          status: 'SUCCESS'
-        });
-        await transaction.save();
-
-        const user = await User.findById(userId);
-        if (user) {
-          const now = new Date();
-          user.vipExpiry = new Date(now.setDate(now.getDate() + 30));
-          user.vipLevel = (user.vipLevel || 0) + 1;
-          await user.save();
-
-          // Emit real-time notification to the app via Socket.IO
-          const io = req.app.get('io');
-          if (io) {
-            // If users join a room with their userId, use io.to(userId).emit(...)
-            // Otherwise, emit globally and filter on the client side
-            io.emit('webhook_payment_success', { userId: userId });
-          }
-        }
-      }
-    } else if (event === 'payment.failed' && transaction) {
-      transaction.status = 'FAILED';
-      await transaction.save();
-    }
-
-    res.status(200).json({ success: true });
-  } catch (error) {
-    console.error('Webhook Error:', error);
-    res.status(500).json({ error: 'Webhook processing failed' });
   }
 };

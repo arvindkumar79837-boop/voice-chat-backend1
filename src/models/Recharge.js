@@ -16,7 +16,7 @@ const rechargeSchema = new mongoose.Schema({
   // Gateway
   gateway: {
     type: String,
-    enum: ['RAZORPAY', 'CASHFREE', 'PAYTM', 'PHONEPAY', 'GOOGLEPAY', 'UPI'],
+    enum: ['CASHFREE', 'PAYTM', 'PHONEPAY', 'GOOGLEPAY', 'UPI', 'GOOGLE_PLAY'],
     required: true
   },
   gatewayOrderId: { type: String, unique: true, sparse: true },

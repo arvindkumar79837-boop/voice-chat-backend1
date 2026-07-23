@@ -12,15 +12,8 @@ router.get('/wallet', auth, asyncHandler(walletController.getWallet));
 router.get('/wallet/transactions', auth, asyncHandler(walletController.getTransactionHistory));
 
 // ===================== COIN WALLET - RECHARGE =====================
-
-// Coin Recharge - Create Razorpay Order
-router.post('/wallet/recharge/create-order', auth, asyncHandler(walletController.createRazorpayOrder));
-
-// Verify Payment
-router.post('/wallet/recharge/verify', auth, asyncHandler(walletController.verifyPayment));
-
-// Webhook for Razorpay
-router.post('/wallet/recharge/webhook', asyncHandler(walletController.handlePaymentWebhook));
+// NOTE: Razorpay coin-purchase routes removed. Coins are purchased via
+// Google Play Billing: POST /api/economy/verify-google-play
 
 // ===================== SEND GIFT =====================
 

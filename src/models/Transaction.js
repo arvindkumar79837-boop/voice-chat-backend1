@@ -8,11 +8,11 @@ const transactionSchema = new mongoose.Schema({
   },
   razorpayOrderId: {
     type: String,
-    required: true
+    required: false
   },
   razorpayPaymentId: {
     type: String,
-    required: true
+    required: false
   },
   amount: {
     type: Number, // In subunits (e.g., paise)
