@@ -494,6 +494,11 @@ module.exports = (io, socket) => {
 
       const kickedUserId = room.seats[seatIndex].userId;
 
+      // H-9 FIX: Prevent co-host from kicking the room owner
+      if (kickedUserId && kickedUserId.toString() === room.ownerId.toString()) {
+        return socket.emit('room_error', { message: 'Room owner cannot be kicked from their own seat.' });
+      }
+
       room.seats[seatIndex].userId = null;
       room.seats[seatIndex].userName = '';
       room.seats[seatIndex].userAvatar = '';

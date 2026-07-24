@@ -35,6 +35,11 @@ module.exports = (io, socket) => {
           return socket.emit('gift_error', { message: 'Missing required fields.' });
         }
 
+        // H-15 FIX: Prevent self-gifting exploit (users cannot gift themselves)
+        if (senderId.toString() === receiverId.toString()) {
+          return socket.emit('gift_error', { message: 'You cannot send a gift to yourself.' });
+        }
+
         // Rate limit check (P2-14)
         const allowed = await checkRateLimit(senderId, 'send_gift');
         if (!allowed) {
@@ -342,7 +347,12 @@ module.exports = (io, socket) => {
         const multiplier = parseInt(comboMultiplier) || 5;
         const totalQty = multiplier;
 
-        if (!roomId) return socket.emit('gift_error', { message: 'Room ID required.' });
+        if (!roomId || !giftId || !receiverId) return socket.emit('gift_error', { message: 'Room ID, gift ID, and receiver ID required.' });
+
+        // H-15 FIX: Prevent self-gifting via combo (users cannot gift themselves)
+        if (senderId.toString() === receiverId.toString()) {
+          return socket.emit('gift_error', { message: 'You cannot send a gift to yourself.' });
+        }
 
         // Rate limit check (P2-14)
         const allowed = await checkRateLimit(senderId, 'send_combo_gift');
@@ -375,19 +385,20 @@ module.exports = (io, socket) => {
           return socket.emit('gift_error', { message: 'Insufficient coins for combo.' });
         }
 
-        // Update room
+        // Update room — atomic to prevent race conditions under concurrent combo gifts
         if (roomId) {
-          const room = await Room.findOne({ roomId });
-          if (room) {
-            room.totalGiftPoints += totalCost;
-            room.lootBoxPoints += Math.floor(totalCost * 0.1);
-            room.rankPoints += Math.floor(totalCost * 0.5);
-            if (room.lootBoxPoints >= room.lootBoxLevel * 100) {
-              room.lootBoxLevel += 1;
-              room.lootBoxPoints = 0;
+          const lootBoxIncrement = Math.floor(totalCost * 0.1);
+          const rankIncrement = Math.floor(totalCost * 0.5);
+          await Room.findOneAndUpdate(
+            { roomId },
+            {
+              $inc: {
+                totalGiftPoints: totalCost,
+                lootBoxPoints: lootBoxIncrement,
+                rankPoints: rankIncrement
+              }
             }
-            await room.save();
-          }
+          );
         }
 
         // Emit combo burst to room
