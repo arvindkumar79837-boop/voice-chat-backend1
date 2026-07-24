@@ -2,7 +2,31 @@
  * Arvind Party - Firebase Configuration
  * Re-exports from firebase-admin.js (canonical source)
  */
-const { getFirebaseAdmin, isFirebaseAvailable } = require('./firebase-admin');
+const { initializeFirebaseAdmin, verifyIdToken, createCustomToken, revokeRefreshTokens, getUserById, sendPasswordResetEmail, sendNotification, sendMulticastNotification, subscribeToTopic, unsubscribeFromTopic } = require('./firebase-admin');
 
-module.exports = getFirebaseAdmin();
-module.exports.isFirebaseInitialized = isFirebaseAvailable();
+let _admin = null;
+let _isInitialized = false;
+
+const getFirebaseAdmin = () => {
+  if (!_isInitialized) {
+    _admin = initializeFirebaseAdmin();
+    _isInitialized = true;
+  }
+  return _admin;
+};
+
+const isFirebaseAvailable = () => _isInitialized;
+
+module.exports = {
+  getFirebaseAdmin,
+  isFirebaseAvailable,
+  verifyIdToken,
+  createCustomToken,
+  revokeRefreshTokens,
+  getUserById,
+  sendPasswordResetEmail,
+  sendNotification,
+  sendMulticastNotification,
+  subscribeToTopic,
+  unsubscribeFromTopic,
+};
