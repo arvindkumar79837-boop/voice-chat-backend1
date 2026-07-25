@@ -1,10 +1,8 @@
 const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const User = require('../models/User');
-const DealerWallet = require('../models/DealerWallet');
 const WalletTransaction = require('../models/WalletTransaction');
 const AuditLog = require('../models/AuditLog');
-const CoinVault = require('../models/CoinVault');
 
 const HIERARCHY_LEVELS = {
   owner: 4,

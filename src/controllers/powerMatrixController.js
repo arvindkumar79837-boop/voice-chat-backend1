@@ -190,9 +190,9 @@ exports.checkUserPower = async (req, res) => {
       });
     }
 
-    const isRoomOwner = room && room.ownerId.toString() === actorId.toString();
-    const isRoomAdmin = room && (room.admins.includes(actorId) || room.coHosts.includes(actorId));
-    const isTargetOwner = room && room.ownerId.toString() === targetUserId.toString();
+    const isRoomOwner = room?.ownerId?.toString() === actorId.toString();
+    const isRoomAdmin = room?.admins?.includes(actorId) || room?.coHosts?.includes(actorId);
+    const isTargetOwner = room?.ownerId?.toString() === targetUserId.toString();
 
     if (isTargetOwner) {
       return res.status(403).json({
@@ -207,7 +207,14 @@ exports.checkUserPower = async (req, res) => {
     if (isRoomOwner) actorRole = 'owner';
     else if (isRoomAdmin) actorRole = 'admin';
 
-    const targetRole = target.isVip ? (target.vipLevel >= 10 ? 'svip' : 'vip') : 'user';
+    let targetRole;
+    if (target.isVip && target.vipLevel >= 10) {
+      targetRole = 'svip';
+    } else if (target.isVip) {
+      targetRole = 'vip';
+    } else {
+      targetRole = 'user';
+    }
 
     let result;
     if (action === 'mute') {

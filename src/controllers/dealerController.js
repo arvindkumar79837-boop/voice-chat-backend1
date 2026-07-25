@@ -511,8 +511,8 @@ exports.processRefund = async (req, res) => {
 exports.getDealerTransactions = async (req, res) => {
   try {
     const { dealerUid } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const skip = (page - 1) * limit;
 
     const dealer = await User.findOne({ uid: dealerUid });
@@ -629,8 +629,8 @@ exports.getDealerStats = async (req, res) => {
 
 exports.getAllDealerWallets = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const skip = (page - 1) * limit;
 
     const filter = {};

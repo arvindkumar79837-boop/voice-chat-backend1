@@ -205,7 +205,7 @@ exports.getMyInviteStats = async (req, res) => {
 exports.adminGetAllInvites = async (req, res) => {
   try {
     const { page = 1, limit = 50, status } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     const query = {};
     if (status) query.status = status;
@@ -215,14 +215,14 @@ exports.adminGetAllInvites = async (req, res) => {
       .populate('invitee_id', 'username uid')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     const total = await InviteEvent.countDocuments(query);
 
     res.status(200).json({
       success: true,
       data: invites,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+      pagination: { page: parseInt(page, 10), limit: parseInt(limit, 10), total, pages: Math.ceil(total / parseInt(limit, 10)) }
     });
   } catch (error) {
     Logger.error('Admin Get Invites Error:', error);

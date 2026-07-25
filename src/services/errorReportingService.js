@@ -1,6 +1,5 @@
 const Sentry = require('@sentry/node');
 const { NodeInstrumentation } = require('@sentry/integrations');
-const MonitoringService = require('./monitoringService');
 const Logger = require('../utils/logger');
 
 class ErrorReportingService {
@@ -9,7 +8,7 @@ class ErrorReportingService {
     this.dsn = process.env.SENTRY_DSN || '';
     this.environment = process.env.NODE_ENV || 'development';
     this.errorHistory = [];
-    this.maxHistory = parseInt(process.env.ERROR_HISTORY_MAX) || 500;
+    this.maxHistory = parseInt(process.env.ERROR_HISTORY_MAX, 10) || 500;
     this.alertThresholds = {
       critical: 10,
       error: 50,
@@ -209,10 +208,19 @@ class ErrorReportingService {
   async sendSlackAlert(alert) {
     try {
       const axios = require('axios');
+      let severityColor;
+      if (alert.severity === 'critical') {
+        severityColor = 'danger';
+      } else if (alert.severity === 'error') {
+        severityColor = 'warning';
+      } else {
+        severityColor = 'good';
+      }
+
       await axios.post(process.env.ALERT_SLACK_WEBHOOK, {
         text: `*[${alert.severity.toUpperCase()}]* Arvind Party Alert\n${alert.message}\nTime: ${alert.timestamp}`,
         attachments: [{
-          color: alert.severity === 'critical' ? 'danger' : alert.severity === 'error' ? 'warning' : 'good',
+          color: severityColor,
           fields: [
             { title: 'Severity', value: alert.severity, short: true },
             { title: 'Count', value: alert.count.toString(), short: true },

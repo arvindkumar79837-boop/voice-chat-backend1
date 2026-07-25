@@ -1,9 +1,7 @@
 const Logger = require('../utils/logger');
-const mongoose = require('mongoose');
 const Agency = require('../models/Agency');
 const AgencyWallet = require('../models/AgencyWallet');
 const Withdrawal = require('../models/Withdrawal');
-const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 
 // ─────────────────────────────────────────────────────────────────────────

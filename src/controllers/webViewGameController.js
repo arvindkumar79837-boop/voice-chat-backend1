@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const WebViewGame = require('../models/WebViewGame');
 const GameRecord = require('../models/GameRecord');
 const User = require('../models/User');
-const WalletTransaction = require('../models/WalletTransaction');
 
 exports.getAllGames = async (req, res) => {
   try {
@@ -15,7 +14,7 @@ exports.getAllGames = async (req, res) => {
     const games = await WebViewGame.find(filter)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .populate('createdBy', 'name uid');
 
     const total = await WebViewGame.countDocuments(filter);
@@ -23,7 +22,7 @@ exports.getAllGames = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: games,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+      pagination: { page: parseInt(page, 10), limit: parseInt(limit, 10), total, pages: Math.ceil(total / limit) }
     });
   } catch (error) {
     Logger.error('Fetch Games Error:', error);
@@ -277,7 +276,7 @@ exports.getGameLedger = async (req, res) => {
       .populate('gameId', 'name gameType')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     const totalVolumeResult = await GameRecord.aggregate([
       { $match: filter },
@@ -323,7 +322,7 @@ exports.getGameLeaderboard = async (req, res) => {
       { $match: matchFilter },
       { $group: { _id: '$user', totalWon: { $sum: '$winAmount' }, sessionsPlayed: { $sum: 1 } } },
       { $sort: { totalWon: -1 } },
-      { $limit: parseInt(limit) },
+      { $limit: parseInt(limit, 10) },
       { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'userInfo' } },
       { $unwind: '$userInfo' },
       { $project: { _id: 1, totalWon: 1, sessionsPlayed: 1, name: '$userInfo.name', avatar: '$userInfo.avatar', uid: '$userInfo.uid' } }

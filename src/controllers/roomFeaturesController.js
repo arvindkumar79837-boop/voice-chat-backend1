@@ -112,8 +112,8 @@ exports.unfollowRoom = async (req, res) => {
 exports.getRoomFollowers = async (req, res) => {
   try {
     const { roomId } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const skip = (page - 1) * limit;
 
     const followers = await RoomFollower.find({ roomId })
@@ -383,8 +383,8 @@ exports.getRoomLeaderboard = async (req, res) => {
 
 exports.getRoomLeaderboardByLevel = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const skip = (page - 1) * limit;
 
     const roomLevels = await RoomLevel.find()
@@ -445,8 +445,8 @@ exports.trackTimeSpent = async (req, res) => {
 exports.getMyFollowedRooms = async (req, res) => {
   try {
     const userId = req.user._id;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
 
     const follows = await RoomFollower.find({ userId })

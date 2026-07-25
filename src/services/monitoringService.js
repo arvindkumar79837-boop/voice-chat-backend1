@@ -150,7 +150,7 @@ class MonitoringService extends EventEmitter {
     if (system.memory > 85) {
       issues.push('High memory usage detected');
     }
-    if (system.cpu && system.cpu.usage > 80) {
+    if (system.cpu?.usage > 80) {
       issues.push('High CPU usage detected');
     }
     if (!database.connected) {

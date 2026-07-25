@@ -9,12 +9,12 @@ exports.searchSongs = async (req, res) => {
     if (search) filter.$text = { $search: search };
     if (genre) filter.genre = genre;
     if (language) filter.language = language;
-    const skip = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
+    const skip = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
     const [songs, total] = await Promise.all([
-      Song.find(filter).sort({ totalPlays: -1 }).skip(skip).limit(parseInt(limit)),
+      Song.find(filter).sort({ totalPlays: -1 }).skip(skip).limit(parseInt(limit, 10)),
       Song.countDocuments(filter)
     ]);
-    return res.json({ success: true, data: { songs, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } } });
+    return res.json({ success: true, data: { songs, pagination: { page: parseInt(page, 10), limit: parseInt(limit, 10), total, pages: Math.ceil(total / parseInt(limit, 10)) } } });
   } catch (err) { return res.status(500).json({ success: false, message: err.message }); }
 };
 

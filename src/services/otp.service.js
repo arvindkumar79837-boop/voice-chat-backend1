@@ -58,14 +58,14 @@ const verifyOTP = async (phone, otp) => {
     let storedOtp = null;
 
     const client = getRedisClient();
-    if (client && client.isOpen) {
+    if (client?.isOpen) {
       isRedisConnected = true;
       const key = `otp:${phone}`;
       storedOtp = await client.get(key);
     } else {
       // Fallback to memory
       const entry = otpMemoryStore.get(phone);
-      if (entry && entry.expiresAt > Date.now()) {
+      if (entry?.expiresAt > Date.now()) {
         storedOtp = entry.otp;
       }
     }
@@ -79,7 +79,7 @@ const verifyOTP = async (phone, otp) => {
     }
 
     // Delete OTP after successful verification
-    if (client && client.isOpen) {
+    if (client?.isOpen) {
       await client.del(`otp:${phone}`);
     } else {
       otpMemoryStore.delete(phone);

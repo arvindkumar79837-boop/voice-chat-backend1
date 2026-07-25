@@ -6,7 +6,7 @@ exports.getTopWealth = async (req, res) => {
   try {
     const period = req.query.period || 'daily';
     const country = req.query.country || 'global';
-    const limit = parseInt(req.query.limit) || 100;
+    const limit = parseInt(req.query.limit, 10) || 100;
 
     const rankings = await redisRankingService.getWealthRanking(period, country, limit);
 
@@ -56,7 +56,7 @@ exports.getTopCharm = async (req, res) => {
   try {
     const period = req.query.period || 'daily';
     const country = req.query.country || 'global';
-    const limit = parseInt(req.query.limit) || 100;
+    const limit = parseInt(req.query.limit, 10) || 100;
 
     const rankings = await redisRankingService.getCharmRanking(period, country, limit);
 
@@ -106,7 +106,7 @@ exports.getGiftRanking = async (req, res) => {
   try {
     const period = req.query.period || 'daily';
     const country = req.query.country || 'global';
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit, 10) || 50;
 
     const rankings = await redisRankingService.getGiftRanking(period, country, limit);
     res.status(200).json({ success: true, rankings });
@@ -120,7 +120,7 @@ exports.getFamilyRanking = async (req, res) => {
   try {
     const period = req.query.period || 'daily';
     const country = req.query.country || 'global';
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit, 10) || 50;
 
     const rankings = await redisRankingService.getFamilyRanking(period, country, limit);
     res.status(200).json({ success: true, rankings });
@@ -134,7 +134,7 @@ exports.getAgencyRanking = async (req, res) => {
   try {
     const period = req.query.period || 'daily';
     const country = req.query.country || 'global';
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit, 10) || 50;
 
     const rankings = await redisRankingService.getAgencyRanking(period, country, limit);
     res.status(200).json({ success: true, rankings });
@@ -148,7 +148,7 @@ exports.getRoomRanking = async (req, res) => {
   try {
     const period = req.query.period || 'daily';
     const country = req.query.country || 'global';
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit, 10) || 50;
 
     const rankings = await redisRankingService.getRoomRanking(period, country, limit);
     res.status(200).json({ success: true, rankings });
@@ -162,7 +162,7 @@ exports.getPKRanking = async (req, res) => {
   try {
     const period = req.query.period || 'daily';
     const country = req.query.country || 'global';
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit, 10) || 50;
 
     const rankings = await redisRankingService.getPKRanking(period, country, limit);
     res.status(200).json({ success: true, rankings });
@@ -176,7 +176,7 @@ exports.getRichList = async (req, res) => {
   try {
     const period = req.query.period || 'daily';
     const country = req.query.country || 'global';
-    const limit = parseInt(req.query.limit) || 100;
+    const limit = parseInt(req.query.limit, 10) || 100;
 
     const rankings = await redisRankingService.getRichList(period, country, limit);
     res.status(200).json({ success: true, rankings });
@@ -190,7 +190,7 @@ exports.getPopularList = async (req, res) => {
   try {
     const period = req.query.period || 'daily';
     const country = req.query.country || 'global';
-    const limit = parseInt(req.query.limit) || 100;
+    const limit = parseInt(req.query.limit, 10) || 100;
 
     const rankings = await redisRankingService.getPopularList(period, country, limit);
     res.status(200).json({ success: true, rankings });
@@ -221,7 +221,7 @@ exports.getAdminLeaderboard = async (req, res) => {
   try {
     const period = req.query.period || 'daily';
     const country = req.query.country || 'global';
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit, 10) || 50;
 
     const wealthRankings = await redisRankingService.getWealthRanking(period, country, limit);
     const charmRankings = await redisRankingService.getCharmRanking(period, country, limit);

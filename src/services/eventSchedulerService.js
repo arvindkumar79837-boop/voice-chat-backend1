@@ -7,12 +7,10 @@ const Logger = require('../utils/logger');
 const Event = require('../models/Event');
 const Tournament = require('../models/Tournament');
 const Championship = require('../models/Championship');
-const DailyTask = require('../models/DailyTask');
 const LuckyDraw = require('../models/LuckyDraw');
 const InviteEvent = require('../models/InviteEvent');
 const LoginStreak = require('../models/LoginStreak');
 const UserEventProgress = require("../models/UserEventProgress");
-const User = require("../models/User");
 
 class EventSchedulerService {
   constructor() {
@@ -182,7 +180,7 @@ class EventSchedulerService {
           user.diamonds = (user.diamonds || 0) + (reward.diamonds || 0);
           user.xp = (user.xp || 0) + (reward.xp || 0);
 
-          if (reward.vipTag && reward.vipTag.trim() !== '') {
+          if (reward.vipTag?.trim() !== '') {
             user.unlockedBadges = user.unlockedBadges || [];
             if (!user.unlockedBadges.includes(reward.vipTag)) {
               user.unlockedBadges.push(reward.vipTag);
@@ -270,14 +268,14 @@ class EventSchedulerService {
         user.diamonds = (user.diamonds || 0) + (reward.diamonds || 0);
         user.xp = (user.xp || 0) + (reward.xp || 0);
 
-        if (reward.vipTag && reward.vipTag.trim() !== '') {
+        if (reward.vipTag?.trim() !== '') {
           user.unlockedBadges = user.unlockedBadges || [];
           if (!user.unlockedBadges.includes(reward.vipTag)) {
             user.unlockedBadges.push(reward.vipTag);
           }
         }
 
-        if (reward.specialFrame && reward.specialFrame.trim() !== '') {
+        if (reward.specialFrame?.trim() !== '') {
           user.unlockedFrames = user.unlockedFrames || [];
           if (!user.unlockedFrames.includes(reward.specialFrame)) {
             user.unlockedFrames.push(reward.specialFrame);

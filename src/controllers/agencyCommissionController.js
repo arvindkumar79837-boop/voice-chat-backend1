@@ -6,8 +6,6 @@ const Logger = require('../utils/logger');
 
 const Agency = require('../models/Agency');
 const User = require('../models/User');
-const WalletTransaction = require('../models/WalletTransaction');
-const AuditLog = require('../models/AuditLog');
 
 /**
  * POST /api/agency/commission-tiers/create
@@ -57,7 +55,7 @@ exports.createCommissionTier = async (req, res) => {
 exports.updateCommissionTier = async (req, res) => {
   try {
     const { agencyId, tierIndex } = req.params;
-    const idx = parseInt(tierIndex);
+    const idx = parseInt(tierIndex, 10);
     const updates = req.body;
 
     const agency = await Agency.findById(agencyId);
@@ -93,7 +91,7 @@ exports.updateCommissionTier = async (req, res) => {
 exports.deleteCommissionTier = async (req, res) => {
   try {
     const { agencyId, tierIndex } = req.params;
-    const idx = parseInt(tierIndex);
+    const idx = parseInt(tierIndex, 10);
 
     const agency = await Agency.findById(agencyId);
     if (!agency) {

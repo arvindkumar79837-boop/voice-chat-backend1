@@ -34,7 +34,7 @@ exports.createTreasureHunt = async (req, res) => {
 exports.getTreasureHunts = async (req, res) => {
   try {
     const { page = 1, limit = 20, event_id, room_id, is_active } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     const query = {};
     if (event_id) query.event_id = event_id;
@@ -46,14 +46,14 @@ exports.getTreasureHunts = async (req, res) => {
       .populate('event_id', 'event_name')
       .sort({ created_at: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     const total = await TreasureHunt.countDocuments(query);
 
     res.status(200).json({
       success: true,
       data: treasureHunts,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+      pagination: { page: parseInt(page, 10), limit: parseInt(limit, 10), total, pages: Math.ceil(total / parseInt(limit, 10)) }
     });
   } catch (error) {
     Logger.error('Get Treasure Hunts Error:', error);
@@ -142,7 +142,7 @@ async function distributeTreasureRewards(treasureHunt) {
     user.diamonds = (user.diamonds || 0) + (rewards.diamonds || 0);
     user.xp = (user.xp || 0) + (rewards.xp || 0);
 
-    if (rewards.frames && rewards.frames.length > 0) {
+    if (rewards.frames?.length > 0) {
       user.unlockedFrames = user.unlockedFrames || [];
       for (const frame of rewards.frames) {
         if (!user.unlockedFrames.includes(frame)) {
@@ -151,7 +151,7 @@ async function distributeTreasureRewards(treasureHunt) {
       }
     }
 
-    if (rewards.badges && rewards.badges.length > 0) {
+    if (rewards.badges?.length > 0) {
       user.unlockedBadges = user.unlockedBadges || [];
       for (const badge of rewards.badges) {
         if (!user.unlockedBadges.includes(badge)) {
@@ -160,7 +160,7 @@ async function distributeTreasureRewards(treasureHunt) {
       }
     }
 
-    if (rewards.cars && rewards.cars.length > 0) {
+    if (rewards.cars?.length > 0) {
       user.unlockedFrames = user.unlockedFrames || [];
       for (const car of rewards.cars) {
         if (!user.unlockedFrames.includes(car)) {

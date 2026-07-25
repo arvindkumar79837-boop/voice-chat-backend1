@@ -1,15 +1,14 @@
-const mongoose = require('mongoose');
 const AuditLog = require('../models/AuditLog');
 const Logger = require('../utils/logger');
 
 class AuditLogService {
   constructor() {
     this.isEnabled = process.env.AUDIT_LOGGING_ENABLED !== 'false';
-    this.bufferSize = parseInt(process.env.AUDIT_BUFFER_SIZE) || 100;
-    this.flushIntervalMs = parseInt(process.env.AUDIT_FLUSH_INTERVAL) || 5000;
+    this.bufferSize = parseInt(process.env.AUDIT_BUFFER_SIZE, 10) || 100;
+    this.flushIntervalMs = parseInt(process.env.AUDIT_FLUSH_INTERVAL, 10) || 5000;
     this.logBuffer = [];
     this.flushInterval = null;
-    this.retentionDays = parseInt(process.env.AUDIT_RETENTION_DAYS) || 90;
+    this.retentionDays = parseInt(process.env.AUDIT_RETENTION_DAYS, 10) || 90;
   }
 
   async initialize() {

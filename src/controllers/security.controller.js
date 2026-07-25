@@ -10,8 +10,6 @@ const FraudAlert = require('../models/FraudAlert');
 const BannedDevice = require('../models/BannedDevice');
 const BlockedIp = require('../models/BlockedIp');
 const User = require('../models/User');
-const RefreshToken = require('../models/RefreshToken');
-const { authMiddleware, requireRole } = require('../middlewares/auth.middleware');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DASHBOARD SUMMARY (requires owner or admin role)
@@ -50,8 +48,8 @@ exports.getDashboard = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getFraudAlerts = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
     const severity = req.query.severity;
     const status = req.query.status;
@@ -239,8 +237,8 @@ exports.unblockIp = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getAuditLogs = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const skip = (page - 1) * limit;
     const action = req.query.action;
 

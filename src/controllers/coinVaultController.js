@@ -222,8 +222,8 @@ exports.getVaultHistory = async (req, res) => {
     // Sort by date descending
     history.sort((a, b) => new Date(b.mintedAt || b.dispatchedAt || b.burnedAt || b.createdAt || 0) - new Date(a.mintedAt || a.dispatchedAt || a.burnedAt || a.createdAt || 0));
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const total = history.length;
     const paginatedHistory = history.slice((page - 1) * limit, page * limit);
 

@@ -107,7 +107,7 @@ exports.requestDiamondExchange = async (req, res) => {
     }
 
     if (!target.isTargetMet) {
-      return res.status(400).json({ success: false, message: 'Target not yet met. Current progress: ' + target.progress.percentComplete + '%' });
+      return res.status(400).json({ success: false, message: `Target not yet met. Current progress: ${target.progress.percentComplete}%` });
     }
 
     if (target.settlement.isSettled) {
@@ -167,7 +167,7 @@ exports.approveExchange = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Target not found' });
     }
 
-    const reqIdx = parseInt(requestIndex);
+    const reqIdx = parseInt(requestIndex, 10);
     if (reqIdx < 0 || reqIdx >= target.diamondExchangeRequests.length) {
       return res.status(400).json({ success: false, message: 'Invalid exchange request index' });
     }
@@ -249,8 +249,8 @@ exports.getTargets = async (req, res) => {
     if (isTargetMet !== undefined) query.isTargetMet = isTargetMet === 'true';
     if (isSettled !== undefined) query['settlement.isSettled'] = isSettled === 'true';
 
-    const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 20;
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 20;
 
     const [targets, total] = await Promise.all([
       TargetManager.find(query)

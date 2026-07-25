@@ -7,7 +7,7 @@ class CDNService {
     this.isEnabled = process.env.CDN_ENABLED !== 'false';
     this.provider = process.env.CDN_PROVIDER || 'cloudinary';
     this.cacheEnabled = true;
-    this.defaultCacheTTL = parseInt(process.env.CDN_CACHE_TTL) || 86400;
+    this.defaultCacheTTL = parseInt(process.env.CDN_CACHE_TTL, 10) || 86400;
     this.cdnDomains = {
       images: process.env.CDN_IMAGES_DOMAIN || '',
       videos: process.env.CDN_VIDEOS_DOMAIN || '',
@@ -37,16 +37,22 @@ class CDNService {
         Logger.info('CDN Service initialized with Cloudinary');
         return true;
       } else if (this.provider === 's3') {
-        const AWS = require('aws-sdk');
-        this.s3 = new AWS.S3({
-          region: process.env.AWS_REGION,
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-        });
-        this.s3Bucket = process.env.S3_BUCKET_NAME;
-        this.cloudFrontDomain = process.env.CLOUD_FRONT_DOMAIN;
-        Logger.info('CDN Service initialized with S3 + CloudFront');
-        return true;
+        try {
+          const AWS = require('aws-sdk');
+          this.s3 = new AWS.S3({
+            region: process.env.AWS_REGION,
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+          });
+          this.s3Bucket = process.env.S3_BUCKET_NAME;
+          this.cloudFrontDomain = process.env.CLOUD_FRONT_DOMAIN;
+          Logger.info('CDN Service initialized with S3 + CloudFront');
+          return true;
+        } catch (e) {
+          Logger.warn('aws-sdk not installed, falling back to local mode');
+          this.provider = 'local';
+          return true;
+        }
       } else if (this.provider === 'local') {
         Logger.info('CDN Service running in local mode (no external CDN)');
         return true;
@@ -215,24 +221,29 @@ class CDNService {
         Logger.info('CDN cache invalidated', { urls: urlList.length, result: result.result });
         return result;
       } else if (this.provider === 's3' && this.cloudFrontDomain) {
-        const cloudfront = require('aws-sdk').CloudFront;
-        const cf = new cloudfront({ region: process.env.AWS_REGION });
-        const distributionId = process.env.CLOUD_FRONT_DISTRIBUTION_ID;
+        try {
+          const AWS = require('aws-sdk');
+          const cloudfront = new AWS.CloudFront({ region: process.env.AWS_REGION });
+          const distributionId = process.env.CLOUD_FRONT_DISTRIBUTION_ID;
 
-        const invalidationParams = {
-          DistributionId: distributionId,
-          InvalidationBatch: {
-            CallerReference: Date.now().toString(),
-            Paths: {
-              Quantity: urlList.length,
-              Items: urlList
+          const invalidationParams = {
+            DistributionId: distributionId,
+            InvalidationBatch: {
+              CallerReference: Date.now().toString(),
+              Paths: {
+                Quantity: urlList.length,
+                Items: urlList
+              }
             }
-          }
-        };
+          };
 
-        const result = await cf.createInvalidation(invalidationParams).promise();
-        Logger.info('CloudFront cache invalidated', { invalidationId: result.Invalidation.Id });
-        return result;
+          const result = await cloudfront.createInvalidation(invalidationParams).promise();
+          Logger.info('CloudFront cache invalidated', { invalidationId: result.Invalidation.Id });
+          return result;
+        } catch (e) {
+          Logger.warn('aws-sdk not available for CloudFront invalidation');
+          return null;
+        }
       }
 
       return null;

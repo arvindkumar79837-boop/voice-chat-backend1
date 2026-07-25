@@ -23,7 +23,7 @@ module.exports = (io, socket) => {
         return;
       }
 
-      const validQty = Math.max(1, Math.min(parseInt(quantity) || 1, 999));
+      const validQty = Math.max(1, Math.min(parseInt(quantity, 10) || 1, 999));
       const score = gift.coinPrice * validQty;
 
       let update = {};

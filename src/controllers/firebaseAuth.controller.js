@@ -7,7 +7,7 @@ const Logger = require('../utils/logger');
 
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const { verifyIdToken, getUserById } = require('../config/firebase-admin');
+const { verifyIdToken } = require('../config/firebase-admin');
 const BannedDevice = require('../models/BannedDevice');
 const { captureDeviceFingerprint } = require('../middlewares/deviceFingerprint');
 
@@ -75,7 +75,7 @@ exports.verifyFirebaseToken = async (req, res, next) => {
       const crypto = require('crypto');
       const uid = `FIREBASE_${firebaseUid}_${Date.now().toString(36)}`;
       const username = firebaseEmail
-        ? firebaseEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_') + '_' + crypto.randomBytes(2).toString('hex')
+        ? `${firebaseEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_')}_${crypto.randomBytes(2).toString('hex')}`
         : `user_${Date.now().toString(36)}_${crypto.randomBytes(2).toString('hex')}`.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
 
       user = await User.create({

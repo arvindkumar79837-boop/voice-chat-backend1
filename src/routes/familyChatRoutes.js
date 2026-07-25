@@ -19,7 +19,7 @@ router.get('/:familyId/messages', authMiddleware, async (req, res) => {
       return errorResponse(res, 'Access denied', 403);
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     let query = { familyId, isDeleted: false };
 
     if (before) {
@@ -29,7 +29,7 @@ router.get('/:familyId/messages', authMiddleware, async (req, res) => {
     const messages = await FamilyChat.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     return successResponse(res, 'Messages fetched', messages.reverse());

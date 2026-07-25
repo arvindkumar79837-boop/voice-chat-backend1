@@ -1,5 +1,4 @@
 const Logger = require('../utils/logger');
-const User = require('../models/User');
 
 // In-memory matchmaking queue (Use Redis in production for horizontal scaling)
 let matchmakingQueue = [];

@@ -61,7 +61,7 @@ module.exports = (io, socket) => {
           return socket.emit('gift_error', { message: 'Invalid gift price.' });
         }
 
-        const cost = gift.coinPrice * (parseInt(quantity) || 1);
+        const cost = gift.coinPrice * (parseInt(quantity, 10) || 1);
 
         // Atomic coin deduction — prevents double-spend race condition
         const updatedSender = await User.findOneAndUpdate(
@@ -90,7 +90,7 @@ module.exports = (io, socket) => {
           );
           // Check loot box level-up (read after atomic increment)
           const updatedRoom = await Room.findOne({ roomId });
-          if (updatedRoom && updatedRoom.lootBoxPoints >= updatedRoom.lootBoxLevel * 100) {
+          if (updatedRoom?.lootBoxPoints >= updatedRoom?.lootBoxLevel * 100) {
             updatedRoom.lootBoxLevel += 1;
             updatedRoom.lootBoxPoints = 0;
             await updatedRoom.save();
@@ -108,7 +108,7 @@ module.exports = (io, socket) => {
           senderName: senderName || updatedSender.name || 'User',
           senderAvatar: updatedSender.avatar || '',
           receiverId,
-          quantity: parseInt(quantity) || 1,
+          quantity: parseInt(quantity, 10) || 1,
           comboMultiplier: 1,
           previewImageUrl: gift.previewImageUrl,
           animationUrl: gift.animationUrl,
@@ -140,7 +140,7 @@ module.exports = (io, socket) => {
           senderId,
           senderName: senderName || updatedSender.name || 'User',
           receiverId,
-          quantity: parseInt(quantity) || 1,
+          quantity: parseInt(quantity, 10) || 1,
           coinCost: cost,
           timestamp: Date.now()
         });
@@ -165,7 +165,7 @@ module.exports = (io, socket) => {
 
         // Lucky gift effect
         if (gift.isLucky) {
-          const multiplier = gift.luckyMultiplier && gift.luckyMultiplier.length > 0
+          const multiplier = gift.luckyMultiplier?.length > 0
             ? gift.luckyMultiplier[Math.floor(Math.random() * gift.luckyMultiplier.length)]
             : 1;
           const winAmount = cost * multiplier;
@@ -239,12 +239,12 @@ module.exports = (io, socket) => {
         }
 
         // Combo counter for multi-quantity gifts
-        if (parseInt(quantity) > 1) {
+        if (parseInt(quantity, 10) > 1) {
           io.to(roomId).emit('combo_counter_update', {
             senderId,
             senderName: senderName || updatedSender.name || 'User',
-            comboMultiplier: parseInt(quantity),
-            totalQuantity: parseInt(quantity),
+            comboMultiplier: parseInt(quantity, 10),
+            totalQuantity: parseInt(quantity, 10),
             giftName: gift.giftName || giftName,
             totalCost: cost
           });
@@ -284,7 +284,7 @@ module.exports = (io, socket) => {
             senderId,
             receiverId,
             giftId,
-            quantity: parseInt(quantity) || 1,
+            quantity: parseInt(quantity, 10) || 1,
             totalCoins: cost,
             diamondsEarned
           });
@@ -298,7 +298,7 @@ module.exports = (io, socket) => {
             recipientId: receiverId,
             giftId: gift._id.toString(),
             giftName: gift.giftName,
-            quantity: parseInt(quantity) || 1,
+            quantity: parseInt(quantity, 10) || 1,
             balanceAfter: updatedSender.coins,
             status: 'completed'
           });
@@ -320,7 +320,7 @@ module.exports = (io, socket) => {
               senderId,
               giftId: gift._id.toString(),
               giftName: gift.giftName,
-              quantity: parseInt(quantity) || 1,
+              quantity: parseInt(quantity, 10) || 1,
               balanceAfter: receiver.diamonds,
               status: 'completed'
             });
@@ -342,7 +342,7 @@ module.exports = (io, socket) => {
       try {
         const { roomId, senderName, receiverId, giftId, giftName, comboMultiplier } = data;
         const senderId = authedUserId;
-        const multiplier = parseInt(comboMultiplier) || 5;
+        const multiplier = parseInt(comboMultiplier, 10) || 5;
         const totalQty = multiplier;
 
         if (!roomId || !giftId || !receiverId) return socket.emit('gift_error', { message: 'Room ID, gift ID, and receiver ID required.' });

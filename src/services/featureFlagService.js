@@ -9,7 +9,7 @@ class FeatureFlagService extends EventEmitter {
     this.overrideRules = new Map();
     this.rolloutHistory = [];
     this.maxHistory = 100;
-    this.defaultTtl = parseInt(process.env.FEATURE_FLAG_TTL) || 86400000;
+    this.defaultTtl = parseInt(process.env.FEATURE_FLAG_TTL, 10) || 86400000;
   }
 
   initialize() {
@@ -390,7 +390,7 @@ class FeatureFlagService extends EventEmitter {
 
   importFlags(data, importedBy) {
     try {
-      if (data.flags && Array.isArray(data.flags)) {
+      if (Array.isArray(data.flags)) {
         data.flags.forEach(flag => {
           if (!this.flags.has(flag.key)) {
             this.flags.set(flag.key, flag);
@@ -399,7 +399,7 @@ class FeatureFlagService extends EventEmitter {
         });
       }
 
-      if (data.overrides && Array.isArray(data.overrides)) {
+      if (Array.isArray(data.overrides)) {
         data.overrides.forEach(override => {
           this.overrideRules.set(`${override.flagKey}_${override.userId}`, override);
         });

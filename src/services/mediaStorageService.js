@@ -45,7 +45,7 @@ class MediaStorageService {
         cb(null, targetDir);
       },
       filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
         const ext = path.extname(file.originalname);
         cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
       }
@@ -88,7 +88,7 @@ class MediaStorageService {
       Logger.info('Image compressed', {
         originalSize: originalStats.size,
         compressedSize: stats.size,
-        savings: ((1 - stats.size / originalStats.size) * 100).toFixed(2) + '%'
+        savings: `${((1 - stats.size / originalStats.size) * 100).toFixed(2)}%`
       });
 
       return compressedPath;

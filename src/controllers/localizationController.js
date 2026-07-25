@@ -8,7 +8,7 @@ class LocalizationController {
       const keys = req.query.keys ? req.query.keys.split(',') : null;
 
       const query = { isActive: true };
-      if (keys && keys.length > 0) {
+      if (keys?.length > 0) {
         query.key = { $in: keys };
       }
 
@@ -38,7 +38,7 @@ class LocalizationController {
   async getAllStrings(req, res) {
     try {
       const { page = 1, limit = 100, category, search } = req.query;
-      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
       const query = {};
       if (category) query.category = category;
@@ -50,17 +50,17 @@ class LocalizationController {
         AppLocalizationString.find(query)
           .sort({ key: 1 })
           .skip(skip)
-          .limit(parseInt(limit)),
+          .limit(parseInt(limit, 10)),
         AppLocalizationString.countDocuments(query)
       ]);
 
       return ApiResponse.success(res, 'Localization strings fetched', {
         strings,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page: parseInt(page, 10),
+          limit: parseInt(limit, 10),
           total,
-          pages: Math.ceil(total / parseInt(limit))
+          pages: Math.ceil(total / parseInt(limit, 10))
         }
       });
     } catch (error) {

@@ -2,7 +2,6 @@ const Logger = require('../utils/logger');
 const FamilyWar = require('../models/FamilyWar');
 const Family = require('../models/Family');
 const User = require('../models/User');
-const GiftTransaction = require('../models/GiftTransaction');
 
 const familyWarController = {};
 
@@ -62,19 +61,19 @@ familyWarController.createWar = async (req, res) => {
 familyWarController.getAllWars = async (req, res) => {
   try {
     const { status = 'all', war_type = 'all', page = 1, limit = 50 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     let query = {};
     if (status !== 'all') query.status = status;
     if (war_type !== 'all') query.war_type = war_type;
 
-    const wars = await FamilyWar.find(query).sort({ start_time: -1 }).skip(skip).limit(parseInt(limit)).lean();
+    const wars = await FamilyWar.find(query).sort({ start_time: -1 }).skip(skip).limit(parseInt(limit, 10)).lean();
     const total = await FamilyWar.countDocuments(query);
 
     res.status(200).json({
       success: true,
       data: wars,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+      pagination: { page: parseInt(page, 10), limit: parseInt(limit, 10), total, pages: Math.ceil(total / parseInt(limit, 10)) }
     });
   } catch (error) {
     Logger.error('Get Wars Error:', error);

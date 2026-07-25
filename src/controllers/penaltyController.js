@@ -1,9 +1,7 @@
 const Logger = require('../utils/logger');
-const mongoose = require('mongoose');
 const Penalty = require('../models/Penalty');
 const User = require('../models/User');
 const Agency = require('../models/Agency');
-const SalaryRecord = require('../models/SalaryRecord');
 const AuditLog = require('../models/AuditLog');
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -130,8 +128,8 @@ exports.getMonthlyPenaltySummary = async (req, res) => {
     const agency = await Agency.findOne({ hosts: userId });
     if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
 
-    const m = parseInt(month) || new Date().getMonth() + 1;
-    const y = parseInt(year) || new Date().getFullYear();
+    const m = parseInt(month, 10) || new Date().getMonth() + 1;
+    const y = parseInt(year, 10) || new Date().getFullYear();
 
     const penalties = await Penalty.find({
       agencyId: agency._id,

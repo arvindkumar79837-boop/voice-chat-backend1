@@ -1,6 +1,5 @@
 const Logger = require('../utils/logger');
 const CpPair = require('../models/CpPair');
-const User = require('../models/User');
 
 exports.getMyCp = async (req, res) => {
   try {

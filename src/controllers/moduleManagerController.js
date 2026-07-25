@@ -4,8 +4,6 @@ const Logger = require('../utils/logger');
 // Handles User, Agency, Family, Finance, Event, Content, Banner, Ad, Gift, VIP, Audit, Reports, Backup, Settings managers
 // ═══════════════════════════════════════════════════════════════════════════
 
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const Staff = require('../models/Staff');
 const AuditLog = require('../models/AuditLog');
 const { 
@@ -18,11 +16,9 @@ const User = require('../models/User');
 const Agency = require('../models/Agency');
 const Family = require('../models/Family');
 const Event = require('../models/Event');
-const CoinVault = require('../models/CoinVault');
 const Gift = require('../models/Gift');
 const VipPlan = require('../models/VipPlan');
 const Transaction = require('../models/Transaction');
-const WalletTransaction = require('../models/WalletTransaction');
 const SystemSettings = require('../models/SystemSettings');
 
 // ===========================================================================
@@ -578,8 +574,8 @@ exports.updateSettings = async (req, res) => {
  */
 exports.getAuditLogs = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const action = req.query.action || '';
     const performedBy = req.query.performedBy || '';
     const startDate = req.query.startDate || '';
@@ -661,8 +657,8 @@ exports.exportAuditLogs = async (req, res) => {
  */
 exports.getReports = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const status = req.query.status || '';
     const type = req.query.type || '';
     const assignedTo = req.query.assignedTo || '';

@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const RoomLevel = require('../models/RoomLevel');
 const RoomFollower = require('../models/RoomFollower');
 const Room = require('../models/Room');
-const User = require('../models/User');
 
 const onlineUsersInRooms = {};
 

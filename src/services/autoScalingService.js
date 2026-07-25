@@ -1,4 +1,3 @@
-const os = require('os');
 const MonitoringService = require('./monitoringService');
 const Logger = require('../utils/logger');
 
@@ -8,11 +7,11 @@ class AutoScalingService {
     this.checkInterval = null;
     this.scalingHistory = [];
     this.currentInstanceCount = 1;
-    this.minInstances = parseInt(process.env.MIN_INSTANCES) || 1;
-    this.maxInstances = parseInt(process.env.MAX_INSTANCES) || 4;
+    this.minInstances = parseInt(process.env.MIN_INSTANCES, 10) || 1;
+    this.maxInstances = parseInt(process.env.MAX_INSTANCES, 10) || 4;
     this.cpuThreshold = parseFloat(process.env.CPU_SCALE_THRESHOLD) || 75;
     this.memoryThreshold = parseFloat(process.env.MEMORY_SCALE_THRESHOLD) || 80;
-    this.cooldownPeriod = parseInt(process.env.SCALE_COOLDOWN_MS) || 300000;
+    this.cooldownPeriod = parseInt(process.env.SCALE_COOLDOWN_MS, 10) || 300000;
     this.lastScaleAction = 0;
     this.scaleUpCount = 0;
     this.scaleDownCount = 0;
@@ -198,22 +197,26 @@ class AutoScalingService {
   }
 
   async triggerAWSLambdaScale(instanceCount) {
-    const AWS = require('aws-sdk');
-    const autoscaling = new AWS.AutoScaling({
-      region: process.env.AWS_REGION || 'us-east-1',
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-    });
+    try {
+      const AWS = require('aws-sdk');
+      const autoscaling = new AWS.AutoScaling({
+        region: process.env.AWS_REGION || 'us-east-1',
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+      });
 
-    const params = {
-      AutoScalingGroupName: process.env.AWS_AUTOSCALING_GROUP,
-      DesiredCapacity: instanceCount,
-      MinSize: this.minInstances,
-      MaxSize: this.maxInstances
-    };
+      const params = {
+        AutoScalingGroupName: process.env.AWS_AUTOSCALING_GROUP,
+        DesiredCapacity: instanceCount,
+        MinSize: this.minInstances,
+        MaxSize: this.maxInstances
+      };
 
-    await autoscaling.updateAutoScalingGroup(params).promise();
-    Logger.info('AWS AutoScaling group updated', { instanceCount });
+      await autoscaling.updateAutoScalingGroup(params).promise();
+      Logger.info('AWS AutoScaling group updated', { instanceCount });
+    } catch (e) {
+      Logger.warn('aws-sdk not available for AWS Lambda scaling');
+    }
   }
 
   async triggerRenderScale(instanceCount) {

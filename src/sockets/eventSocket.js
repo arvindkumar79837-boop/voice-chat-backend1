@@ -2,8 +2,6 @@ const Logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const Event = require('../models/Event');
 const UserEventProgress = require('../models/UserEventProgress');
-const EventPrizePool = require('../models/EventPrizePool');
-const WelcomeWeekTask = require('../models/WelcomeWeekTask');
 
 
 class EventSocket {
@@ -130,8 +128,8 @@ class EventSocket {
           if (rewards.coins > 0) updateOps.$inc = { ...(updateOps.$inc || {}), coins: rewards.coins };
           if (rewards.diamonds > 0) updateOps.$inc = { ...(updateOps.$inc || {}), diamonds: rewards.diamonds };
           if (rewards.xp > 0) updateOps.$inc = { ...(updateOps.$inc || {}), xp: rewards.xp };
-          if (rewards.badges && rewards.badges.length > 0) updateOps.$push = { ...(updateOps.$push || {}), badges: { $each: rewards.badges } };
-          if (rewards.frames && rewards.frames.length > 0) updateOps.$push = { ...(updateOps.$push || {}), frames: { $each: rewards.frames } };
+          if (rewards.badges?.length > 0) updateOps.$push = { ...(updateOps.$push || {}), badges: { $each: rewards.badges } };
+          if (rewards.frames?.length > 0) updateOps.$push = { ...(updateOps.$push || {}), frames: { $each: rewards.frames } };
           if (rewards.vipDays > 0) updateOps.$set = { ...(updateOps.$set || {}), vipExpiry: new Date(Date.now() + rewards.vipDays * 24 * 60 * 60 * 1000) };
 
           const User = mongoose.model('User');

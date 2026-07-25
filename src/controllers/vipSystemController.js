@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const VipSystem = require('../models/VipSystem');
 const CosmeticItem = require('../models/CosmeticItem');
 const User = require('../models/User');
-const { VIP_XP_THRESHOLDS, SVIP_CONFIG } = require('../models/VipSystem');
+const { VIP_XP_THRESHOLDS } = require('../models/VipSystem');
 
 // ============================================================
 // VIP SYSTEM CONTROLLER
@@ -230,7 +230,7 @@ exports.purchasePremium = async (req, res) => {
   try {
     const userId = req.user.id || req.user.userId;
     const { months } = req.body;
-    const monthsToAdd = parseInt(months) || 1;
+    const monthsToAdd = parseInt(months, 10) || 1;
     const premiumCost = 500 * monthsToAdd; // 500 coins per month
     const user = await User.findById(userId);
     if (!user) {
@@ -805,7 +805,7 @@ exports.adminListAllVIP = async (req, res) => {
   try {
     const { page = 1, limit = 20, vip_level, is_svip, is_premium, sort_by = 'vip_level', sort_order = 'desc' } = req.query;
     const filter = {};
-    if (vip_level) filter.vip_level = parseInt(vip_level);
+    if (vip_level) filter.vip_level = parseInt(vip_level, 10);
     if (is_svip === 'true') filter.is_svip = true;
     if (is_svip === 'false') filter.is_svip = false;
     if (is_premium === 'true') filter.is_premium = true;
@@ -814,8 +814,8 @@ exports.adminListAllVIP = async (req, res) => {
     const total = await VipSystem.countDocuments(filter);
     const vipUsers = await VipSystem.find(filter)
       .sort(sortObj)
-      .skip((parseInt(page) - 1) * parseInt(limit))
-      .limit(parseInt(limit))
+      .skip((parseInt(page, 10) - 1) * parseInt(limit, 10))
+      .limit(parseInt(limit, 10))
       .lean();
     const enriched = await Promise.all(vipUsers.map(async (vu) => {
       const user = await User.findById(vu.user_uid).select('username fullName profilePic coins phoneNumber').lean();
@@ -825,10 +825,10 @@ exports.adminListAllVIP = async (req, res) => {
       success: true,
       data: enriched,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: Math.ceil(total / parseInt(limit, 10))
       }
     });
   } catch (error) {
@@ -882,7 +882,7 @@ exports.getVIPLeaderboard = async (req, res) => {
     const { limit = 50 } = req.query;
     const vipUsers = await VipSystem.find({ vip_level: { $gt: 0 } })
       .sort({ vip_level: -1, vip_xp: -1 })
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
     const enriched = await Promise.all(vipUsers.map(async (vu, index) => {
       const user = await User.findById(vu.user_uid).select('username fullName profilePic').lean();

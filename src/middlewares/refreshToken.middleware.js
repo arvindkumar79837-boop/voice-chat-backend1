@@ -7,11 +7,9 @@ const Logger = require('../utils/logger');
 // • Revokes family on security events
 // ═══════════════════════════════════════════════════════════════════════════
 
-const jwt = require('jsonwebtoken');
 const RefreshToken = require('../models/RefreshToken');
 const User = require('../models/User');
 const { verifyRefreshToken } = require('../utils/jwt');
-const { verifyIdToken } = require('../config/firebase-admin');
 
 /**
  * Attaches refreshToken middleware to router.

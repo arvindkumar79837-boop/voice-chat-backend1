@@ -62,7 +62,7 @@ exports.getVisitorHistory = async (req, res) => {
     const visitors = await VisitorHistory.find({ profileOwner: userId })
       .populate('visitor', 'username displayName avatar uid vipLevel role verificationType agencyId')
       .sort({ visitedAt: -1 })
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     res.json({ success: true, visitors });
   } catch (err) {
@@ -88,7 +88,7 @@ exports.recordVisitor = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    if (targetUser.blockList && targetUser.blockList.includes(viewerId)) {
+    if (targetUser.blockList?.includes(viewerId)) {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
@@ -160,7 +160,7 @@ exports.searchUsers = async (req, res) => {
       { $text: { $search: query }, isBanned: false },
       { score: { $meta: 'textScore' } }
     )
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .select('username displayName avatar uid vipLevel verificationType followersCount');
 
     res.json({ success: true, users });

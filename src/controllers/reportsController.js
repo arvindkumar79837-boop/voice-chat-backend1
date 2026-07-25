@@ -1,5 +1,4 @@
 const Logger = require('../utils/logger');
-const mongoose = require('mongoose');
 const Attendance = require('../models/Attendance');
 const SalaryRecord = require('../models/SalaryRecord');
 const Bonus = require('../models/Bonus');
@@ -7,7 +6,6 @@ const Penalty = require('../models/Penalty');
 const Agency = require('../models/Agency');
 const MonthlyReport = require('../models/MonthlyReport');
 const Gift = require('../models/Gift');
-const Transaction = require('../models/Transaction');
 
 // ─────────────────────────────────────────────────────────────────────────
 // AGENCY: GET REAL-TIME ANALYTICS DASHBOARD
@@ -105,8 +103,8 @@ exports.getMonthlyReport = async (req, res) => {
     const agency = await Agency.findOne({ hosts: userId });
     if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
 
-    const m = parseInt(month) || new Date().getMonth() + 1;
-    const y = parseInt(year) || new Date().getFullYear();
+    const m = parseInt(month, 10) || new Date().getMonth() + 1;
+    const y = parseInt(year, 10) || new Date().getFullYear();
 
     let report = await MonthlyReport.findOne({ agencyId: agency._id, month: m, year: y });
 
@@ -195,8 +193,8 @@ exports.getDailyChartData = async (req, res) => {
     const agency = await Agency.findOne({ hosts: userId });
     if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
 
-    const m = parseInt(month) || new Date().getMonth() + 1;
-    const y = parseInt(year) || new Date().getFullYear();
+    const m = parseInt(month, 10) || new Date().getMonth() + 1;
+    const y = parseInt(year, 10) || new Date().getFullYear();
     const daysInMonth = new Date(y, m, 0).getDate();
 
     const startDate = new Date(y, m - 1, 1);
@@ -238,8 +236,8 @@ exports.getHostRanking = async (req, res) => {
     const agency = await Agency.findOne({ hosts: userId });
     if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
 
-    const m = parseInt(month) || new Date().getMonth() + 1;
-    const y = parseInt(year) || new Date().getFullYear();
+    const m = parseInt(month, 10) || new Date().getMonth() + 1;
+    const y = parseInt(year, 10) || new Date().getFullYear();
     const startDate = new Date(y, m - 1, 1);
     const endDate = new Date(y, m, 0, 23, 59, 59);
 

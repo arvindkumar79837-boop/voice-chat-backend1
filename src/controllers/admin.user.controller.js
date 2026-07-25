@@ -8,8 +8,8 @@ const User = require('../models/User');
  */
 exports.getAllUsers = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const search = req.query.search || '';
 
     const query = {};

@@ -4,7 +4,7 @@ const Message = require('../models/RoomMessage');
 exports.getChatHistory = async (req, res) => {
   try {
     const { userId, targetId } = req.params;
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit, 10) || 50;
 
     // Find messages where the two users are either the sender or receiver
     const messages = await Message.find({

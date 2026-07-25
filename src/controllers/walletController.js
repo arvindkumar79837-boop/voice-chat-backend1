@@ -9,7 +9,6 @@ const Agency = require('../models/Agency');
 const Family = require('../models/Family');
 const IncomeAnalytics = require('../models/IncomeAnalytics');
 const AuditLog = require('../models/AuditLog');
-const RechargePlan = require('../models/RechargePlan');
 
 const DEFAULT_CONFIG = {
   diamondToCoinRate: 10,
@@ -240,8 +239,8 @@ exports.getWallet = async (req, res, next) => {
 exports.getTransactionHistory = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
     const walletType = req.query.walletType;
 
@@ -424,7 +423,7 @@ exports.addFamilyTaskReward = async (req, res, next) => {
     await familyWallet.save();
 
     const family = await Family.findById(familyId).select('members_list family_name');
-    if (family && family.members_list) {
+    if (family?.members_list) {
       const members = await User.find({ uid: { $in: family.members_list } }).select('_id');
       for (const member of members) {
         await logTransaction(member._id, 'family', 'family_task_reward', taskCoins || taskDiamonds, description, {
@@ -908,8 +907,8 @@ exports.getWithdrawalStatus = async (req, res, next) => {
 
 exports.getAllWithdrawals = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const status = req.query.status;
     const userId = req.query.userId;
 
@@ -1150,8 +1149,8 @@ exports.getIncomeAnalytics = async (req, res, next) => {
   try {
     const userId = req.user.userId;
     const range = req.query.range || 'monthly';
-    const year = parseInt(req.query.year) || new Date().getFullYear();
-    const month = parseInt(req.query.month) || (new Date().getMonth() + 1);
+    const year = parseInt(req.query.year, 10) || new Date().getFullYear();
+    const month = parseInt(req.query.month, 10) || (new Date().getMonth() + 1);
 
     let analytics;
     if (range === 'daily') {
@@ -1470,8 +1469,8 @@ exports.updateWalletConfig = async (req, res, next) => {
 
 exports.getAllTransactions = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const skip = (page - 1) * limit;
     const userId = req.query.userId;
     const walletType = req.query.walletType;
@@ -1505,8 +1504,8 @@ exports.getAllTransactions = async (req, res, next) => {
 
 exports.getTaxRecords = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const skip = (page - 1) * limit;
 
     const taxTransactions = await WalletTransaction.find({ type: 'tax_deducted' })
@@ -1545,8 +1544,8 @@ exports.getFamilyWalletTransactions = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'No family found' });
     }
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
 
     const transactions = await WalletTransaction.find({
@@ -1585,8 +1584,8 @@ exports.getAgencyWalletTransactions = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'No agency found' });
     }
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
 
     const transactions = await WalletTransaction.find({
@@ -1820,7 +1819,7 @@ exports.getAgencyMonthlyHistory = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'No agency found' });
     }
 
-    const months = parseInt(req.query.months) || 6;
+    const months = parseInt(req.query.months, 10) || 6;
     const now = new Date();
     const stats = [];
 

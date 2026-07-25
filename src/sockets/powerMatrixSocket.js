@@ -32,9 +32,9 @@ function setupPowerMatrixSocketHandlers(io, socket) {
         return socket.emit('power:error', { message: 'Power matrix not configured.' });
       }
 
-      const isRoomOwner = room && room.ownerId.toString() === actorId.toString();
-      const isRoomAdmin = room && (room.admins.includes(actorId) || room.coHosts.includes(actorId));
-      const isTargetOwner = room && room.ownerId.toString() === targetUserId.toString();
+      const isRoomOwner = room?.ownerId?.toString() === actorId.toString();
+      const isRoomAdmin = room?.admins?.includes(actorId) || room?.coHosts?.includes(actorId);
+      const isTargetOwner = room?.ownerId?.toString() === targetUserId.toString();
 
       if (isTargetOwner) {
         return socket.emit('power:authorization_result', {
@@ -44,7 +44,11 @@ function setupPowerMatrixSocketHandlers(io, socket) {
             actorLevel: actor.level,
             targetLevel: target.level,
             actorRole: actor.role,
-            targetRole: target.isVip ? (target.vipLevel >= 10 ? 'svip' : 'vip') : 'user',
+            targetRole: (() => {
+              if (target.isVip && target.vipLevel >= 10) return 'svip';
+              if (target.isVip) return 'vip';
+              return 'user';
+            })(),
             action
           }
         });
@@ -54,7 +58,14 @@ function setupPowerMatrixSocketHandlers(io, socket) {
       if (isRoomOwner) actorRole = 'owner';
       else if (isRoomAdmin) actorRole = 'admin';
 
-      const targetRole = target.isVip ? (target.vipLevel >= 10 ? 'svip' : 'vip') : 'user';
+      let targetRole;
+      if (target.isVip && target.vipLevel >= 10) {
+        targetRole = 'svip';
+      } else if (target.isVip) {
+        targetRole = 'vip';
+      } else {
+        targetRole = 'user';
+      }
 
       let result;
       if (action === 'mute') {
@@ -350,9 +361,9 @@ async function validateSocketPower(io, socket, actorId, targetUserId, action, ro
       return { allowed: false, reason: 'Power matrix not configured.' };
     }
 
-    const isRoomOwner = room && room.ownerId.toString() === actorId.toString();
-    const isRoomAdmin = room && (room.admins.includes(actorId) || room.coHosts.includes(actorId));
-    const isTargetOwner = room && room.ownerId.toString() === targetUserId.toString();
+    const isRoomOwner = room?.ownerId?.toString() === actorId.toString();
+    const isRoomAdmin = room?.admins?.includes(actorId) || room?.coHosts?.includes(actorId);
+    const isTargetOwner = room?.ownerId?.toString() === targetUserId.toString();
 
     if (isTargetOwner) {
       return { allowed: false, reason: 'Cannot perform action on room owner.', powerDetails: { isTargetOwner: true } };
@@ -362,7 +373,14 @@ async function validateSocketPower(io, socket, actorId, targetUserId, action, ro
     if (isRoomOwner) actorRole = 'owner';
     else if (isRoomAdmin) actorRole = 'admin';
 
-    const targetRole = target.isVip ? (target.vipLevel >= 10 ? 'svip' : 'vip') : 'user';
+    let targetRole;
+    if (target.isVip && target.vipLevel >= 10) {
+      targetRole = 'svip';
+    } else if (target.isVip) {
+      targetRole = 'vip';
+    } else {
+      targetRole = 'user';
+    }
 
     let result;
     if (action === 'mute') {

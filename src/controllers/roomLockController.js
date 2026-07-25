@@ -124,13 +124,13 @@ exports.discoverRooms = async (req, res) => {
     if (topic) filter.topic = topic;
     if (roomType) filter.roomType = roomType;
 
-    const skip = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
+    const skip = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
     const [rooms, total] = await Promise.all([
       Room.find(filter)
         .populate('ownerId', 'uid name username avatar arvindId')
         .sort({ isLive: -1, activeUsers: -1, createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit)),
+        .limit(parseInt(limit, 10)),
       Room.countDocuments(filter),
     ]);
 
@@ -139,10 +139,10 @@ exports.discoverRooms = async (req, res) => {
       data: {
         rooms,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page: parseInt(page, 10),
+          limit: parseInt(limit, 10),
           total,
-          pages: Math.ceil(total / parseInt(limit)),
+          pages: Math.ceil(total / parseInt(limit, 10)),
         },
       },
     });

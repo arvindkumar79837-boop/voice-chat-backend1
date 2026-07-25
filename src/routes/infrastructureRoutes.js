@@ -129,7 +129,7 @@ router.post('/backup/restore/:backupId', async (req, res) => {
 router.get('/errors/recent', (req, res) => {
   try {
     const { duration } = req.query;
-    const durationMs = duration ? parseInt(duration) : 3600000;
+    const durationMs = duration ? parseInt(duration, 10) : 3600000;
     const errors = ErrorReportingService.getRecentErrors(durationMs);
     res.json({ success: true, data: errors });
   } catch (error) {
@@ -179,8 +179,8 @@ router.get('/audit/logs', async (req, res) => {
       search: req.query.search
     };
     const pagination = {
-      page: parseInt(req.query.page) || 1,
-      limit: parseInt(req.query.limit) || 50
+      page: parseInt(req.query.page, 10) || 1,
+      limit: parseInt(req.query.limit, 10) || 50
     };
     const result = await AuditLogService.query(filters, pagination);
     res.json({ success: true, data: result });
@@ -192,7 +192,7 @@ router.get('/audit/logs', async (req, res) => {
 router.get('/audit/activity-report', async (req, res) => {
   try {
     const { duration } = req.query;
-    const durationMs = duration ? parseInt(duration) : 86400000;
+    const durationMs = duration ? parseInt(duration, 10) : 86400000;
     const report = await AuditLogService.getActivityReport(durationMs);
     res.json({ success: true, data: report });
   } catch (error) {
@@ -203,7 +203,7 @@ router.get('/audit/activity-report', async (req, res) => {
 router.get('/audit/suspicious', async (req, res) => {
   try {
     const { duration } = req.query;
-    const durationMs = duration ? parseInt(duration) : 3600000;
+    const durationMs = duration ? parseInt(duration, 10) : 3600000;
     const suspicious = await AuditLogService.getSuspiciousActivity(durationMs);
     res.json({ success: true, data: suspicious });
   } catch (error) {
@@ -223,7 +223,7 @@ router.get('/alerts/active', (req, res) => {
 router.get('/alerts/history', (req, res) => {
   try {
     const { limit } = req.query;
-    const history = HealthAlertService.getAlertHistory(limit ? parseInt(limit) : 50);
+    const history = HealthAlertService.getAlertHistory(limit ? parseInt(limit, 10) : 50);
     res.json({ success: true, data: history });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch alert history', error: error.message });
@@ -272,7 +272,7 @@ router.post('/deploy/rollback', async (req, res) => {
 router.get('/deploy/history', (req, res) => {
   try {
     const { limit } = req.query;
-    const history = DeploymentService.getDeploymentHistory(limit ? parseInt(limit) : 20);
+    const history = DeploymentService.getDeploymentHistory(limit ? parseInt(limit, 10) : 20);
     res.json({ success: true, data: history });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch deployment history', error: error.message });

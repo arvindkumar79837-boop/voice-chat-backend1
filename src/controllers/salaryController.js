@@ -1,5 +1,4 @@
 const Logger = require('../utils/logger');
-const mongoose = require('mongoose');
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const Gift = require('../models/Gift');
@@ -19,8 +18,8 @@ exports.calculateMonthlySalary = async (req, res) => {
     const { agencyId } = req.params;
     const { month, year } = req.query;
 
-    const m = parseInt(month) || new Date().getMonth() + 1;
-    const y = parseInt(year) || new Date().getFullYear() - 1; // previous month by default for cron
+    const m = parseInt(month, 10) || new Date().getMonth() + 1;
+    const y = parseInt(year, 10) || new Date().getFullYear() - 1; // previous month by default for cron
 
     const startDate = new Date(y, m - 1, 1);
     const endDate = new Date(y, m, 0, 23, 59, 59);
@@ -95,7 +94,14 @@ exports.calculateMonthlySalary = async (req, res) => {
         return sum + p.amount;
       }, 0);
 
-      const attendanceBonus = data.attendanceDays >= 25 ? 500 : data.attendanceDays >= 20 ? 300 : 0;
+      let attendanceBonus;
+      if (data.attendanceDays >= 25) {
+        attendanceBonus = 500;
+      } else if (data.attendanceDays >= 20) {
+        attendanceBonus = 300;
+      } else {
+        attendanceBonus = 0;
+      }
       const giftCommission = Math.floor(data.giftsValue * 0.05);
       const totalPaid = Math.max(0, baseSalary + bonusesTotal + attendanceBonus + giftCommission - penaltiesTotal);
 
@@ -130,7 +136,7 @@ exports.calculateMonthlySalary = async (req, res) => {
     const wallet = await AgencyWallet.findOne({ agencyId: agency._id });
     const totalSalary = salaryRecords.reduce((sum, r) => sum + r.totalPaid, 0);
 
-    if (wallet && wallet.balance >= totalSalary) {
+    if (wallet?.balance >= totalSalary) {
       wallet.balance -= totalSalary;
       wallet.totalWithdrawn += totalSalary;
       await wallet.save();
@@ -197,8 +203,8 @@ exports.getSalaryHistory = async (req, res) => {
     if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
 
     const query = { agencyId: agency._id };
-    if (month) query.month = parseInt(month);
-    if (year) query.year = parseInt(year);
+    if (month) query.month = parseInt(month, 10);
+    if (year) query.year = parseInt(year, 10);
     if (hostId) query.userId = hostId;
 
     const records = await SalaryRecord.find(query)

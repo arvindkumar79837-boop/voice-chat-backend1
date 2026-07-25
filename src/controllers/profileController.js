@@ -8,9 +8,6 @@ const Logger = require('../utils/logger');
 const User = require('../models/User');
 const Staff = require('../models/Staff');
 const Badge = require('../models/Badge');
-const BannedDevice = require('../models/BannedDevice');
-const path = require('path');
-const fs = require('fs');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPER: Calculate XP needed for next level (exponential growth)
@@ -159,46 +156,48 @@ exports.updateProfile = async (req, res, next) => {
     const staffRecord = await Staff.findOne({ userId: user._id });
     const isStaffMember = !!staffRecord;
 
+    const { name, displayName, avatar, bio, gender, dob, username } = req.body;
+
     const allowedFields = {};
 
     if (isStaffMember && userId === requestingUserId) {
       // Staff can ONLY update display picture and display name
-      if (req.body.displayName !== undefined) {
-        allowedFields.displayName = req.body.displayName.trim();
-        allowedFields.name = req.body.displayName.trim();
+      if (displayName !== undefined) {
+        allowedFields.displayName = displayName.trim();
+        allowedFields.name = displayName.trim();
       }
-      if (req.body.avatar !== undefined) {
-        allowedFields.avatar = req.body.avatar;
+      if (avatar !== undefined) {
+        allowedFields.avatar = avatar;
       }
     } else if (userId === requestingUserId) {
       // Regular user can update full profile (except login credentials)
-      if (req.body.name !== undefined) allowedFields.name = req.body.name.trim();
-      if (req.body.displayName !== undefined) allowedFields.displayName = req.body.displayName.trim();
-      if (req.body.avatar !== undefined) allowedFields.avatar = req.body.avatar;
-      if (req.body.bio !== undefined) allowedFields.bio = req.body.bio.trim();
-      if (req.body.gender !== undefined) {
+      if (name !== undefined) allowedFields.name = name.trim();
+      if (displayName !== undefined) allowedFields.displayName = displayName.trim();
+      if (avatar !== undefined) allowedFields.avatar = avatar;
+      if (bio !== undefined) allowedFields.bio = bio.trim();
+      if (gender !== undefined) {
         const validGenders = ['Male', 'Female', 'Other', 'Not specified'];
-        if (validGenders.includes(req.body.gender)) {
-          allowedFields.gender = req.body.gender;
+        if (validGenders.includes(gender)) {
+          allowedFields.gender = gender;
         }
       }
-      if (req.body.dob !== undefined) {
-        const parsedDob = new Date(req.body.dob);
+      if (dob !== undefined) {
+        const parsedDob = new Date(dob);
         if (!isNaN(parsedDob.getTime())) {
           allowedFields.dob = parsedDob;
         }
       }
-      if (req.body.username !== undefined) {
-        const username = req.body.username.trim().toLowerCase();
-        if (/^[a-z0-9_]{3,20}$/.test(username)) {
-          const existingUser = await User.findOne({ username, _id: { $ne: userId } });
+      if (username !== undefined) {
+        const normalizedUsername = username.trim().toLowerCase();
+        if (/^[a-z0-9_]{3,20}$/.test(normalizedUsername)) {
+          const existingUser = await User.findOne({ username: normalizedUsername, _id: { $ne: userId } });
           if (existingUser) {
             return res.status(409).json({
               success: false,
               message: 'Username is already taken',
             });
           }
-          allowedFields.username = username;
+          allowedFields.username = normalizedUsername;
         } else {
           return res.status(400).json({
             success: false,

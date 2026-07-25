@@ -127,7 +127,7 @@ const _muteChatUser = async (userId, minutes) => {
     await User.findByIdAndUpdate(userId, {
       $set: { chatMutedUntil: muteExpiry },
     });
-  } catch (_) {}
+  } catch (err) { console.error('Failed to mute chat user:', err.message); }
 };
 
 module.exports = { analyseMessage, validateGameTiming };

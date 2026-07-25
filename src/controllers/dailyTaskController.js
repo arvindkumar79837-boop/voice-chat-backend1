@@ -148,7 +148,7 @@ exports.claimTaskReward = async (req, res) => {
     user.diamonds = (user.diamonds || 0) + (task.reward_diamonds || 0);
     user.xp = (user.xp || 0) + (task.reward_xp || 0);
 
-    if (task.reward_frames && task.reward_frames.length > 0) {
+    if (task.reward_frames?.length > 0) {
       user.unlockedFrames = user.unlockedFrames || [];
       for (const frame of task.reward_frames) {
         if (!user.unlockedFrames.includes(frame)) {
@@ -156,7 +156,7 @@ exports.claimTaskReward = async (req, res) => {
         }
       }
     }
-    if (task.reward_badges && task.reward_badges.length > 0) {
+    if (task.reward_badges?.length > 0) {
       user.unlockedBadges = user.unlockedBadges || [];
       for (const badge of task.reward_badges) {
         if (!user.unlockedBadges.includes(badge)) {

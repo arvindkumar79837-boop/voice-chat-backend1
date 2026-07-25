@@ -171,7 +171,7 @@ exports.decide = async (req, res) => {
     if (session.userADecision !== 'PENDING' && session.userBDecision !== 'PENDING') {
       if (session.userADecision === 'INTERESTED' && session.userBDecision === 'INTERESTED') {
         session.status = 'MATCHED'; session.endedAt = new Date();
-        try { await User.findByIdAndUpdate(session.userA, { $addToSet: { following: session.userB, followers: session.userB } }); await User.findByIdAndUpdate(session.userB, { $addToSet: { following: session.userA, followers: session.userA } }); } catch (_) {}
+        try { await User.findByIdAndUpdate(session.userA, { $addToSet: { following: session.userB, followers: session.userB } }); await User.findByIdAndUpdate(session.userB, { $addToSet: { following: session.userA, followers: session.userA } }); } catch (err) { console.error('Failed to update following/followers:', err.message); }
         await BlindDateProfile.updateMany({ userId: { $in: [session.userA, session.userB] } }, { $inc: { totalMatches: 1 } });
         const uA = await User.findById(session.userA).select('name avatar');
         const uB = await User.findById(session.userB).select('name avatar');
@@ -216,8 +216,8 @@ exports.getAllSessions = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
     const filter = status ? { status } : {};
-    const skip = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
-    const [sessions, total] = await Promise.all([BlindDateSession.find(filter).populate('userA', 'name avatar').populate('userB', 'name avatar').sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)), BlindDateSession.countDocuments(filter)]);
-    return res.json({ success: true, data: { sessions, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } } });
+    const skip = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
+    const [sessions, total] = await Promise.all([BlindDateSession.find(filter).populate('userA', 'name avatar').populate('userB', 'name avatar').sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit, 10)), BlindDateSession.countDocuments(filter)]);
+    return res.json({ success: true, data: { sessions, pagination: { page: parseInt(page, 10), limit: parseInt(limit, 10), total, pages: Math.ceil(total / parseInt(limit, 10)) } } });
   } catch (err) { return res.status(500).json({ success: false, message: err.message }); }
 };

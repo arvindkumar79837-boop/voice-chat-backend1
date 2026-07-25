@@ -4,16 +4,13 @@ const Logger = require('../utils/logger');
 // ARVIND PARTY - MASTER EVENT ENGINE CONTROLLER
 // ═══════════════════════════════════════════════════════════════════════════
 
-const mongoose = require('mongoose');
 const Event = require('../models/Event');
 const WelcomeWeekTask = require('../models/WelcomeWeekTask');
 const UserEventProgress = require('../models/UserEventProgress');
 const EventPrizePool = require('../models/EventPrizePool');
 const FestivalGift = require('../models/FestivalGift');
 const AnniversaryReward = require('../models/AnniversaryReward');
-const Gift = require('../models/Gift');
 const User = require('../models/User');
-const Transaction = require('../models/Transaction');
 const WalletTransaction = require('../models/WalletTransaction');
 const { broadcastToUser } = require('../sockets/eventSocket');
 
@@ -302,11 +299,11 @@ class EventController {
         await User.findByIdAndUpdate(userId, { $inc: { xp: rewards.xp } });
       }
 
-      if (rewards.badges && rewards.badges.length > 0) {
+      if (rewards.badges?.length > 0) {
         user.badges = [...(user.badges || []), ...rewards.badges];
       }
 
-      if (rewards.frames && rewards.frames.length > 0) {
+      if (rewards.frames?.length > 0) {
         user.frames = [...(user.frames || []), ...rewards.frames];
       }
 
@@ -413,14 +410,14 @@ class EventController {
     try {
       const userId = req.user.userId;
       const { page = 1, limit = 20 } = req.query;
-      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
       const progress = await UserEventProgress.find({ userId })
         .populate('eventId', 'event_name event_type reward_details start_time end_time')
         .populate('taskId', 'task_name task_type')
         .sort({ updatedAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit));
+        .limit(parseInt(limit, 10));
 
       const total = await UserEventProgress.countDocuments({ userId });
 
@@ -428,10 +425,10 @@ class EventController {
         success: true,
         data: progress,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page: parseInt(page, 10),
+          limit: parseInt(limit, 10),
           total,
-          pages: Math.ceil(total / parseInt(limit))
+          pages: Math.ceil(total / parseInt(limit, 10))
         }
       });
     } catch (error) {
@@ -450,7 +447,7 @@ class EventController {
   static async getAllEventsAdmin(req, res) {
     try {
       const { page = 1, limit = 50, type, status } = req.query;
-      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
       const query = {};
       if (type) query.event_type = type;
@@ -461,7 +458,7 @@ class EventController {
         .populate('updated_by', 'name email')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit));
+        .limit(parseInt(limit, 10));
 
       const total = await Event.countDocuments(query);
 
@@ -469,10 +466,10 @@ class EventController {
         success: true,
         data: events,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page: parseInt(page, 10),
+          limit: parseInt(limit, 10),
           total,
-          pages: Math.ceil(total / parseInt(limit))
+          pages: Math.ceil(total / parseInt(limit, 10))
         }
       });
     } catch (error) {
@@ -704,7 +701,7 @@ class EventController {
     try {
       const { year_anniversary } = req.query;
       const query = {};
-      if (year_anniversary) query.year_anniversary = parseInt(year_anniversary);
+      if (year_anniversary) query.year_anniversary = parseInt(year_anniversary, 10);
 
       const rewards = await AnniversaryReward.find(query).sort({ year_anniversary: -1, category: 1, rank_position: 1 });
       res.status(200).json({

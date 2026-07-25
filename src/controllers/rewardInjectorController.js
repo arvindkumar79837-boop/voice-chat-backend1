@@ -97,8 +97,8 @@ exports.getRewardHistory = async (req, res) => {
     if (targetUid) query.targetUid = targetUid;
     if (assetType) query['assets.assetType'] = assetType;
 
-    const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 20;
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 20;
 
     const [rewards, total] = await Promise.all([
       RewardInjector.find(query)

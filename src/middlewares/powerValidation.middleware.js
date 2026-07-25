@@ -61,7 +61,14 @@ const checkPowerMiddleware = async (req, res, next) => {
     if (isRoomOwner) actorRole = 'owner';
     else if (isRoomAdmin) actorRole = 'admin';
 
-    const targetRole = target.isVip ? (target.vipLevel >= 10 ? 'svip' : 'vip') : 'user';
+    let targetRole;
+    if (target.isVip && target.vipLevel >= 10) {
+      targetRole = 'svip';
+    } else if (target.isVip) {
+      targetRole = 'vip';
+    } else {
+      targetRole = 'user';
+    }
 
     let result;
     if (action === 'mute') {

@@ -1,5 +1,4 @@
 const Logger = require('../utils/logger');
-const User = require('../models/User');
 
 function agencySocket(io, socket) {
     const userId = socket.data?.userId;

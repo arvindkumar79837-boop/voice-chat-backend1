@@ -52,10 +52,8 @@ exports.createRoom = async (req, res) => {
     }
 
     // Validate password for PASSWORD rooms
-    if (normalizedType === 'PASSWORD') {
-      if (!roomPassword || roomPassword.length !== 4) {
-        return res.status(400).json({ success: false, message: '4-digit password is required for password rooms.' });
-      }
+    if (normalizedType === 'PASSWORD' && (!roomPassword || roomPassword.length !== 4)) {
+      return res.status(400).json({ success: false, message: '4-digit password is required for password rooms.' });
     }
 
     // Validate family/agency association
@@ -66,7 +64,7 @@ exports.createRoom = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Agency ID is required for agency rooms.' });
     }
 
-    const seatCountNum = Math.min(Math.max(parseInt(seatCount) || 8, 2), 32);
+    const seatCountNum = Math.min(Math.max(parseInt(seatCount, 10) || 8, 2), 32);
 
     // Generate seats matrix
     const seats = [];
@@ -158,7 +156,7 @@ exports.getLiveRooms = async (req, res) => {
       ];
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const totalRooms = await Room.countDocuments(query);
 
     const rooms = await Room.find(query)
@@ -167,7 +165,7 @@ exports.getLiveRooms = async (req, res) => {
       .populate('agencyId', 'name')
       .sort({ isLive: -1, activeUsers: -1, totalGiftPoints: -1 })
       .skip(skip)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     // Remove password field from response
@@ -181,10 +179,10 @@ exports.getLiveRooms = async (req, res) => {
       message: 'Rooms fetched successfully.',
       rooms: sanitizedRooms,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total: totalRooms,
-        pages: Math.ceil(totalRooms / parseInt(limit))
+        pages: Math.ceil(totalRooms / parseInt(limit, 10))
       }
     });
   } catch (error) {
@@ -360,7 +358,7 @@ exports.toggleSeatLock = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { roomId, seatIndex } = req.params;
-    const seatIdx = parseInt(seatIndex);
+    const seatIdx = parseInt(seatIndex, 10);
 
     const room = await Room.findOne({ roomId });
     if (!room) {
@@ -404,7 +402,7 @@ exports.toggleSeatMute = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { roomId, seatIndex } = req.params;
-    const seatIdx = parseInt(seatIndex);
+    const seatIdx = parseInt(seatIndex, 10);
 
     const room = await Room.findOne({ roomId });
     if (!room) {
@@ -447,7 +445,7 @@ exports.claimSeat = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { roomId, seatIndex } = req.params;
-    const seatIdx = parseInt(seatIndex);
+    const seatIdx = parseInt(seatIndex, 10);
 
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Authentication required.' });
@@ -475,7 +473,7 @@ exports.claimSeat = async (req, res) => {
     }
 
     // Remove user from any existing seat first
-    const existingSeatIdx = room.seats.findIndex(s => s.userId && s.userId.toString() === userId.toString());
+    const existingSeatIdx = room.seats.findIndex(s => s.userId?.toString() === userId.toString());
     if (existingSeatIdx !== -1) {
       room.seats[existingSeatIdx].userId = null;
       room.seats[existingSeatIdx].userName = '';
@@ -514,7 +512,7 @@ exports.releaseSeat = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { roomId, seatIndex } = req.params;
-    const seatIdx = parseInt(seatIndex);
+    const seatIdx = parseInt(seatIndex, 10);
 
     const room = await Room.findOne({ roomId });
     if (!room) {
@@ -526,7 +524,7 @@ exports.releaseSeat = async (req, res) => {
     }
 
     const seat = room.seats[seatIdx];
-    if (seat.userId && seat.userId.toString() !== userId.toString()) {
+    if (seat.userId?.toString() !== userId.toString()) {
       return res.status(403).json({ success: false, message: 'You can only release your own seat.' });
     }
 
@@ -558,7 +556,7 @@ exports.kickFromSeat = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { roomId, seatIndex } = req.params;
-    const seatIdx = parseInt(seatIndex);
+    const seatIdx = parseInt(seatIndex, 10);
 
     const room = await Room.findOne({ roomId });
     if (!room) {
@@ -728,7 +726,7 @@ exports.getRoomRanking = async (req, res) => {
     })
       .populate('ownerId', 'uid name username avatar')
       .sort(sortQuery)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .select('roomId title ownerId roomType totalGiftPoints totalTrafficMinutes pkPoints pkWins pkLosses rankPoints activeUsers cosmetics.backgroundUrl')
       .lean();
 
@@ -762,8 +760,8 @@ exports.sendGiftToRoom = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Room not found.' });
     }
 
-    const points = parseInt(giftPoints) || 1;
-    const coinCost = parseInt(coins) || 0;
+    const points = parseInt(giftPoints, 10) || 1;
+    const coinCost = parseInt(coins, 10) || 0;
 
     // Deduct coins from sender — ATOMIC
     const updatedUser = await User.findOneAndUpdate(
@@ -830,7 +828,7 @@ exports.challengeRoomPK = async (req, res) => {
     }
 
     // Check if either room already has an active PK
-    if (challengerRoom.currentPkChallenge && challengerRoom.currentPkChallenge.status === 'active') {
+    if (challengerRoom.currentPkChallenge?.status === 'active') {
       return res.status(400).json({ success: false, message: 'Your room already has an active PK challenge.' });
     }
 
@@ -954,7 +952,7 @@ exports.updateTaskProgress = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Task already completed.' });
     }
 
-    task.currentValue = Math.min(task.currentValue + parseInt(increment), task.targetValue);
+    task.currentValue = Math.min(task.currentValue + parseInt(increment, 10), task.targetValue);
 
     if (task.currentValue >= task.targetValue) {
       task.isCompleted = true;
@@ -995,12 +993,6 @@ exports.claimTaskReward = async (req, res) => {
     if (!task.isCompleted) {
       return res.status(400).json({ success: false, message: 'Task not yet completed.' });
     }
-
-    // Award coins/XP to user (implement your economy system)
-    // const user = await User.findById(userId);
-    // user.coins += task.rewardCoins;
-    // user.xp += task.rewardXp;
-    // await user.save();
 
     return res.status(200).json({
       success: true,

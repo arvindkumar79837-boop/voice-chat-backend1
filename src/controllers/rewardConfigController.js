@@ -2,7 +2,6 @@ const Logger = require('../utils/logger');
 const RewardConfig = require('../models/RewardConfig');
 const LuckyDraw = require('../models/LuckyDraw');
 const TreasureHunt = require('../models/TreasureHunt');
-const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const { getIO } = require('../config/socket');
 
@@ -67,7 +66,7 @@ exports.createRewardConfig = async (req, res) => {
 exports.getAllRewardConfigs = async (req, res) => {
   try {
     const { gameType, isActive, page = 1, limit = 20 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     
     const query = {};
     if (gameType) query.gameType = gameType;
@@ -78,7 +77,7 @@ exports.getAllRewardConfigs = async (req, res) => {
         .populate('deployedBy', 'name uid')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit))
+        .limit(parseInt(limit, 10))
         .lean(),
       RewardConfig.countDocuments(query)
     ]);
@@ -86,7 +85,7 @@ exports.getAllRewardConfigs = async (req, res) => {
     res.status(200).json({
       success: true,
       data: configs,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+      pagination: { page: parseInt(page, 10), limit: parseInt(limit, 10), total, pages: Math.ceil(total / parseInt(limit, 10)) }
     });
   } catch (error) {
     Logger.error('Get RewardConfigs Error:', error);
@@ -129,7 +128,7 @@ exports.updateRewardConfig = async (req, res) => {
     const oldConfig = { ...config.toObject() };
     const updates = req.body;
 
-    if (updates.rewardItems && updates.rewardItems.length > 0) {
+    if (updates.rewardItems?.length > 0) {
       const totalProbability = updates.rewardItems.reduce((sum, item) => sum + (item.probability || 0), 0);
       if (Math.abs(totalProbability - 100) > 0.01) {
         return res.status(400).json({ 
@@ -316,7 +315,7 @@ exports.getRewardTiers = async (req, res) => {
 
 function incrementVersion(current) {
   const parts = current.split('.');
-  const patch = parseInt(parts[2] || '0') + 1;
+  const patch = parseInt(parts[2] || '0', 10) + 1;
   return `${parts[0]}.${parts[1]}.${patch}`;
 }
 

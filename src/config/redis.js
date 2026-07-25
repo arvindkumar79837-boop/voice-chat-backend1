@@ -19,22 +19,22 @@ const connectRedis = async () => {
       clientConfig = {
         socket: {
           host: url.hostname,
-          port: parseInt(url.port),
+          port: parseInt(url.port, 10),
           reconnectStrategy: (retries) => Math.min(retries * 50, 1000)
         },
         password: url.password || undefined,
-        database: parseInt((url.pathname || '/0').replace('/', '0'))
+        database: parseInt((url.pathname || '/0', 10).replace('/', '0'))
       };
     } else if (process.env.REDIS_HOST) {
       // Secondary: Explicit host-based config
       clientConfig = {
         socket: {
           host: process.env.REDIS_HOST,
-          port: parseInt(process.env.REDIS_PORT || '6379'),
+          port: parseInt(process.env.REDIS_PORT || '6379', 10),
           reconnectStrategy: (retries) => Math.min(retries * 50, 1000)
         },
         password: process.env.REDIS_PASSWORD || undefined,
-        database: parseInt(process.env.REDIS_DB || '0')
+        database: parseInt(process.env.REDIS_DB || '0', 10)
       };
     } else {
       // Fallback: Localhost

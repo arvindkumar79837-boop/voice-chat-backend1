@@ -2,7 +2,6 @@ const Logger = require('../utils/logger');
 const Room = require('../models/Room');
 const VipSystem = require('../models/VipSystem');
 const CosmeticItem = require('../models/CosmeticItem');
-const crypto = require('crypto');
 const { generateLiveKitToken, deleteLiveKitRoom } = require('../services/livekitService');
 
 module.exports = (io, socket) => {
@@ -245,7 +244,7 @@ module.exports = (io, socket) => {
 
       // Remove user from any existing seat first
       const existingSeatIdx = room.seats.findIndex(
-        (s) => s.userId && s.userId.toString() === userId.toString()
+        (s) => s.userId?.toString() === userId.toString()
       );
       if (existingSeatIdx !== -1) {
         room.seats[existingSeatIdx].userId = null;
@@ -496,7 +495,7 @@ module.exports = (io, socket) => {
       const kickedUserId = room.seats[seatIndex].userId;
 
       // H-9 FIX: Prevent co-host from kicking the room owner
-      if (kickedUserId && kickedUserId.toString() === room.ownerId.toString()) {
+      if (kickedUserId?.toString() === room.ownerId.toString()) {
         return socket.emit('room_error', { message: 'Room owner cannot be kicked from their own seat.' });
       }
 
@@ -546,7 +545,7 @@ module.exports = (io, socket) => {
 
       // Also remove them from seat if seated
       const seatIdx = room.seats.findIndex(
-        (s) => s.userId && s.userId.toString() === targetUserId.toString()
+        (s) => s.userId?.toString() === targetUserId.toString()
       );
       if (seatIdx !== -1) {
         room.seats[seatIdx].userId = null;
@@ -738,7 +737,7 @@ module.exports = (io, socket) => {
       const room = await Room.findOne({ roomId });
       if (!room || room.ownerId.toString() !== adminId?.toString()) return;
 
-      const newCount = Math.min(Math.max(parseInt(seatCount) || 8, 2), 32);
+      const newCount = Math.min(Math.max(parseInt(seatCount, 10) || 8, 2), 32);
 
       // Adjust seats array
       if (newCount > room.seats.length) {
@@ -793,9 +792,9 @@ module.exports = (io, socket) => {
         return;
 
       if (room.currentPkChallenge.challengerRoomId === roomId) {
-        room.currentPkChallenge.challengerScore += parseInt(score) || 1;
+        room.currentPkChallenge.challengerScore += parseInt(score, 10) || 1;
       } else if (room.currentPkChallenge.opponentRoomId === roomId) {
-        room.currentPkChallenge.opponentScore += parseInt(score) || 1;
+        room.currentPkChallenge.opponentScore += parseInt(score, 10) || 1;
       }
 
       await room.save();

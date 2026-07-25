@@ -285,7 +285,7 @@ cron.schedule('*/3 * * * * *', async () => {
     try {
       const backupService = require('./src/services/backupService');
       await backupService.initialize({
-        interval: parseInt(process.env.BACKUP_INTERVAL_MINUTES) || 60
+        interval: parseInt(process.env.BACKUP_INTERVAL_MINUTES, 10) || 60
       });
       console.log('✅ Backup Service initialized');
     } catch (error) {

@@ -5,12 +5,9 @@ const DeviceSession = require('../models/DeviceSession');
 const TwoFactorAuth = require('../models/TwoFactorAuth');
 const TwoFactorSession = require('../models/TwoFactorSession');
 const RefreshToken = require('../models/RefreshToken');
-const BannedDevice = require('../models/BannedDevice');
-const BlockedIp = require('../models/BlockedIp');
 const jwt = require('jsonwebtoken');
 const speakeasy = require('speakeasy');
 const crypto = require('crypto');
-const { captureDeviceFingerprint } = require('../middlewares/deviceFingerprint');
 const { emitToUser } = require('../config/socket');
 const admin = require('firebase-admin');
 
@@ -181,7 +178,7 @@ exports.getLoginHistory = async (req, res, next) => {
   try {
     const userId = req.user?.id || req.user?.userId;
     const { page = 1, limit = 50 } = req.query;
-    const history = await LoginHistory.find({ userId }).sort({ loginAt: -1 }).skip((page - 1) * limit).limit(parseInt(limit)).lean();
+    const history = await LoginHistory.find({ userId }).sort({ loginAt: -1 }).skip((page - 1) * limit).limit(parseInt(limit, 10)).lean();
     const total = await LoginHistory.countDocuments({ userId });
 
     res.status(200).json({
@@ -192,7 +189,7 @@ exports.getLoginHistory = async (req, res, next) => {
           location: h.location, deviceInfo: h.deviceInfo, loginType: h.loginType, status: h.status,
           isNewDevice: h.isNewDevice, isNewLocation: h.isNewLocation, suspiciousReason: h.suspiciousReason,
         })),
-        pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) },
+        pagination: { page: parseInt(page, 10), limit: parseInt(limit, 10), total, pages: Math.ceil(total / limit) },
       },
     });
   } catch (error) { Logger.error('❌ Get Login History Error:', error); next(error); }

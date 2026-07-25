@@ -2,7 +2,6 @@ const Logger = require('../utils/logger');
 const Bonus = require('../models/Bonus');
 const Agency = require('../models/Agency');
 const User = require('../models/User');
-const SalaryRecord = require('../models/SalaryRecord');
 const AuditLog = require('../models/AuditLog');
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -101,8 +100,8 @@ exports.getMonthlyBonusSummary = async (req, res) => {
     const agency = await Agency.findOne({ hosts: userId });
     if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
 
-    const m = parseInt(month) || new Date().getMonth() + 1;
-    const y = parseInt(year) || new Date().getFullYear();
+    const m = parseInt(month, 10) || new Date().getMonth() + 1;
+    const y = parseInt(year, 10) || new Date().getFullYear();
 
     const bonuses = await Bonus.find({
       agencyId: agency._id,

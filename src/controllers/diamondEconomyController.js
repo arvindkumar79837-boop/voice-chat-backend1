@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const UsedPurchaseToken = require('../models/UsedPurchaseToken');
 const User = require('../models/User');
-const SystemSettings = require('../models/SystemSettings');
 const AuditLog = require('../models/AuditLog');
 
 /**

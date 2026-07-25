@@ -1,6 +1,5 @@
 const Report = require('../models/Report');
 const User = require('../models/User');
-const Room = require('../models/Room');
 
 const getLoggedInUserId = (req) => {
   return req.user?.id || req.user?.userId || req.user?._id || req.user?.uid || null;

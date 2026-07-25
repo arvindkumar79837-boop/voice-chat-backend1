@@ -1,8 +1,6 @@
 const Logger = require('../utils/logger');
 const Tournament = require('../models/Tournament');
 const User = require('../models/User');
-const Championship = require('../models/Championship');
-const redisRankingService = require('../services/redisRankingService');
 
 // ─── TOURNAMENT CRUD ───────────────────────────────────────────────────
 
@@ -31,7 +29,7 @@ exports.createTournament = async (req, res) => {
 exports.getTournaments = async (req, res) => {
   try {
     const { page = 1, limit = 20, status, event_type } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     const query = { is_active: true };
     if (status) query.status = status;
@@ -41,14 +39,14 @@ exports.getTournaments = async (req, res) => {
       .populate('created_by', 'name avatar')
       .sort({ start_time: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     const total = await Tournament.countDocuments(query);
 
     res.status(200).json({
       success: true,
       data: tournaments,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+      pagination: { page: parseInt(page, 10), limit: parseInt(limit, 10), total, pages: Math.ceil(total / parseInt(limit, 10)) }
     });
   } catch (error) {
     Logger.error('Get Tournaments Error:', error);
@@ -200,7 +198,7 @@ async function distributeTournamentRewards(tournament) {
     user.diamonds = (user.diamonds || 0) + (reward.diamonds || 0);
     user.xp = (user.xp || 0) + (reward.xp || 0);
 
-    if (reward.vipTag && reward.vipTag.trim() !== '') {
+    if (reward.vipTag?.trim() !== '') {
       user.unlockedBadges = user.unlockedBadges || [];
       if (!user.unlockedBadges.includes(reward.vipTag)) {
         user.unlockedBadges.push(reward.vipTag);

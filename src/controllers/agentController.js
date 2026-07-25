@@ -1,9 +1,7 @@
 const Logger = require('../utils/logger');
-const mongoose = require('mongoose');
 const User = require('../models/User');
 const Agency = require('../models/Agency');
 const Agent = require('../models/Agent');
-const AuditLog = require('../models/AuditLog');
 
 // ─────────────────────────────────────────────────────────────────────────
 // AGENCY OWNER: ADD NEW AGENT (RECRUITER)

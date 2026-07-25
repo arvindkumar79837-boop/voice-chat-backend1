@@ -72,13 +72,13 @@ function maskPhone(phone) {
     if (countryCode.length > 0) {
       return `+${countryCode}****${localNumber.slice(-4)}`;
     }
-    return phone.slice(0, 3) + '****' + phone.slice(-4);
+    return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
   }
 
   if (phone.length >= 10) {
-    return phone.slice(0, 2) + '****' + phone.slice(-4);
+    return `${phone.slice(0, 2)}****${phone.slice(-4)}`;
   }
-  return '****' + phone.slice(-4);
+  return `****${phone.slice(-4)}`;
 }
 
 module.exports = { formatPhoneForDisplay, maskPhone, formatLocalNumber };

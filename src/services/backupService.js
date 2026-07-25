@@ -11,8 +11,8 @@ class BackupService {
   constructor() {
     this.isEnabled = process.env.BACKUP_ENABLED !== 'false';
     this.backupDir = process.env.BACKUP_DIR || './backups';
-    this.maxBackups = parseInt(process.env.MAX_BACKUPS) || 24;
-    this.retentionDays = parseInt(process.env.BACKUP_RETENTION_DAYS) || 7;
+    this.maxBackups = parseInt(process.env.MAX_BACKUPS, 10) || 24;
+    this.retentionDays = parseInt(process.env.BACKUP_RETENTION_DAYS, 10) || 7;
     this.compressionEnabled = process.env.BACKUP_COMPRESSION === 'true';
     this.backupInterval = null;
     this.isBackupServer = process.env.BACKUP_SERVER_MODE === 'true';
@@ -54,7 +54,7 @@ class BackupService {
   }
 
   startScheduledBackups() {
-    const backupIntervalMs = parseInt(process.env.BACKUP_INTERVAL_MS) || 3600000;
+    const backupIntervalMs = parseInt(process.env.BACKUP_INTERVAL_MS, 10) || 3600000;
 
     this.backupInterval = setInterval(async () => {
       await this.createBackup();
@@ -326,7 +326,12 @@ class BackupService {
 
       await this.createBackup();
 
-      if (await fs.access(compressedPath).then(() => true).catch(() => false)) {
+      let compressedExists = false;
+      try {
+        await fs.access(compressedPath);
+        compressedExists = true;
+      } catch {}
+      if (compressedExists) {
         const extractCmd = `tar -xzf "${compressedPath}" -C "${path.dirname(backupPath)}"`;
         await execAsync(extractCmd);
       }

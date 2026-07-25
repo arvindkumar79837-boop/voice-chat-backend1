@@ -9,7 +9,6 @@ const User = require('../models/User');
 const Family = require('../models/Family');
 const Agency = require('../models/Agency');
 const Room = require('../models/Room');
-const Gift = require('../models/Gift');
 
 class RedisRankingIntegration {
   // ─── GIFT SYSTEM INTEGRATION ─────────────────────────────────────────────
@@ -55,7 +54,7 @@ class RedisRankingIntegration {
   async onFamilyActivity(familyId, points, userId) {
     try {
       const family = await Family.findById(familyId).select('name icon country members');
-      if (family && family.country) {
+      if (family?.country) {
         await redisRankingService.addFamilyScore(
           familyId,
           points,
@@ -65,7 +64,7 @@ class RedisRankingIntegration {
         );
       }
 
-      if (family && family.members && family.members.length > 0) {
+      if (family?.members?.length > 0) {
         for (const memberId of family.members) {
           const user = await User.findById(memberId).select('uid name avatar country');
           if (user) {

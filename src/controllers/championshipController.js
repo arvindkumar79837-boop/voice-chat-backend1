@@ -1,7 +1,6 @@
 const Logger = require('../utils/logger');
 const Championship = require('../models/Championship');
 const User = require('../models/User');
-const Tournament = require('../models/Tournament');
 
 // ─── CHAMPIONSHIP CRUD ─────────────────────────────────────────────────
 
@@ -30,7 +29,7 @@ exports.createChampionship = async (req, res) => {
 exports.getChampionships = async (req, res) => {
   try {
     const { page = 1, limit = 20, period_type, status } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     const query = { is_active: true };
     if (period_type) query.period_type = period_type;
@@ -41,14 +40,14 @@ exports.getChampionships = async (req, res) => {
       .populate('winner_id', 'name avatar uid')
       .sort({ start_time: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     const total = await Championship.countDocuments(query);
 
     res.status(200).json({
       success: true,
       data: championships,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+      pagination: { page: parseInt(page, 10), limit: parseInt(limit, 10), total, pages: Math.ceil(total / parseInt(limit, 10)) }
     });
   } catch (error) {
     Logger.error('Get Championships Error:', error);
@@ -219,14 +218,14 @@ async function distributeChampionshipRewards(championship) {
     user.diamonds = (user.diamonds || 0) + (reward.diamonds || 0);
     user.xp = (user.xp || 0) + (reward.xp || 0);
 
-    if (reward.vipTag && reward.vipTag.trim() !== '') {
+    if (reward.vipTag?.trim() !== '') {
       user.unlockedBadges = user.unlockedBadges || [];
       if (!user.unlockedBadges.includes(reward.vipTag)) {
         user.unlockedBadges.push(reward.vipTag);
       }
     }
 
-    if (reward.specialFrame && reward.specialFrame.trim() !== '') {
+    if (reward.specialFrame?.trim() !== '') {
       user.unlockedFrames = user.unlockedFrames || [];
       if (!user.unlockedFrames.includes(reward.specialFrame)) {
         user.unlockedFrames.push(reward.specialFrame);
@@ -309,14 +308,14 @@ exports.claimChampionshipRewards = async (req, res) => {
       }
     }
 
-    if (reward.vipTag && reward.vipTag.trim() !== '') {
+    if (reward.vipTag?.trim() !== '') {
       user.unlockedBadges = user.unlockedBadges || [];
       if (!user.unlockedBadges.includes(reward.vipTag)) {
         user.unlockedBadges.push(reward.vipTag);
       }
     }
 
-    if (reward.specialFrame && reward.specialFrame.trim() !== '') {
+    if (reward.specialFrame?.trim() !== '') {
       user.unlockedFrames = user.unlockedFrames || [];
       if (!user.unlockedFrames.includes(reward.specialFrame)) {
         user.unlockedFrames.push(reward.specialFrame);

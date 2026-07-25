@@ -65,7 +65,7 @@ exports.playLuckyWheel = async (req, res) => {
 
     // Update Daily Mission Progress
     const today = new Date().toISOString().split('T')[0];
-    let progress = await MissionProgress.findOne({ user: userId });
+    const progress = await MissionProgress.findOne({ user: userId });
     if (progress) {
       if (progress.lastResetDate !== today) {
         progress.lastResetDate = today; progress.dailyLogin = 1; progress.gamesPlayed = 1; progress.giftsSent = 0; progress.claimedMissions = [];
@@ -134,7 +134,7 @@ exports.playScratchCard = async (req, res) => {
 
     // Update Daily Mission Progress
     const today = new Date().toISOString().split('T')[0];
-    let progress = await MissionProgress.findOne({ user: userId });
+    const progress = await MissionProgress.findOne({ user: userId });
     if (progress) {
       if (progress.lastResetDate !== today) {
         progress.lastResetDate = today; progress.dailyLogin = 1; progress.gamesPlayed = 1; progress.giftsSent = 0; progress.claimedMissions = [];

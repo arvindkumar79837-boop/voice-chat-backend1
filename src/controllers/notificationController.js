@@ -13,7 +13,7 @@ const Notification = require('../models/Notification');
 exports.getNotifications = async (req, res) => {
   try {
     const { page = 1, limit = 20, unreadOnly = false } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     const query = { userId: req.user.userId };
     if (unreadOnly === 'true') {
@@ -24,7 +24,7 @@ exports.getNotifications = async (req, res) => {
       .populate('fromUserId', 'name avatar arvindId')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     const total = await Notification.countDocuments(query);
     const unreadCount = await Notification.countDocuments({
@@ -37,10 +37,10 @@ exports.getNotifications = async (req, res) => {
       data: notifications,
       unreadCount,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: Math.ceil(total / parseInt(limit, 10))
       }
     });
   } catch (error) {
@@ -218,13 +218,13 @@ exports.sendNotification = async (req, res) => {
 exports.getNotificationHistory = async (req, res) => {
   try {
     const { page = 1, limit = 100 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const query = { userId: req.user.userId };
 
     const notifications = await Notification.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     return res.status(200).json({ success: true, data: notifications });
   } catch (error) {

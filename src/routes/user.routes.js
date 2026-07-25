@@ -17,7 +17,7 @@ router.get('/search', authMiddleware, asyncHandler(async (req, res) => {
   const sanitized = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const users = await User.find({
     username: { $regex: sanitized, $options: 'i' }
-  }).limit(parseInt(limit)).select('username avatar arvindId');
+  }).limit(parseInt(limit, 10)).select('username avatar arvindId');
 
   res.json({ success: true, users });
 }));

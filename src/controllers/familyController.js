@@ -9,9 +9,7 @@ const FamilyInvitation = require('../models/FamilyInvitation');
 const FamilyStayReward = require('../models/FamilyStayReward');
 const FamilyLeaderboard = require('../models/FamilyLeaderboard');
 const User = require('../models/User');
-const GiftTransaction = require('../models/GiftTransaction');
 const Ranking = require('../models/Ranking');
-const mongoose = require('mongoose');
 const redisRankingIntegration = require('../services/redisRankingIntegration');
 const { getIO } = require('../config/socket');
 
@@ -313,7 +311,7 @@ exports.searchFamilies = async (req, res) => {
     })
       .sort({ total_xp: -1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     const totalCount = await Family.countDocuments({
@@ -323,7 +321,7 @@ exports.searchFamilies = async (req, res) => {
       ]
     });
 
-    res.status(200).json({ success: true, data: families, total: totalCount, page: parseInt(page) });
+    res.status(200).json({ success: true, data: families, total: totalCount, page: parseInt(page, 10) });
   } catch (error) {
     Logger.error('Search Families Error:', error);
     res.status(500).json({ success: false, message: 'Failed to search families' });
@@ -350,7 +348,7 @@ exports.searchUsersByUid = async (req, res) => {
     })
       .select('uid username displayName avatar level coins')
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     res.status(200).json({ success: true, data: users });
@@ -383,7 +381,7 @@ exports.searchUsersToInvite = async (req, res) => {
     })
       .select('uid username displayName avatar level coins')
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     res.status(200).json({ success: true, data: users });
@@ -488,7 +486,7 @@ exports.getMyInvitations = async (req, res) => {
     })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     const totalCount = await FamilyInvitation.countDocuments({
@@ -517,7 +515,7 @@ exports.getSentInvitations = async (req, res) => {
     })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     res.status(200).json({ success: true, data: invitations });
@@ -681,7 +679,13 @@ exports.assignAdmin = async (req, res) => {
       family.admins_list.push({ uid: targetUid, role, assignedAt: new Date() });
     }
 
-    targetUser.familyRole = role === 'co_leader' ? 'co_leader' : role === 'elder' ? 'elder' : 'admin';
+    if (role === 'co_leader') {
+      targetUser.familyRole = 'co_leader';
+    } else if (role === 'elder') {
+      targetUser.familyRole = 'elder';
+    } else {
+      targetUser.familyRole = 'admin';
+    }
     await targetUser.save();
     await family.save();
 
@@ -1101,7 +1105,7 @@ exports.getFamilyChatMessages = async (req, res) => {
     const messages = await FamilyChat.find({ familyId: user.familyId, isDeleted: false })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     res.status(200).json({ success: true, data: messages.reverse() });
@@ -1584,7 +1588,7 @@ exports.getFamilyLeaderboard = async (req, res) => {
     })
       .sort({ rank: 1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     const totalCount = await FamilyLeaderboard.countDocuments({
@@ -1600,7 +1604,7 @@ exports.getFamilyLeaderboard = async (req, res) => {
         leaderboard,
         top3,
         total: totalCount,
-        page: parseInt(page),
+        page: parseInt(page, 10),
         period: period
       }
     });
@@ -1672,7 +1676,7 @@ exports.getDailyFamilyRankings = async (req, res) => {
     const rankings = await Ranking.find({ type: 'family', period: 'daily', createdAt: { $gte: today } })
       .sort({ rank: 1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     res.status(200).json({ success: true, data: rankings });
@@ -1692,7 +1696,7 @@ exports.getWeeklyFamilyRankings = async (req, res) => {
     const rankings = await Ranking.find({ type: 'family', period: 'weekly', createdAt: { $gte: weekStart } })
       .sort({ rank: 1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     res.status(200).json({ success: true, data: rankings });
@@ -1712,7 +1716,7 @@ exports.getMonthlyFamilyRankings = async (req, res) => {
     const rankings = await Ranking.find({ type: 'family', period: 'monthly', createdAt: { $gte: monthStart } })
       .sort({ rank: 1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     res.status(200).json({ success: true, data: rankings });
@@ -2119,12 +2123,12 @@ exports.adminGetAllFamilies = async (req, res) => {
     const families = await Family.find(query)
       .sort({ created_at: -1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     const totalCount = await Family.countDocuments(query);
 
-    res.status(200).json({ success: true, data: families, total: totalCount, page: parseInt(page) });
+    res.status(200).json({ success: true, data: families, total: totalCount, page: parseInt(page, 10) });
   } catch (error) {
     Logger.error('Admin Get All Families Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch families' });

@@ -1,6 +1,5 @@
 const Logger = require('../utils/logger');
 const LegalDocument = require('../models/LegalDocument');
-const Staff = require('../models/Staff');
 const User = require('../models/User');
 const AccountDeletionRequest = require('../models/AccountDeletionRequest');
 const AuditLog = require('../models/AuditLog');

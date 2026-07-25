@@ -153,9 +153,13 @@ class DeploymentService {
 
   async installDependencies() {
     try {
-      const packageManager = await fs.access(path.join(this.deployPath, 'package-lock.json'))
-        .then(() => 'npm ci --only=production')
-        .catch(() => 'npm install --only=production');
+      let packageManager;
+      try {
+        await fs.access(path.join(this.deployPath, 'package-lock.json'));
+        packageManager = 'npm ci --only=production';
+      } catch {
+        packageManager = 'npm install --only=production';
+      }
 
       const result = await execAsync(packageManager, { cwd: this.deployPath, timeout: 300000 });
       Logger.info('Dependencies installed');
@@ -187,7 +191,7 @@ class DeploymentService {
     try {
       const packageJsonPath = path.join(this.deployPath, 'package.json');
       const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
-      return !!(packageJson.scripts && packageJson.scripts[scriptName]);
+      return !!(packageJson.scripts?.[scriptName]);
     } catch (error) {
       return false;
     }
@@ -383,7 +387,7 @@ class DeploymentService {
         return { success: true, message: `Ignoring push to ${event}, deploying ${this.deployBranch} only` };
       }
 
-      const delay = parseInt(process.env.DEPLOY_DELAY_MS) || 0;
+      const delay = parseInt(process.env.DEPLOY_DELAY_MS, 10) || 0;
       if (delay > 0) {
         await new Promise(resolve => setTimeout(resolve, delay));
       }

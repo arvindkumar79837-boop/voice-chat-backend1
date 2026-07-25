@@ -2,7 +2,6 @@ const Logger = require('../utils/logger');
 const Gift = require('../models/Gift');
 const User = require('../models/User');
 const GiftEvent = require('../models/GiftEvent');
-const GiftTransaction = require('../models/GiftTransaction');
 const Room = require('../models/Room');
 const GlobalSetting = require('../models/GlobalSetting');
 const Agency = require('../models/Agency');
@@ -132,7 +131,7 @@ exports.sendGift = async (req, res) => {
       }
     }
 
-    const totalQuantity = parseInt(quantity) * parseInt(comboMultiplier);
+    const totalQuantity = parseInt(quantity, 10) * parseInt(comboMultiplier, 10);
     const totalCost = gift.coinPrice * totalQuantity;
 
     // Get commission settings
@@ -158,7 +157,7 @@ exports.sendGift = async (req, res) => {
     // Process lucky gift - random multiplier
     let luckyMultiplier = 1;
     let luckyWinAmount = 0;
-    if (gift.isLucky && gift.luckyMultiplier && gift.luckyMultiplier.length > 0) {
+    if (gift.isLucky && gift.luckyMultiplier?.length > 0) {
       luckyMultiplier = gift.luckyMultiplier[Math.floor(Math.random() * gift.luckyMultiplier.length)];
       luckyWinAmount = gift.coinPrice * totalQuantity * luckyMultiplier;
     }
@@ -188,7 +187,7 @@ exports.sendGift = async (req, res) => {
       try {
         const agencyTargetController = require('./agencyTargetController');
         await agencyTargetController.updateProgress(agencyId, totalCost, 'COINS_SPENT');
-      } catch (_) {}
+      } catch (err) { console.error('Failed to update agency target progress:', err.message); }
     }
 
     // Build gift event key
@@ -227,7 +226,7 @@ exports.sendGift = async (req, res) => {
       );
       // Level-up check (rare edge case, safe to do read-check after atomic inc)
       const room = await Room.findOne({ roomId }).select('lootBoxPoints lootBoxLevel');
-      if (room && room.lootBoxPoints >= room.lootBoxLevel * 100) {
+      if (room?.lootBoxPoints >= room?.lootBoxLevel * 100) {
         await Room.findOneAndUpdate({ roomId }, { $inc: { lootBoxLevel: 1 }, $set: { lootBoxPoints: 0 } });
       }
     }
@@ -247,7 +246,7 @@ exports.sendGift = async (req, res) => {
       receiverName: receiver.name || receiver.username || 'User',
       receiverAvatar: receiver.avatar || '',
       quantity: totalQuantity,
-      comboMultiplier: parseInt(comboMultiplier),
+      comboMultiplier: parseInt(comboMultiplier, 10),
       previewImageUrl: gift.previewImageUrl,
       animationUrl: gift.animationUrl,
       svgaUrl: gift.svgaUrl,
@@ -280,11 +279,11 @@ exports.sendGift = async (req, res) => {
       io.to(roomId).emit('live_gift_effect', giftPayload);
 
       // Combo counter event
-      if (gift.comboEnabled && parseInt(comboMultiplier) > 1) {
+      if (gift.comboEnabled && parseInt(comboMultiplier, 10) > 1) {
         io.to(roomId).emit('combo_counter_update', {
           senderId: sender._id.toString(),
           senderName: updatedSender.name || updatedSender.username || 'User',
-          comboMultiplier: parseInt(comboMultiplier),
+          comboMultiplier: parseInt(comboMultiplier, 10),
           totalQuantity: totalQuantity,
           giftName: gift.giftName,
           totalCost: totalCost
@@ -349,7 +348,7 @@ exports.sendComboGift = async (req, res) => {
     const senderId = getUserId(req);
     const { giftId, receiverId, roomId, comboMultiplier = 5 } = req.body;
 
-    if (![5, 10, 99, 999].includes(parseInt(comboMultiplier))) {
+    if (![5, 10, 99, 999].includes(parseInt(comboMultiplier, 10))) {
       return res.status(400).json({ success: false, message: 'Combo multiplier must be 5, 10, 99, or 999.' });
     }
 
@@ -523,15 +522,15 @@ exports.setGiftGoal = async (req, res) => {
     }
 
     // Store goal in room (you can extend Room schema or use a separate collection)
-    room.announcement = `🎯 GOAL: ${title || 'Collect ' + targetCoins + ' coins'} - Target: ${targetCoins} coins`;
+    room.announcement = `🎯 GOAL: ${title || `Collect ${targetCoins} coins`} - Target: ${targetCoins} coins`;
     await room.save();
 
     const io = req.app.get('io');
     io.to(roomId).emit('gift_goal_updated', {
-      targetCoins: parseInt(targetCoins),
+      targetCoins: parseInt(targetCoins, 10),
       currentCoins: room.totalGiftPoints || 0,
       title: title || 'Room Gift Goal',
-      progressPercent: room.totalGiftPoints > 0 ? Math.min((room.totalGiftPoints / parseInt(targetCoins)) * 100, 100) : 0
+      progressPercent: room.totalGiftPoints > 0 ? Math.min((room.totalGiftPoints / parseInt(targetCoins, 10)) * 100, 100) : 0
     });
 
     return res.status(200).json({
@@ -575,7 +574,7 @@ exports.getGiftLeaderboard = async (req, res) => {
         }
       },
       { $sort: { [sortField]: -1 } },
-      { $limit: parseInt(limit) }
+      { $limit: parseInt(limit, 10) }
     ]);
 
     // Populate user details
@@ -671,14 +670,14 @@ exports.getGiftStatistics = async (req, res) => {
 exports.getGiftHistory = async (req, res) => {
   try {
     const { limit = 50, page = 1 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     const history = await GiftEvent.find({ status: 'COMPLETED' })
       .populate('senderId', 'name username avatar')
       .populate('receiverId', 'name username avatar')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .lean();
 
     const total = await GiftEvent.countDocuments({ status: 'COMPLETED' });
@@ -698,10 +697,10 @@ exports.getGiftHistory = async (req, res) => {
         createdAt: h.createdAt
       })),
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: Math.ceil(total / parseInt(limit, 10))
       }
     });
   } catch (error) {

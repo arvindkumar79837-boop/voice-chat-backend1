@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const ContentReport = require('../models/ContentReport');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
@@ -45,11 +44,11 @@ exports.getReports = async (req, res) => {
       .populate('reviewedBy', 'uid name loginId')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     const total = await ContentReport.countDocuments(filter);
 
-    return res.json({ success: true, data: reports, pagination: { total, page: parseInt(page), limit: parseInt(limit) } });
+    return res.json({ success: true, data: reports, pagination: { total, page: parseInt(page, 10), limit: parseInt(limit, 10) } });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }

@@ -9,7 +9,6 @@ const Logger = require('../utils/logger');
 
 const axios = require('axios');
 const User = require('../models/User');
-const Transaction = require('../models/Transaction');
 const WalletTransaction = require('../models/WalletTransaction');
 const FraudAlert = require('../models/FraudAlert');
 const AuditLog = require('../models/AuditLog');
@@ -84,7 +83,7 @@ const verifyGooglePlaySubscription = async ({ packageName, productId, purchaseTo
       return { valid: false, reason: `Subscription payment state is ${data.paymentState} (not paid)` };
     }
     // Check expiry
-    const expiryMillis = parseInt(data.expiryTimeMillis);
+    const expiryMillis = parseInt(data.expiryTimeMillis, 10);
     if (expiryMillis && expiryMillis < Date.now()) {
       return { valid: false, reason: 'Subscription has expired on Google Play' };
     }
@@ -222,7 +221,7 @@ const _holdAccount = async (userId, reason) => {
       $set: { isBlocked: true, isCoinSeller: false },
     });
     await _createFraudAlert(userId, '', 'ABNORMAL_COIN_TRANSFER', reason, 'CRITICAL', 0);
-  } catch (_) {}
+  } catch (err) { console.error('Failed to hold account:', err.message); }
 };
 
 // ── Device fingerprint + IP pattern (anti referral farming) ─────────────────

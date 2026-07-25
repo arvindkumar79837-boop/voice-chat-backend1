@@ -38,7 +38,7 @@ exports.createStaff = async (req, res) => {
     const defaultPerms = DEFAULT_PERMISSIONS[role] || [];
     // If custom permissions provided, intersect with role's allowed permissions
     let finalPermissions = defaultPerms;
-    if (permissions && Array.isArray(permissions) && permissions.length > 0) {
+    if (Array.isArray(permissions) && permissions.length > 0) {
       if (req.user?.role === 'owner' || req.user?.role === 'super_admin') {
         finalPermissions = permissions;
       } else {
@@ -474,8 +474,8 @@ exports.searchUser = async (req, res) => {
 exports.getAuditLogs = async (req, res) => {
   try {
     const AuditLog = require('../models/AuditLog');
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
     const action = req.query.action || '';
 
     const query = {};

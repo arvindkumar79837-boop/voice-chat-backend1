@@ -6,8 +6,8 @@ const Logger = require('../utils/logger');
 class HealthAlertService {
   constructor() {
     this.isEnabled = process.env.HEALTH_ALERTS_ENABLED !== 'false';
-    this.checkIntervalMs = parseInt(process.env.HEALTH_CHECK_INTERVAL) || 30000;
-    this.alertCooldownMs = parseInt(process.env.ALERT_COOLDOWN_MS) || 300000;
+    this.checkIntervalMs = parseInt(process.env.HEALTH_CHECK_INTERVAL, 10) || 30000;
+    this.alertCooldownMs = parseInt(process.env.ALERT_COOLDOWN_MS, 10) || 300000;
     this.lastAlertTime = {};
     this.alertHistory = [];
     this.maxHistory = 100;
@@ -131,7 +131,7 @@ class HealthAlertService {
         }
       }
 
-      if (health.issues && health.issues.length > 0) {
+      if (health.issues?.length > 0) {
         health.issues.forEach(issue => {
           this.triggerAlert('general', 'warning', issue, {}, 'warning');
         });
@@ -207,10 +207,8 @@ class HealthAlertService {
         }
       }
 
-      if (alert.type === 'database') {
-        if (BackupService.getBackupStats().lastBackup) {
-          Logger.warn('Consider manual backup before any recovery action');
-        }
+      if (alert.type === 'database' && BackupService.getBackupStats().lastBackup) {
+        Logger.warn('Consider manual backup before any recovery action');
       }
     } catch (error) {
       Logger.error('Emergency response failed', { error: error.message });
@@ -222,7 +220,7 @@ class HealthAlertService {
       const nodemailer = require('nodemailer');
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT),
+        port: parseInt(process.env.SMTP_PORT, 10),
         secure: true,
         auth: {
           user: process.env.SMTP_USER,
@@ -249,7 +247,7 @@ class HealthAlertService {
               <p><strong>Subtype:</strong> ${alert.subtype}</p>
               <p><strong>Message:</strong> ${alert.message}</p>
               <p><strong>Time:</strong> ${alert.timestamp}</p>
-              ${Object.keys(alert.data).length > 0 ? '<p><strong>Details:</strong></p><pre>' + JSON.stringify(alert.data, null, 2) + '</pre>' : ''}
+              ${Object.keys(alert.data).length > 0 ? `<p><strong>Details:</strong></p><pre>${JSON.stringify(alert.data, null, 2)}</pre>` : ''}
             </div>
             <p><small>Server: ${process.env.SERVER_ID || 'primary'}</small></p>
           </div>

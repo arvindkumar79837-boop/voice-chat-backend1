@@ -271,7 +271,7 @@ exports.refreshToken = async (req, res, next) => {
 exports.logout = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
       const { blacklistAccessToken } = require('../utils/jwt');
       await blacklistAccessToken(token);
@@ -321,14 +321,14 @@ exports.deleteAccount = async (req, res, next) => {
     user.isDeleted = true;
     user.isActive = false;
     user.isBanned = true;
-    user.phone = 'DELETED-' + Date.now();
+    user.phone = `DELETED-${Date.now()}`;
     user.email = 'deleted@deleted.com';
     user.name = 'Deleted User';
     user.displayName = 'Deleted User';
     user.avatar = '';
     user.bio = '';
     user.coverPhoto = '';
-    user.uid = 'DELETED-' + Date.now();
+    user.uid = `DELETED-${Date.now()}`;
     user.arvindId = 'DELETED';
     user.firebaseUid = null;
     user.privacy = {

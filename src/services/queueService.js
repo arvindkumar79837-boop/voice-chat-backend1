@@ -37,9 +37,9 @@ class QueueService {
       } else {
         redisOptions = {
           host: process.env.REDIS_HOST || '127.0.0.1',
-          port: parseInt(process.env.REDIS_PORT || '6379'),
+          port: parseInt(process.env.REDIS_PORT || '6379', 10),
           password: process.env.REDIS_PASSWORD || undefined,
-          db: parseInt(process.env.REDIS_DB || '0'),
+          db: parseInt(process.env.REDIS_DB || '0', 10),
           retryStrategy: (times) => Math.min(times * 50, 1000),
           maxRetriesPerRequest: null,
           enableReadyCheck: true,

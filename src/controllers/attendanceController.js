@@ -132,9 +132,17 @@ exports.getLiveAttendance = async (req, res) => {
 
     const result = hosts.map(host => {
       const att = todayAttendance.find(a => a.userId._id.toString() === host._id.toString());
+      let status;
+      if (att?.sessionStart && !att.sessionEnd) {
+        status = 'live';
+      } else if (att?.isValidDay) {
+        status = 'done';
+      } else {
+        status = 'not_started';
+      }
       return {
         ...host,
-        status: att && att.sessionStart && !att.sessionEnd ? 'live' : (att && att.isValidDay ? 'done' : 'not_started'),
+        status,
         minutesToday: att ? att.totalDailyMinutes : 0,
         isValidDay: att ? att.isValidDay : false,
       };
@@ -159,8 +167,8 @@ exports.getMonthlyAttendance = async (req, res) => {
     const agency = await Agency.findOne({ hosts: userId });
     if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
 
-    const m = parseInt(month) || new Date().getMonth() + 1;
-    const y = parseInt(year) || new Date().getFullYear();
+    const m = parseInt(month, 10) || new Date().getMonth() + 1;
+    const y = parseInt(year, 10) || new Date().getFullYear();
     const startDate = new Date(y, m - 1, 1);
     const endDate = new Date(y, m, 0, 23, 59, 59);
 

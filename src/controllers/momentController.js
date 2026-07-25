@@ -14,13 +14,13 @@ const { validationResult } = require('express-validator');
 exports.getMomentsFeed = async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     const moments = await Moment.find()
       .populate('userId', 'name avatar arvindId')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     const total = await Moment.countDocuments();
 
@@ -28,10 +28,10 @@ exports.getMomentsFeed = async (req, res) => {
       success: true,
       data: moments,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: Math.ceil(total / parseInt(limit, 10))
       }
     });
   } catch (error) {
@@ -322,7 +322,7 @@ exports.deleteMoment = async (req, res) => {
 exports.searchMoments = async (req, res) => {
   try {
     const { q, page = 1, limit = 20 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     if (!q || !q.trim()) {
       return res.status(400).json({
@@ -339,7 +339,7 @@ exports.searchMoments = async (req, res) => {
       .populate('userId', 'name avatar arvindId')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     const total = await Moment.countDocuments(query);
 
@@ -347,10 +347,10 @@ exports.searchMoments = async (req, res) => {
       success: true,
       data: moments,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: Math.ceil(total / parseInt(limit, 10))
       }
     });
   } catch (error) {

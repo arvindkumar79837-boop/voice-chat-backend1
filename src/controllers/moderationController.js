@@ -13,9 +13,9 @@ exports.getReports = async (req, res) => {
       .populate('reportedUserId', 'uid username displayName avatar')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
     const total = await ContentReport.countDocuments(filter);
-    return res.json({ success: true, data: reports, pagination: { total, page: parseInt(page), limit: parseInt(limit) } });
+    return res.json({ success: true, data: reports, pagination: { total, page: parseInt(page, 10), limit: parseInt(limit, 10) } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
