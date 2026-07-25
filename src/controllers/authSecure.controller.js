@@ -414,7 +414,7 @@ exports.socialLogin = async (req, res, next) => {
     }
 
     const token = jwt.sign({ userId: user._id.toString(), uid: user.uid, role: user.role }, process.env.JWT_SECRET, { expiresIn: '15m' });
-    const refreshToken = jwt.sign({ userId: user._id.toString() }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
+    const refreshToken = jwt.sign({ userId: user._id.toString() }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' });
 
     res.status(200).json({
       success: true,
@@ -511,7 +511,7 @@ exports.guestLogin = async (req, res, next) => {
     await user.save();
 
     const token = jwt.sign({ userId: user._id.toString(), uid: user.uid, role: user.role }, process.env.JWT_SECRET, { expiresIn: '15m' });
-    const refreshToken = jwt.sign({ userId: user._id.toString() }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
+    const refreshToken = jwt.sign({ userId: user._id.toString() }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' });
 
     res.status(200).json({
       success: true,

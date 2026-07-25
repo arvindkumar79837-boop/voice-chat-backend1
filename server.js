@@ -2,18 +2,15 @@ const path = require('path');
 const fs = require('fs');
 const envPath = path.join(__dirname, '.env');
 
-if (!fs.existsSync(envPath)) {
-  console.error('❌ FATAL: .env file not found!');
-  console.error('');
-  console.error('   Run the following command to get started:');
-  console.error('   $ cp .env.example .env');
-  console.error('');
-  console.error('   Then edit .env with your configuration values.');
-  console.error('');
-  process.exit(1);
+// Load .env file if it exists, otherwise assume environment variables are provided globally.
+if (fs.existsSync(envPath)) {
+  console.log('✅ Loading environment variables from .env file.');
+  require('dotenv').config({ path: envPath });
+} else {
+  console.warn('⚠️  .env file not found. Assuming environment variables are set by the deployment environment.');
+  // When no path is specified, dotenv checks for process.env variables.
+  require('dotenv').config();
 }
-
-require('dotenv').config({ path: envPath });
 
 // ─────────────────────────────────────────────────────────────────────────
 // ENVIRONMENT VARIABLE VALIDATION
@@ -31,7 +28,7 @@ if (missingEnvVars.length > 0) {
   console.error('❌ FATAL: Missing required environment variables:');
   missingEnvVars.forEach(key => console.error(`   - ${key}`));
   console.error('');
-  console.error('   Edit your .env file and add the missing values,');
+  console.error('   Provide these through your deployment environment or .env file,');
   console.error('   then restart the server.');
   console.error('');
   process.exit(1);
@@ -42,7 +39,7 @@ const { Server } = require('socket.io');
 const connectDB = require('./src/config/db');
 const { setIO } = require('./src/config/socket');
 const { initRedis } = require('./src/services/otp.service');
-const { connectRedis } = require('./src/config/redis');
+const { connectRedis, disconnectRedis } = require('./src/config/redis');
 const app = require('./src/app');
 const { initializeFirebaseAdmin } = require('./src/config/firebase-admin');
 
@@ -352,30 +349,42 @@ cron.schedule('*/3 * * * * *', async () => {
 const gracefulShutdown = async (signal) => {
   console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
 
+  const forcedExitTimer = setTimeout(() => {
+    console.error('⚠️ Forced shutdown after 10s timeout');
+    process.exit(1);
+  }, 10000);
+  forcedExitTimer.unref();
+
   // Stop accepting new connections
-  server.close(() => {
-    console.log('✅ HTTP server closed');
+  await new Promise((resolve) => {
+    server.close(() => {
+      console.log('✅ HTTP server closed');
+      resolve();
+    });
   });
 
   // Disconnect Socket.IO
   try {
     const { getIO } = require('./src/config/socket');
     const io = getIO();
-    io.close(() => {
-      console.log('✅ Socket.IO server closed');
+    await new Promise((resolve) => {
+      io.close(() => {
+        console.log('✅ Socket.IO server closed');
+        resolve();
+      });
     });
   } catch (_) {}
 
   // Disconnect Redis
   try {
     await disconnectRedis();
-  } catch (_) {}
+    console.log('✅ Redis client disconnected');
+  } catch (err) {
+    console.error('⚠️ Error during Redis disconnection:', err);
+  }
 
-  // Force exit after timeout
-  setTimeout(() => {
-    console.error('⚠️ Forced shutdown after 10s timeout');
-    process.exit(1);
-  }, 10000);
+  clearTimeout(forcedExitTimer);
+  process.exit(0);
 };
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

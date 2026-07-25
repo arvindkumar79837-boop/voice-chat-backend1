@@ -79,7 +79,6 @@ const verifyOTP = async (phone, otp) => {
     }
 
     // Delete OTP after successful verification
-    const client = getRedisClient();
     if (client && client.isOpen) {
       await client.del(`otp:${phone}`);
     } else {

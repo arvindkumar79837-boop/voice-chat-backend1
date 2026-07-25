@@ -1,4 +1,4 @@
-const Logger = require('../utils/logger');
+const Logger = require('../../utils/logger');
 const jwt = require('jsonwebtoken');
 const GameRecord = require('../../models/GameRecord');
 const User = require('../../models/User');

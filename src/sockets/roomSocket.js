@@ -346,6 +346,7 @@ module.exports = (io, socket) => {
 
       if (updatedRoom) {
         io.to(roomId).emit('seat_vacated', { seatIndex, userId });
+      }
       io.to(roomId).emit('seat_animation', {
         seatIndex,
         effect: 'vacate_fade_out',

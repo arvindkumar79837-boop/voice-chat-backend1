@@ -6,7 +6,14 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-const { login, logout, register, refreshToken } = require('../controllers/auth.controller');
+const { 
+  sendOtp,
+  verifyOtp,
+  resendOtp,
+  logout,
+  register,
+  refreshToken 
+} = require('../controllers/auth.controller');
 const { validatePhone } = require('../middlewares/validation.middleware');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 
@@ -24,12 +31,30 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// ─────────────────────────────────────────────────────────────────────────
+// PUBLIC AUTH ROUTES (OTP FLOW)
+// ─────────────────────────────────────────────────────────────────────────
+
 /**
- * POST /api/auth/register
- * Body: { phone, name, gender?, dob? }
- * Completes profile after OTP verify when isProfileComplete is false.
+ * POST /api/auth/send-otp
+ * Body: { phone: "..." }
+ * Sends a one-time password to the user's phone.
  */
-router.post('/register', authLimiter, validatePhone(), register);
+router.post('/send-otp', authLimiter, validatePhone(), sendOtp);
+
+/**
+ * POST /api/auth/otp-verify
+ * Body: { phone: "...", otp: "..." }
+ * Verifies the OTP. If user exists, logs them in. If not, creates a new user.
+ */
+router.post('/otp-verify', authLimiter, validatePhone(), verifyOtp);
+
+/**
+ * POST /api/auth/resend-otp
+ * Body: { phone: "..." }
+ * Resends a new OTP to the user's phone.
+ */
+router.post('/resend-otp', authLimiter, validatePhone(), resendOtp);
 
 /**
  * POST /api/auth/refresh-token
@@ -38,9 +63,18 @@ router.post('/register', authLimiter, validatePhone(), register);
  */
 router.post('/refresh-token', authLimiter, refreshToken);
 
+
 // ─────────────────────────────────────────────────────────────────────────
 // PROTECTED ROUTES
 // ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/auth/register
+ * Header: Authorization: Bearer <token>
+ * Body: { name, gender, dob }
+ * Completes profile after OTP verification. This route is now protected.
+ */
+router.post('/register', authMiddleware, register);
 
 /**
  * POST /api/auth/logout
@@ -113,9 +147,5 @@ router.get('/admin/verify', async (req, res) => {
     return res.status(401).json({ success: false, message: 'Invalid token' });
   }
 });
-
-// ─── MOBILE APP ALIASES ──────────────────────────────────────────────────────
-router.post('/login', authLimiter, validatePhone(), login);
-router.post('/signup', authLimiter, validatePhone(), register);
 
 module.exports = router;

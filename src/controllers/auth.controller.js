@@ -7,7 +7,11 @@ const Logger = require('../utils/logger');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { verifyOTP } = require('../services/otp.service');
+const { sendOTP, verifyOTP, resendOTP } = require('../services/otp.service');
+const {
+  ACCESS_TOKEN_EXPIRES_IN,
+  REFRESH_TOKEN_EXPIRES_IN,
+} = require('../config/jwt');
 
 const generateUsername = (prefix = 'user') => {
   const suffix = Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
@@ -17,15 +21,29 @@ const generateUsername = (prefix = 'user') => {
 const generateUid = (prefix = 'UID') => {
   return `${prefix}_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
 };
+
 // ═══════════════════════════════════════════════════════════════════════════
-// LOGIN
+// OTP FLOW
 // ═══════════════════════════════════════════════════════════════════════════
 
-exports.login = async (req, res, next) => {
+exports.sendOtp = async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'Phone number is required' });
+    }
+    const result = await sendOTP(phone);
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    Logger.error('❌ Send OTP Error:', error);
+    next(error);
+  }
+};
+
+exports.verifyOtp = async (req, res, next) => {
   try {
     const { phone, otp } = req.body;
 
-    // Validate input
     if (!phone || !otp) {
       return res.status(400).json({
         success: false,
@@ -33,124 +51,56 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    // Verify OTP
     const verification = await verifyOTP(phone, otp);
 
     if (!verification.valid) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid OTP'
+        message: verification.message || 'Invalid OTP'
       });
     }
 
-    // Find user
-    const user = await User.findOne({ phone });
+    let user = await User.findOne({ phone });
+    let isNewUser = false;
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found. Please sign up first.'
+      const arvindId = `ARV-${Date.now().toString().slice(-8)}`;
+      const phoneSuffix = phone.slice(-4);
+      const name = `User ${phoneSuffix}`;
+      const username = generateUsername(`user${phoneSuffix}`);
+      const uid = generateUid('PH');
+      
+      user = await User.create({
+        phone,
+        uid,
+        username,
+        name,
+        arvindId,
+        provider: 'phone',
+        isProfileComplete: false, // Profile is not complete yet
+        coins: 0,
+        diamonds: 0,
+        level: 1,
+        xp: 0
       });
+      isNewUser = true;
     }
 
-    // Generate tokens
     const token = jwt.sign(
       { id: user._id.toString(), role: user.role, uid: user.uid, phone: user.phone },
       process.env.JWT_SECRET,
-      { expiresIn: '15m' }
-     );
+      { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
+    );
  
-     const refreshToken = jwt.sign(
+    const refreshToken = jwt.sign(
       { id: user._id.toString(), role: user.role, uid: user.uid },
       process.env.REFRESH_TOKEN_SECRET,
-     { expiresIn: '90d' }
+      { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
     );
 
-    res.status(200).json({
+    res.status(isNewUser ? 201 : 200).json({
       success: true,
-      message: 'Login successful',
-      data: {
-        token,
-        refreshToken,
-        user: {
-          _id: user._id,
-          phone: user.phone,
-          name: user.name || `User ${phone.slice(-4)}`,
-          avatar: user.avatar,
-          arvindId: user.arvindId,
-          level: user.level || 1,
-          isProfileComplete: user.isProfileComplete
-        }
-      }
-    });
-  } catch (error) {
-    Logger.error('❌ Login Error:', error);
-    next(error);
-  }
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// REGISTER (New User)
-// ═══════════════════════════════════════════════════════════════════════════
-
-exports.register = async (req, res, next) => {
-  try {
-    const { phone, name, gender, dob } = req.body;
-
-    // Validation
-    if (!phone || !name) {
-      return res.status(400).json({
-        success: false,
-        message: 'Phone and name are required'
-      });
-    }
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ phone });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'User already exists'
-      });
-    }
-
-    // Create new user
-    const arvindId = `ARV-${Date.now().toString().slice(-8)}`;
-    const phoneSuffix = phone.slice(-4);
-    const username = generateUsername(`user${phoneSuffix}`);
-    const uid = generateUid('PH');
-    const user = await User.create({
-      phone,
-      uid,
-      username,
-      name,
-      arvindId,
-      gender,
-      dob: dob ? new Date(dob) : null,
-      provider: 'phone',
-      isProfileComplete: true,
-      coins: 0,
-      diamonds: 0,
-      level: 1,
-      xp: 0
-    });
-
-    // Generate tokens
-    const token = jwt.sign(
-      { id: user._id.toString(), role: user.role, uid: user.uid, phone: user.phone },
-       process.env.JWT_SECRET,
-       { expiresIn: '15m' }
-     );
- 
-     const refreshToken = jwt.sign(
-       { id: user._id.toString(), role: user.role, uid: user.uid },
-       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: '90d' }
-    );
-
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
+      message: isNewUser ? 'User created and logged in' : 'Login successful',
       data: {
         token,
         refreshToken,
@@ -158,16 +108,83 @@ exports.register = async (req, res, next) => {
           _id: user._id,
           phone: user.phone,
           name: user.name,
+          avatar: user.avatar,
           arvindId: user.arvindId,
-          level: user.level
+          level: user.level,
+          isProfileComplete: user.isProfileComplete
         }
       }
     });
   } catch (error) {
-    Logger.error('❌ Register Error:', error);
+    Logger.error('❌ OTP Verify Error:', error);
     next(error);
   }
 };
+
+exports.resendOtp = async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'Phone number is required' });
+    }
+    const result = await resendOTP(phone);
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    Logger.error('❌ Resend OTP Error:', error);
+    next(error);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REGISTER (Complete Profile)
+// ═══════════════════════════════════════════════════════════════════════════
+
+exports.register = async (req, res, next) => {
+  try {
+    // This now serves to complete the user profile
+    const { phone, name, gender, dob } = req.body;
+    const userId = req.user.id; // From authMiddleware
+
+    if (!name || !gender || !dob) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, gender, and date of birth are required to complete the profile.'
+      });
+    }
+    
+    const user = await User.findById(userId);
+
+    if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Update user profile
+    user.name = name;
+    user.gender = gender;
+    user.dob = new Date(dob);
+    user.isProfileComplete = true;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        user: {
+          _id: user._id,
+          phone: user.phone,
+          name: user.name,
+          arvindId: user.arvindId,
+          level: user.level,
+          isProfileComplete: user.isProfileComplete
+        }
+      }
+    });
+  } catch (error) {
+    Logger.error('❌ Register/Update Profile Error:', error);
+    next(error);
+  }
+};
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // REFRESH TOKEN
@@ -220,14 +237,14 @@ exports.refreshToken = async (req, res, next) => {
     const newAccessToken = jwt.sign(
       { id: user._id.toString(), role: user.role, uid: user.uid, phone: user.phone },
       process.env.JWT_SECRET,
-      { expiresIn: '15m' }
+      { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
     );
 
     // Issue new refresh token (30-day validity)
     const newRefreshToken = jwt.sign(
       { id: user._id.toString() },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
     );
 
     // Persist new refresh token in DB

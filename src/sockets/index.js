@@ -85,19 +85,28 @@ const initializeSockets = (io) => {
       socket.on('disconnect', (reason) => {
         Logger.info(`User disconnected: ${socket.data.userId || 'unknown'} (reason: ${reason})`);
 
-        // Cleanup: leave all rooms this socket was in
-        if (socket.rooms && socket.rooms.size > 0) {
-          for (const room of socket.rooms) {
-            if (room !== socket.id) {
-              socket.leave(room);
-            }
-          }
+        const roomsToLeave = [];
+        // Safely collect rooms before leaving, as the socket.rooms set might change.
+        if (socket.rooms) {
+            socket.rooms.forEach(room => {
+                if (room !== socket.id) {
+                    roomsToLeave.push(room);
+                }
+            });
         }
 
-        // Cleanup: notify room sockets of user departure
-        if (socket.data.userId) {
-          io.emit('room:user_left', { userId: socket.data.userId, reason });
+        // Emitter for user departure.
+        if (socket.data.userId && roomsToLeave.length > 0) {
+          const payload = { userId: socket.data.userId, reason };
+          roomsToLeave.forEach(roomId => {
+            io.to(roomId).emit('room:user_left', payload);
+          });
         }
+
+        // Clean up by leaving all rooms.
+        roomsToLeave.forEach(room => {
+          socket.leave(room);
+        });
       });
     });
   } catch (err) {

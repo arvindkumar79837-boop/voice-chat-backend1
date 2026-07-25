@@ -1,0 +1,7 @@
+const ACCESS_TOKEN_EXPIRES_IN = '15m';
+const REFRESH_TOKEN_EXPIRES_IN = '30d';
+
+module.exports = {
+  ACCESS_TOKEN_EXPIRES_IN,
+  REFRESH_TOKEN_EXPIRES_IN,
+};

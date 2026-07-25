@@ -53,7 +53,7 @@ exports.googleLogin = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, uid: user.uid, role: user.role, isUser: true },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '15m' }
     );
 
     return res.status(200).json({
@@ -119,7 +119,7 @@ exports.appleLogin = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, uid: user.uid, role: user.role, isUser: true },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '15m' }
     );
 
     return res.status(200).json({

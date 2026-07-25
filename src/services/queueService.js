@@ -1,3 +1,4 @@
+const Logger = require('../utils/logger');
 const { Queue } = require('bullmq');
 const Redis = require('ioredis');
 
@@ -13,7 +14,6 @@ try {
 } catch (patchError) {
   Logger.info(`⚠️ BullMQ patch skipped: ${patchError.message}`);
 }
-const Logger = require('../utils/logger');
 
 class QueueService {
   constructor() {

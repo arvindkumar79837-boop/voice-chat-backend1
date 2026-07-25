@@ -132,7 +132,7 @@ exports.verifyFirebaseToken = async (req, res, next) => {
     const refreshToken = jwt.sign(
       { id: user._id.toString(), firebaseUid: user.firebaseUid },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: '90d' },
+      { expiresIn: '30d' },
     );
 
     res.status(200).json({
@@ -367,7 +367,7 @@ exports.verifyAppleToken = async (req, res, next) => {
     const refreshToken = jwt.sign(
       { id: user._id.toString(), firebaseUid: user.firebaseUid },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: '90d' },
+      { expiresIn: '30d' },
     );
 
     res.status(200).json({

@@ -28,7 +28,7 @@ module.exports = (io, socket) => {
     // ─── Send Gift via Socket (realtime with wallet check) ─────
     const handleSendGift = async (data) => {
       try {
-        const { roomId, senderName, receiverId, giftId, giftName, quantity, cost } = data;
+        const { roomId, senderName, receiverId, giftId, giftName, quantity } = data;
         const senderId = authedUserId;
 
         if (!senderId || !giftId || !receiverId || !roomId) {
@@ -61,7 +61,7 @@ module.exports = (io, socket) => {
           return socket.emit('gift_error', { message: 'Invalid gift price.' });
         }
 
-        const actualCost = gift.coinPrice * (parseInt(quantity) || 1);
+        const cost = gift.coinPrice * (parseInt(quantity) || 1);
 
         // Atomic coin deduction — prevents double-spend race condition
         const updatedSender = await User.findOneAndUpdate(
@@ -72,8 +72,6 @@ module.exports = (io, socket) => {
         if (!updatedSender) {
           return socket.emit('gift_error', { message: 'Insufficient coins.' });
         }
-
-        const cost = actualCost;
 
         // Update room gift points
         if (roomId) {
