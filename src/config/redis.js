@@ -23,7 +23,7 @@ const connectRedis = async () => {
           reconnectStrategy: (retries) => Math.min(retries * 50, 1000)
         },
         password: url.password || undefined,
-        database: parseInt((url.pathname || '/0', 10).replace('/', '0'))
+        database: parseInt((url.pathname || '/0').replace('/', '') || '0', 10)
       };
     } else if (process.env.REDIS_HOST) {
       // Secondary: Explicit host-based config
