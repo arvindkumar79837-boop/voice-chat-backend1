@@ -187,7 +187,7 @@ exports.sendGift = async (req, res) => {
       try {
         const agencyTargetController = require('./agencyTargetController');
         await agencyTargetController.updateProgress(agencyId, totalCost, 'COINS_SPENT');
-      } catch (err) { console.error('Failed to update agency target progress:', err.message); }
+      } catch (err) { Logger.error('Failed to update agency target progress:', err.message); }
     }
 
     // Build gift event key

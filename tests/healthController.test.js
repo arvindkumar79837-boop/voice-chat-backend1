@@ -293,7 +293,13 @@ describe('HealthController', () => {
 
 describe('HealthController Integration', () => {
   it('getDetailedHealth should aggregate all checks', async () => {
-    const mockReq = {};
+    const mockIo = {
+      sockets: {
+        sockets: { size: 5 },
+        adapter: { rooms: new Map([['room1', {}], ['room2', {}]]) }
+      }
+    };
+    const mockReq = { app: { get: jest.fn().mockReturnValue(mockIo) } };
     const mockRes = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
@@ -330,7 +336,13 @@ describe('HealthController Integration', () => {
   });
 
   it('getDetailedHealth should return degraded status with warnings', async () => {
-    const mockReq = {};
+    const mockIo = {
+      sockets: {
+        sockets: { size: 5 },
+        adapter: { rooms: new Map([['room1', {}], ['room2', {}]]) }
+      }
+    };
+    const mockReq = { app: { get: jest.fn().mockReturnValue(mockIo) } };
     const mockRes = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
@@ -359,7 +371,13 @@ describe('HealthController Integration', () => {
   });
 
   it('getDetailedHealth should return unhealthy status with failures', async () => {
-    const mockReq = {};
+    const mockIo = {
+      sockets: {
+        sockets: { size: 5 },
+        adapter: { rooms: new Map([['room1', {}], ['room2', {}]]) }
+      }
+    };
+    const mockReq = { app: { get: jest.fn().mockReturnValue(mockIo) } };
     const mockRes = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()

@@ -204,7 +204,7 @@ async function distributeChampionshipRewards(championship) {
     const user = await User.findById(participant.userId);
     if (!user) continue;
 
-    let rewardKey = '';
+    let rewardKey;
     if (participant.final_rank === 1) rewardKey = 'winner';
     else if (participant.final_rank === 2) rewardKey = 'runner_up';
     else if (participant.final_rank === 3) rewardKey = 'third_place';
@@ -283,7 +283,7 @@ exports.claimChampionshipRewards = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    let rewardKey = '';
+    let rewardKey;
     if (participant.final_rank === 1) rewardKey = 'winner';
     else if (participant.final_rank === 2) rewardKey = 'runner_up';
     else if (participant.final_rank === 3) rewardKey = 'third_place';

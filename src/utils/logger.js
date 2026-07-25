@@ -59,10 +59,14 @@ try {
   // Fallback if winston not installed yet
   const noop = () => {};
   logger = {
+    // eslint-disable-next-line no-console
     info: (msg, meta) => console.log(`[INFO] ${msg}`, meta || ''),
+    // eslint-disable-next-line no-console
     error: (msg, meta) => console.error(`[ERROR] ${msg}`, meta || ''),
+    // eslint-disable-next-line no-console
     warn: (msg, meta) => console.warn(`[WARN] ${msg}`, meta || ''),
     debug: (msg, meta) => {
+      // eslint-disable-next-line no-console
       if (process.env.DEBUG_LOGS === 'true') console.log(`[DEBUG] ${msg}`, meta || '');
     },
     http: noop,

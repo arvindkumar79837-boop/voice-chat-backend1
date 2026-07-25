@@ -14,7 +14,6 @@ const RefreshTokenSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-RefreshTokenSchema.index({ token: 1 }, { unique: true });
 RefreshTokenSchema.index({ userId: 1, createdAt: -1 });
 // Auto-delete expired tokens after 35 days
 RefreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });

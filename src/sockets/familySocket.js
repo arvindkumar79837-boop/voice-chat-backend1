@@ -251,7 +251,7 @@ function setupFamilySocketHandlers(io, socket) {
 
       io.to(`family:${familyId}`).emit('family:stay:rewarded', {
         uid: uid,
-        username: user?.username || 'Unknown',
+        username: updatedUser?.username || 'Unknown',
         coinsEarned,
         xpEarned
       });

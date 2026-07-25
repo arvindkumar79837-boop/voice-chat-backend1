@@ -384,8 +384,7 @@ roomSchema.index({ ownerId: 1, status: 1, isLive: -1 });
 // Compound index for family/agency room lookups
 roomSchema.index({ familyId: 1, status: 1 });
 roomSchema.index({ agencyId: 1, status: 1 });
-// Compound index for room by roomId (unique already covered)
-roomSchema.index({ roomId: 1 });
+
 
 // Pre-save hook to sync isActive with status
 roomSchema.pre('save', function(next) {

@@ -298,6 +298,7 @@ class BackupService {
             try {
               await fs.unlink(compressedPath);
             } catch (e) {
+              // Compressed file may not exist; safe to ignore
             }
 
             Logger.info('Old backup removed', { backupId: dir, age: this.retentionDays });
@@ -330,7 +331,9 @@ class BackupService {
       try {
         await fs.access(compressedPath);
         compressedExists = true;
-      } catch {}
+      } catch {
+        // Compressed file does not exist; continue with uncompressed path
+      }
       if (compressedExists) {
         const extractCmd = `tar -xzf "${compressedPath}" -C "${path.dirname(backupPath)}"`;
         await execAsync(extractCmd);

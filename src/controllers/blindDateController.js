@@ -171,7 +171,7 @@ exports.decide = async (req, res) => {
     if (session.userADecision !== 'PENDING' && session.userBDecision !== 'PENDING') {
       if (session.userADecision === 'INTERESTED' && session.userBDecision === 'INTERESTED') {
         session.status = 'MATCHED'; session.endedAt = new Date();
-        try { await User.findByIdAndUpdate(session.userA, { $addToSet: { following: session.userB, followers: session.userB } }); await User.findByIdAndUpdate(session.userB, { $addToSet: { following: session.userA, followers: session.userA } }); } catch (err) { console.error('Failed to update following/followers:', err.message); }
+        try { await User.findByIdAndUpdate(session.userA, { $addToSet: { following: session.userB, followers: session.userB } }); await User.findByIdAndUpdate(session.userB, { $addToSet: { following: session.userA, followers: session.userA } }); } catch (err) { Logger.error('Failed to update following/followers:', err.message); }
         await BlindDateProfile.updateMany({ userId: { $in: [session.userA, session.userB] } }, { $inc: { totalMatches: 1 } });
         const uA = await User.findById(session.userA).select('name avatar');
         const uB = await User.findById(session.userB).select('name avatar');

@@ -6,6 +6,7 @@ const Penalty = require('../models/Penalty');
 const Agency = require('../models/Agency');
 const MonthlyReport = require('../models/MonthlyReport');
 const Gift = require('../models/Gift');
+const User = require('../models/User');
 
 // ─────────────────────────────────────────────────────────────────────────
 // AGENCY: GET REAL-TIME ANALYTICS DASHBOARD

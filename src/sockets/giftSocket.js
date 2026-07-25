@@ -65,8 +65,8 @@ module.exports = (io, socket) => {
 
         // Atomic coin deduction — prevents double-spend race condition
         const updatedSender = await User.findOneAndUpdate(
-          { _id: senderId, coins: { $gte: actualCost } },
-          { $inc: { coins: -actualCost } },
+          { _id: senderId, coins: { $gte: cost } },
+          { $inc: { coins: -cost } },
           { new: true }
         );
         if (!updatedSender) {

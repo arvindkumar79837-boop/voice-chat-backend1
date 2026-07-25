@@ -215,8 +215,8 @@ class CDNService {
 
   async invalidateCache(urls) {
     try {
+      const urlList = Array.isArray(urls) ? urls : [urls];
       if (this.provider === 'cloudinary') {
-        const urlList = Array.isArray(urls) ? urls : [urls];
         const result = await Cloudinary.api.delete_resources_by_prefix(urls[0]);
         Logger.info('CDN cache invalidated', { urls: urlList.length, result: result.result });
         return result;

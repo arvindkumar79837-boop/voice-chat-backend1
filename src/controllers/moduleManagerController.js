@@ -19,6 +19,7 @@ const Event = require('../models/Event');
 const Gift = require('../models/Gift');
 const VipPlan = require('../models/VipPlan');
 const Transaction = require('../models/Transaction');
+const Withdrawal = require('../models/Withdrawal');
 const SystemSettings = require('../models/SystemSettings');
 
 // ===========================================================================
@@ -860,7 +861,7 @@ exports.createCMSPage = async (req, res) => {
         content,
         contentHi: contentHi || '',
         category: category || 'general',
-        isPublished: isActive !== undefined ? isActive : false,
+        isPublished: isPublished !== undefined ? isPublished : false,
         author: req.user?.userId || 'SYSTEM',
         version: 1,
       },
@@ -1045,7 +1046,7 @@ exports.getManagerDashboard = async (req, res) => {
         case 'families':
           stats.families = await Family.countDocuments();
           break;
-        case 'finance':
+        case 'finance': {
           const revenue = await Transaction.aggregate([
             { $match: { type: 'recharge' } },
             { $group: { _id: null, total: { $sum: '$amount' } } },
@@ -1053,6 +1054,7 @@ exports.getManagerDashboard = async (req, res) => {
           stats.totalRevenue = revenue[0]?.total || 0;
           stats.pendingWithdrawals = await Withdrawal.countDocuments({ status: 'pending' });
           break;
+        }
         case 'events':
           stats.activeEvents = await Event.countDocuments({ status: 'active' });
           break;

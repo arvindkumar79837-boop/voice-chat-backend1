@@ -180,13 +180,13 @@ module.exports = (io, socket) => {
         userId,
         userProfile,
         message: `${userProfile?.name || 'A user'} left the room`,
-        activeUsers: room?.activeUsers || 0,
+        activeUsers: updatedRoom?.activeUsers || 0,
       });
       socket.to(roomId).emit('room:user_left', {
         userId,
         userProfile,
         message: `${userProfile?.name || 'A user'} left the room`,
-        activeUsers: room?.activeUsers || 0,
+        activeUsers: updatedRoom?.activeUsers || 0,
       });
     } catch (error) {
       Logger.error('[leave_room] error:', error.message);

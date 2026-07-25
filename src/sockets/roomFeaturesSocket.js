@@ -5,9 +5,10 @@ const RoomFollower = require('../models/RoomFollower');
 const Room = require('../models/Room');
 
 const onlineUsersInRooms = {};
+let roomFeaturesNamespace = null;
 
 function setupRoomFeaturesSocket(io) {
-  const roomFeaturesNamespace = io.of('/room-features');
+  roomFeaturesNamespace = io.of('/room-features');
 
   roomFeaturesNamespace.use((socket, next) => {
     const token = socket.handshake.auth?.token || socket.handshake.query?.token || socket.handshake.headers.authorization?.split(' ')[1];

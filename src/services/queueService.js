@@ -3,10 +3,25 @@ const { Queue } = require('bullmq');
 const Redis = require('ioredis');
 
 // Patch BullMQ to accept Redis 3.x for older Redis servers
+// Try multiple paths for different BullMQ versions
 try {
-  const RedisConnModule = require('bullmq/dist/classes/redis-connection.js');
+  let RedisConnModule = null;
+  const possiblePaths = [
+    'bullmq/dist/cjs/classes/redis-connection.js',
+    'bullmq/dist/classes/redis-connection.js',
+    'bullmq/dist/esm/classes/redis-connection.js'
+  ];
 
-  if (RedisConnModule.RedisConnection && typeof RedisConnModule.RedisConnection.minimumVersion === 'string') {
+  for (const p of possiblePaths) {
+    try {
+      RedisConnModule = require(p);
+      break;
+    } catch (e) {
+      // Try next path
+    }
+  }
+
+  if (RedisConnModule && RedisConnModule.RedisConnection && typeof RedisConnModule.RedisConnection.minimumVersion === 'string') {
     const originalMinVersion = RedisConnModule.RedisConnection.minimumVersion;
     RedisConnModule.RedisConnection.minimumVersion = '3.0.0';
     Logger.info(`🔧 Patched BullMQ Redis version check: ${originalMinVersion} → 3.0.0`);

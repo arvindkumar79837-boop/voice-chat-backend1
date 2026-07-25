@@ -15,7 +15,6 @@ const subscriptionPurchaseLogSchema = new mongoose.Schema({
   verificationResponse: { type: mongoose.Schema.Types.Mixed, default: null },
 }, { timestamps: true });
 
-subscriptionPurchaseLogSchema.index({ purchaseToken: 1 });
 subscriptionPurchaseLogSchema.index({ userId: 1, status: 1 });
 
 module.exports = mongoose.model('SubscriptionPurchaseLog', subscriptionPurchaseLogSchema);

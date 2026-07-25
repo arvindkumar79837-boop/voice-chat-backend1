@@ -166,7 +166,7 @@ class DeploymentService {
       return result;
     } catch (error) {
       Logger.error('Dependency installation failed', { error: error.message });
-      throw new Error(`npm install failed: ${error.message}`);
+      throw new Error(`npm install failed: ${error.message}`, { cause: error });
     }
   }
 
@@ -183,7 +183,7 @@ class DeploymentService {
       return { built: false, reason: 'No build script found' };
     } catch (error) {
       Logger.error('Build failed', { error: error.message });
-      throw new Error(`Build failed: ${error.message}`);
+      throw new Error(`Build failed: ${error.message}`, { cause: error });
     }
   }
 

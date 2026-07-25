@@ -221,7 +221,7 @@ const _holdAccount = async (userId, reason) => {
       $set: { isBlocked: true, isCoinSeller: false },
     });
     await _createFraudAlert(userId, '', 'ABNORMAL_COIN_TRANSFER', reason, 'CRITICAL', 0);
-  } catch (err) { console.error('Failed to hold account:', err.message); }
+  } catch (err) { Logger.error('Failed to hold account:', err.message); }
 };
 
 // ── Device fingerprint + IP pattern (anti referral farming) ─────────────────

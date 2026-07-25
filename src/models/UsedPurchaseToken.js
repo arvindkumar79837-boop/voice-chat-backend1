@@ -15,7 +15,6 @@ const UsedPurchaseTokenSchema = new mongoose.Schema({
   usedAt: { type: Date, default: Date.now },
 });
 
-UsedPurchaseTokenSchema.index({ token: 1 }, { unique: true });
 UsedPurchaseTokenSchema.index({ userId: 1, usedAt: -1 });
 
 module.exports = mongoose.model('UsedPurchaseToken', UsedPurchaseTokenSchema);

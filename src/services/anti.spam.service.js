@@ -7,6 +7,7 @@
 // • Game anti-cheat timing validator
 // ═══════════════════════════════════════════════════════════════════════════
 
+const Logger = require('../utils/logger');
 const SpamLog  = require('../models/SpamLog');
 const User     = require('../models/User');
 const AuditLog = require('../models/AuditLog');
@@ -127,7 +128,7 @@ const _muteChatUser = async (userId, minutes) => {
     await User.findByIdAndUpdate(userId, {
       $set: { chatMutedUntil: muteExpiry },
     });
-  } catch (err) { console.error('Failed to mute chat user:', err.message); }
+  } catch (err) { Logger.error('Failed to mute chat user:', err.message); }
 };
 
 module.exports = { analyseMessage, validateGameTiming };

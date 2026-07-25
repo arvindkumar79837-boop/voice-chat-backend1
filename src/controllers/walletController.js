@@ -9,6 +9,7 @@ const Agency = require('../models/Agency');
 const Family = require('../models/Family');
 const IncomeAnalytics = require('../models/IncomeAnalytics');
 const AuditLog = require('../models/AuditLog');
+const AgencyMonthlyStats = require('../models/AgencyMonthlyStats');
 
 const DEFAULT_CONFIG = {
   diamondToCoinRate: 10,
@@ -765,7 +766,7 @@ exports.exchangeDiamondsToCoins = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Exchange successful',
-      data: { diamondsRemaining: updatedUser.diamonds, coinsReceived, diamondsExchanged: requiredDiamonds }
+      data: { diamondsRemaining: updatedUser.diamonds, coinsReceived: coinsToReceive, diamondsExchanged: requiredDiamonds }
     });
   } catch (error) {
     Logger.error('Exchange Error:', error);

@@ -21,7 +21,6 @@ const premiumSubscriptionSchema = new mongoose.Schema({
   monthlyCoinsLastClaimedAt: { type: Date },
 }, { timestamps: true });
 
-premiumSubscriptionSchema.index({ tierName: 1 });
 premiumSubscriptionSchema.index({ isActive: 1, sortOrder: 1 });
 
 module.exports = mongoose.model('PremiumSubscription', premiumSubscriptionSchema);

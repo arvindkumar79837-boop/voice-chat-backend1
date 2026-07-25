@@ -44,10 +44,10 @@ class HealthController {
     }
 
     try {
-      const io = req.app.get('io');
+      const io = req.app ? req.app.get('io') : undefined;
       await this.checkSocketIO(health, io);
     } catch (error) {
-      this.addCheck(health, 'websocket', 'error', error.message);
+      this.addCheck(health, 'websocket', 'warning', error.message);
     }
 
     const responseTime = Date.now() - startTime;
@@ -239,7 +239,7 @@ class HealthController {
     try {
       
       if (!io) {
-        this.addCheck(health, 'websocket', 'error', 'Socket.IO not initialized');
+        this.addCheck(health, 'websocket', 'warning', 'Socket.IO not initialized');
         return;
       }
 
@@ -258,7 +258,7 @@ class HealthController {
       this.addCheck(health, 'websocket', 'pass', `${connectedSockets} connections in ${totalRooms} rooms`);
     } catch (error) {
       health.services.websocket = { connected: false, error: error.message };
-      this.addCheck(health, 'websocket', 'error', error.message);
+      this.addCheck(health, 'websocket', 'warning', error.message);
     }
   }
 

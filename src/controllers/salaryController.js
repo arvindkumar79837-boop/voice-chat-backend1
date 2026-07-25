@@ -6,6 +6,7 @@ const SalaryRecord = require('../models/SalaryRecord');
 const Penalty = require('../models/Penalty');
 const Bonus = require('../models/Bonus');
 const AgencyWallet = require('../models/AgencyWallet');
+const Agency = require('../models/Agency');
 const Transaction = require('../models/Transaction');
 const AuditLog = require('../models/AuditLog');
 

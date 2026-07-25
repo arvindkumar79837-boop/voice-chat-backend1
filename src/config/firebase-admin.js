@@ -25,7 +25,7 @@ const initializeFirebaseAdmin = () => {
         serviceAccount = JSON.parse(firebaseAccount);
         Logger.info("✅ Firebase Admin initializing from JSON string.");
       } catch (parseError) {
-        throw new Error("Failed to parse FIREBASE_SERVICE_ACCOUNT as JSON string");
+        throw new Error("Failed to parse FIREBASE_SERVICE_ACCOUNT as JSON string", { cause: parseError });
       }
     } else {
       // Treat as file path
