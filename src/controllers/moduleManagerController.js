@@ -990,7 +990,7 @@ exports.getTerminology = async (req, res) => {
 exports.getManagerDashboard = async (req, res) => {
   try {
     const managerRole = req.user?.managedModule;
-    const stats = {};
+    let stats = {};
 
     if (!managerRole || managerRole === 'all') {
       // Super admin / Owner gets everything

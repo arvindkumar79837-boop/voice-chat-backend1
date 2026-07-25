@@ -163,7 +163,7 @@ class HealthController {
    */
   static async checkRedis(health) {
     try {
-      const rankingConnected = QueueService.isHealthy();
+      const rankingConnected = await QueueService.isHealthy();
       
       health.services.redis = {
         connected: rankingConnected
@@ -247,12 +247,7 @@ class HealthController {
       const connectedSockets = sockets.sockets.size;
       const rooms = sockets.adapter.rooms;
 
-      let totalRooms = 0;
-      for (const room in rooms) {
-        if (rooms[room].hasOwnProperty('sockets')) {
-          totalRooms++;
-        }
-      }
+      const totalRooms = rooms instanceof Map ? rooms.size : Object.keys(rooms || {}).length;
 
       health.services.websocket = {
         connected: true,

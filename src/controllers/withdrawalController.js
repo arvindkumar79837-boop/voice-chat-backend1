@@ -156,7 +156,7 @@ exports.rejectWithdrawal = async (req, res) => {
     withdrawal.status = 'rejected';
     withdrawal.rejectedBy = adminId;
     withdrawal.rejectedAt = new Date();
-    rejectionReason: reason || 'Administrative rejection',
+    withdrawal.rejectionReason = reason || 'Administrative rejection';
     await withdrawal.save();
 
     const wallet = await AgencyWallet.findOne({ agencyId: withdrawal.agencyId });
