@@ -24,19 +24,21 @@ exports.getActiveTasks = async (req, res) => {
     const tasks = await DailyTask.find({ is_active: true });
     const userId = req.user.userId;
 
-    // Enrich with user progress
-    const enrichedTasks = [];
-    for (const task of tasks) {
+    // Enrich with user progress in parallel for better performance
+    const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+    const todayEnd = new Date(new Date().setHours(23, 59, 59, 999));
+    
+    const enrichedTasks = await Promise.all(tasks.map(async (task) => {
       const progress = await UserEventProgress.findOne({
         userId,
         taskId: task._id,
         createdAt: {
-          $gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          $lte: new Date(new Date().setHours(23, 59, 59, 999))
+          $gte: todayStart,
+          $lte: todayEnd
         }
       });
 
-      enrichedTasks.push({
+      return {
         _id: task._id,
         task_name: task.task_name,
         description: task.description,
@@ -51,8 +53,8 @@ exports.getActiveTasks = async (req, res) => {
         progress: progress ? progress.progress : 0,
         is_completed: progress ? progress.is_completed : false,
         is_claimed: progress ? progress.is_claimed : false
-      });
-    }
+      };
+    }));
 
     res.status(200).json({ success: true, data: enrichedTasks });
   } catch (error) {

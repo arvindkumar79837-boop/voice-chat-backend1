@@ -61,7 +61,9 @@ exports.joinQueue = async (req, res) => {
       const entry = JSON.stringify({ userId, name: user.name, avatar: user.avatar, birthDate: user.birthDate, country: user.lastLoginLocation?.country || '', genderPreference: profile.genderPreference, ageRangeMin: profile.ageRangeMin, ageRangeMax: profile.ageRangeMax, countryPreference: profile.countryPreference, joinedAt: Date.now() });
       await redis.zadd(QUEUE_KEY, Date.now(), entry);
     }
-    profile.dailyQueueCount += 1; profile.lastQueuedAt = now; await profile.save();
+    profile.dailyQueueCount += 1;
+    profile.lastQueuedAt = now;
+    await profile.save();
     return res.json({ success: true, message: 'Added to queue' });
   } catch (err) { return res.status(500).json({ success: false, message: err.message }); }
 };
@@ -72,7 +74,15 @@ exports.leaveQueue = async (req, res) => {
     const redis = getRedisClient();
     if (redis) {
       const entries = await redis.zrange(QUEUE_KEY, 0, -1);
-      for (const e of entries) { if (JSON.parse(e).userId === userId) { await redis.zrem(QUEUE_KEY, e); break; } }
+      const removePromises = [];
+      for (const e of entries) {
+        if (JSON.parse(e).userId === userId) {
+          removePromises.push(redis.zrem(QUEUE_KEY, e));
+        }
+      }
+      if (removePromises.length > 0) {
+        await Promise.all(removePromises);
+      }
     }
     return res.json({ success: true, message: 'Removed from queue' });
   } catch (err) { return res.status(500).json({ success: false, message: err.message }); }
@@ -89,15 +99,25 @@ exports.processQueue = async () => {
       if (entries.length < 2) return;
       const users = entries.map(e => JSON.parse(e));
       const matched = new Set();
+      
+      // Pre-compute all matches to ensure atomic matching logic
+      const matchesToCreate = [];
       for (let i = 0; i < users.length; i++) {
         if (matched.has(users[i].userId)) continue;
         for (let j = i + 1; j < users.length; j++) {
           if (matched.has(users[j].userId)) continue;
           if (isCompatible(users[i], users[j])) {
-            await createMatch(users[i], users[j], redis);
-            matched.add(users[i].userId); matched.add(users[j].userId); break;
+            matchesToCreate.push([users[i], users[j]]);
+            matched.add(users[i].userId);
+            matched.add(users[j].userId);
+            break;
           }
         }
+      }
+      
+      // Create all matches in parallel for better performance
+      if (matchesToCreate.length > 0) {
+        await Promise.all(matchesToCreate.map(([userA, userB]) => createMatch(userA, userB, redis)));
       }
     } finally { await redis.del(QUEUE_LOCK_KEY); }
   } catch (err) { Logger.error('Blind date queue error:', err.message); }
@@ -117,7 +137,16 @@ function isCompatible(a, b) {
 
 async function createMatch(userA, userB, redis) {
   const entries = await redis.zrange(QUEUE_KEY, 0, -1);
-  for (const e of entries) { const p = JSON.parse(e); if ([userA.userId, userB.userId].includes(p.userId)) await redis.zrem(QUEUE_KEY, e); }
+  const removePromises = [];
+  for (const e of entries) {
+    const p = JSON.parse(e);
+    if ([userA.userId, userB.userId].includes(p.userId)) {
+      removePromises.push(redis.zrem(QUEUE_KEY, e));
+    }
+  }
+  if (removePromises.length > 0) {
+    await Promise.all(removePromises);
+  }
   const coinCost = await SystemSettings.getValue('blindDateCoinCost') || 0;
   let coinsCharged = 0;
     if (coinCost > 0) {

@@ -20,7 +20,7 @@ const handleValidationErrors = (req, res, next) => {
 const validatePhone = () => [
   body('phone')
     .trim()
-    .matches(/^[0-9]{10}$/)
+    .matches(/^\d{10}$/)
     .withMessage('Phone must be 10 digits'),
   handleValidationErrors
 ];
@@ -50,7 +50,7 @@ const validateEmail = () => [
 const validateLogin = () => [
   body('phone')
     .trim()
-    .matches(/^[0-9]{10}$/)
+    .matches(/^\d{10}$/)
     .withMessage('Phone must be 10 digits'),
   body('otp')
     .trim()

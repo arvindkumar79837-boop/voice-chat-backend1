@@ -17,7 +17,7 @@ const TwoFactorSession = require('../models/TwoFactorSession');
  */
 const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({
       success: false,
       code: 'NO_TOKEN',
@@ -25,7 +25,7 @@ const authMiddleware = async (req, res, next) => {
     });
   }
 
-  const token = authHeader.split(' ')[1];
+  const [, token] = authHeader.split(' ');
 
   try {
     // Check if token is blacklisted (logout / forced revocation)
@@ -38,7 +38,7 @@ const authMiddleware = async (req, res, next) => {
       });
     }
     const decoded = verifyAccessToken(token);
-    req.user = decoded; // { id, role, uid, iat, exp }
+    req.user = decoded;
     next();
   } catch (err) {
     if (err.name === 'TokenExpiredError') {

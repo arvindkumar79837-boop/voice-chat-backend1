@@ -88,7 +88,7 @@ exports.calculateMonthlySalary = async (req, res) => {
       const hostPenalties = penalties.filter(p => p.userId.toString() === uid);
       const hostBonuses = bonuses.filter(b => b.userId.toString() === uid);
 
-      let baseSalary = 2000;
+      const baseSalary = 2000;
       const bonusesTotal = hostBonuses.reduce((sum, b) => sum + (b.type === 'coins' ? b.amount : 0), 0);
       const penaltiesTotal = hostPenalties.reduce((sum, p) => {
         if (p.isPercentage) return sum + (baseSalary * p.amount / 100);

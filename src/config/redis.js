@@ -7,7 +7,7 @@ const redis = require('redis');
 const MonitoringService = require('../services/monitoringService');
 
 let redisClient = null;
-let fallbackRedisClient = null;
+const fallbackRedisClient = null;
 
 const connectRedis = async () => {
   try {
@@ -51,9 +51,9 @@ const connectRedis = async () => {
 
     // Add connection timeout to prevent infinite hang
     const connectPromise = redisClient.connect();
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Redis connection timeout after 5s')), 5000)
-    );
+    const timeoutPromise = new Promise((resolve, reject) => {
+      setTimeout(() => reject(new Error('Redis connection timeout after 5s')), 5000);
+    });
     
     redisClient.on('error', (err) => {
       MonitoringService.updateRedisStatus(false);

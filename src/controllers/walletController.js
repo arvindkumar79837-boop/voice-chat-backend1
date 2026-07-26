@@ -426,13 +426,16 @@ exports.addFamilyTaskReward = async (req, res, next) => {
     const family = await Family.findById(familyId).select('members_list family_name');
     if (family?.members_list) {
       const members = await User.find({ uid: { $in: family.members_list } }).select('_id');
-      for (const member of members) {
+      const walletConfig = await getWalletConfig();
+      
+      // Process all member transactions and analytics in parallel for better performance
+      await Promise.all(members.map(async (member) => {
         await logTransaction(member._id, 'family', 'family_task_reward', taskCoins || taskDiamonds, description, {
           familyId,
           awardedBy: adminId
         });
-        await updateIncomeAnalytics(member._id, 'family', 'family_task_reward', taskCoins || taskDiamonds, await getWalletConfig());
-      }
+        await updateIncomeAnalytics(member._id, 'family', 'family_task_reward', taskCoins || taskDiamonds, walletConfig);
+      }));
     }
 
     await createAuditLog(adminId, 'family_task_reward', { familyId, taskCoins, taskDiamonds, description });

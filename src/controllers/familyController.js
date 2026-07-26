@@ -1631,9 +1631,10 @@ exports.updateLeaderboard = async (req, res) => {
       .select('uid username avatar coins totalGiftsSent familyContribution xp level')
       .lean();
 
-    for (const member of members) {
+    // Update all member leaderboard entries in parallel
+    const updatePromises = members.map(async (member) => {
       const totalContribution = (member.familyContribution || 0) + (member.totalGiftsSent || 0);
-      await FamilyLeaderboard.findOneAndUpdate(
+      return FamilyLeaderboard.findOneAndUpdate(
         { familyId: family.familyId, uid: member.uid, period: 'all_time' },
         {
           $set: {
@@ -1647,18 +1648,23 @@ exports.updateLeaderboard = async (req, res) => {
         },
         { upsert: true }
       );
-    }
+    });
+    
+    await Promise.all(updatePromises);
 
     const allEntries = await FamilyLeaderboard.find({ familyId: family.familyId, period: 'all_time' })
       .sort({ totalContribution: -1 })
       .lean();
 
-    for (let i = 0; i < allEntries.length; i++) {
-      await FamilyLeaderboard.findOneAndUpdate(
-        { _id: allEntries[i]._id },
-        { $set: { rank: i + 1 } }
-      );
-    }
+    // Update all ranks in parallel
+    const rankPromises = allEntries.map((entry, index) => 
+      FamilyLeaderboard.findOneAndUpdate(
+        { _id: entry._id },
+        { $set: { rank: index + 1 } }
+      )
+    );
+    
+    await Promise.all(rankPromises);
 
     res.status(200).json({ success: true, message: 'Leaderboard updated!' });
   } catch (error) {
@@ -2098,12 +2104,19 @@ async function updateLeaderboardForMember(familyId, user) {
       .sort({ totalContribution: -1 })
       .lean();
 
-    for (let i = 0; i < allEntries.length; i++) {
-      await FamilyLeaderboard.findOneAndUpdate(
-        { _id: allEntries[i]._id },
-        { $set: { rank: i + 1 } }
-      );
-    }
+    const allEntries = await FamilyLeaderboard.find({ familyId: familyId, period: 'all_time' })
+      .sort({ totalContribution: -1 })
+      .lean();
+
+    // Update all ranks in parallel
+    const rankPromises = allEntries.map((entry, index) => 
+      FamilyLeaderboard.findOneAndUpdate(
+        { _id: entry._id },
+        { $set: { rank: index + 1 } }
+      )
+    );
+    
+    await Promise.all(rankPromises);
   } catch (error) {
     Logger.error('Update Leaderboard For Member Error:', error);
   }

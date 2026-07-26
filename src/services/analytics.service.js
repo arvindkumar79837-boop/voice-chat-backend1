@@ -564,8 +564,9 @@ const aggregateDailyStats = async () => {
     }
   ]);
 
-  for (const user of userActivities) {
-    await UserActivity.findOneAndUpdate(
+  // Update all user activities in parallel for better performance
+  const userActivityPromises = userActivities.map((user) =>
+    UserActivity.findOneAndUpdate(
       { userId: user._id, date: startOfToday },
       {
         $setOnInsert: { userId: user._id, date: startOfToday },
@@ -573,8 +574,9 @@ const aggregateDailyStats = async () => {
         $inc: { sessionsCount: 1, timeSpentMinutes: 1 }
       },
       { upsert: true }
-    );
-  }
+    )
+  );
+  await Promise.all(userActivityPromises);
 
   // Aggregate gift analytics
   const giftStats = await GiftTransaction.aggregate([
@@ -594,9 +596,10 @@ const aggregateDailyStats = async () => {
     }
   ]);
 
-  for (const gift of giftStats) {
+  // Update all gift analytics in parallel for better performance
+  const giftPromises = giftStats.map(async (gift) => {
     const roomInfo = gift.topRoom ? await Room.findById(gift.topRoom).select('name').lean() : null;
-    await GiftAnalytic.findOneAndUpdate(
+    return GiftAnalytic.findOneAndUpdate(
       { giftId: gift._id, date: startOfToday },
       {
         $set: {
@@ -615,7 +618,8 @@ const aggregateDailyStats = async () => {
       },
       { upsert: true }
     );
-  }
+  });
+  await Promise.all(giftPromises);
 
   // Aggregate agency analytics
   const agencies = await Agency.find({ isActive: true }).lean();
@@ -676,17 +680,19 @@ const aggregateDailyStats = async () => {
     .sort({ totalDiamondsEarned: -1 })
     .lean();
 
-  for (let i = 0; i < allAgencyAnalytics.length; i++) {
-    await AgencyAnalytic.findOneAndUpdate(
-      { _id: allAgencyAnalytics[i]._id },
+  // Update all agency rankings in parallel for better performance
+  const agencyRankPromises = allAgencyAnalytics.map((agency, index) =>
+    AgencyAnalytic.findOneAndUpdate(
+      { _id: agency._id },
       {
         $set: {
-          rankingPosition: i + 1,
-          previousRankingPosition: allAgencyAnalytics[i].rankingPosition
+          rankingPosition: index + 1,
+          previousRankingPosition: agency.rankingPosition
         }
       }
-    );
-  }
+    )
+  );
+  await Promise.all(agencyRankPromises);
 
   // Aggregate family analytics
   const families = await Family.find({ isActive: true }).lean();
@@ -756,17 +762,19 @@ const aggregateDailyStats = async () => {
     .sort({ rankingPoints: -1 })
     .lean();
 
-  for (let i = 0; i < allFamilyAnalytics.length; i++) {
-    await FamilyAnalytic.findOneAndUpdate(
-      { _id: allFamilyAnalytics[i]._id },
+  // Update all family rankings in parallel for better performance
+  const familyRankPromises = allFamilyAnalytics.map((family, index) =>
+    FamilyAnalytic.findOneAndUpdate(
+      { _id: family._id },
       {
         $set: {
-          rankingPosition: i + 1,
-          previousRankingPosition: allFamilyAnalytics[i].rankingPosition
+          rankingPosition: index + 1,
+          previousRankingPosition: family.rankingPosition
         }
       }
-    );
-  }
+    )
+  );
+  await Promise.all(familyRankPromises);
 
   // Aggregate heat map data
   const heatMapResults = await UserActivity.aggregate([

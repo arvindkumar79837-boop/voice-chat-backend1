@@ -159,7 +159,7 @@ exports.transferCoinsToUser = async (req, res) => {
     }
 
     const dealer = await User.findOne({ uid: dealerUid }).session(session);
-    if (!dealer || !dealer.isCoinSeller) {
+    if (!dealer || !dealer?.isCoinSeller) {
       await session.abortTransaction();
       return res.status(403).json({ success: false, message: 'Unauthorized: Coin seller access required' });
     }

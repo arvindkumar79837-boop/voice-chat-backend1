@@ -155,13 +155,12 @@ exports.updateProgress = async (agencyId, amount, metricType) => {
     const target = await AgencyTarget.findOne({ agencyId, status: 'ACTIVE' });
     if (!target) return;
 
-    if (metricType === 'COINS_SPENT' && target.targetType === 'COINS_SPENT') {
-      target.currentProgress += amount;
-    } else if (metricType === 'REVENUE_USD' && target.targetType === 'REVENUE_USD') {
+    if ((metricType === 'COINS_SPENT' && target.targetType === 'COINS_SPENT') ||
+        (metricType === 'REVENUE_USD' && target.targetType === 'REVENUE_USD')) {
       target.currentProgress += amount;
     }
 
-    if (target.currentProgress >= target.targetAmount) {
+    if (target.currentProgress >= target.targetAmount && target.status !== 'COMPLETED') {
       target.status = 'COMPLETED';
     }
 
@@ -176,7 +175,8 @@ exports.checkExpiredTargets = async () => {
     const now = new Date();
     const expired = await AgencyTarget.find({ status: 'ACTIVE', endDate: { $lte: now } });
 
-    for (const target of expired) {
+    // Process all expired targets in parallel
+    await Promise.all(expired.map(async (target) => {
       if (target.currentProgress >= target.targetAmount) {
         target.status = 'COMPLETED';
       } else {
@@ -190,7 +190,7 @@ exports.checkExpiredTargets = async () => {
         details: `Target ${target._id} expired. Status: ${target.status}. Progress: ${target.currentProgress}/${target.targetAmount}`,
         metadata: { targetId: target._id, agencyId: target.agencyId, status: target.status },
       });
-    }
+    }));
 
     return expired.length;
   } catch (error) {

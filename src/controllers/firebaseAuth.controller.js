@@ -71,12 +71,11 @@ exports.verifyFirebaseToken = async (req, res, next) => {
     const isNewUser = !user;
 
     if (isNewUser) {
-      const arvindId = `ARV-${Date.now().toString().slice(-8)}`;
       const crypto = require('crypto');
       const uid = `FIREBASE_${firebaseUid}_${Date.now().toString(36)}`;
       const username = firebaseEmail
         ? `${firebaseEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_')}_${crypto.randomBytes(2).toString('hex')}`
-        : `user_${Date.now().toString(36)}_${crypto.randomBytes(2).toString('hex')}`.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
+        : `user_${Date.now().toString(36)}_${crypto.randomBytes(2).toString('hex')}`.substring(0, 20).replace(/\W/g, '');
 
       user = await User.create({
         uid,
@@ -91,7 +90,7 @@ exports.verifyFirebaseToken = async (req, res, next) => {
         platform: platform || 'mobile',
         deviceId: deviceId || deviceFingerprint.deviceId,
         deviceInfo: deviceInfo || deviceFingerprint,
-        isProfileComplete: !!(firebaseEmail || firebasePhone),
+        isProfileComplete: Boolean(firebaseEmail || firebasePhone),
         role: 'user',
         level: 1,
         xp: 0,
@@ -318,9 +317,8 @@ exports.verifyAppleToken = async (req, res, next) => {
     const isNewUser = !user;
     if (isNewUser) {
       const crypto = require('crypto');
-      const arvindId = `ARV-${Date.now().toString().slice(-8)}`;
       const uid = `APPLE_${appleUid}_${Date.now().toString(36)}`;
-      const username = `apple_${Date.now().toString(36)}_${crypto.randomBytes(2).toString('hex')}`.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
+      const username = `apple_${Date.now().toString(36)}_${crypto.randomBytes(2).toString('hex')}`.substring(0, 20).replace(/\W/g, '');
 
       user = await User.create({
         uid,
@@ -334,7 +332,7 @@ exports.verifyAppleToken = async (req, res, next) => {
         platform: platform || 'ios',
         deviceId: deviceId || deviceFingerprint.deviceId,
         deviceInfo: deviceInfo || deviceFingerprint,
-        isProfileComplete: !!appleEmail,
+        isProfileComplete: Boolean(appleEmail),
         role: 'user',
         level: 1,
         xp: 0,

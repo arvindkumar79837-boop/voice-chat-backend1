@@ -15,7 +15,7 @@ const {
 
 const generateUsername = (prefix = 'user') => {
   const suffix = Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
-  return `${prefix}_${suffix}`.substring(0, 20).replace(/[^a-zA-Z0-9_]/g, '');
+  return `${prefix}_${suffix}`.substring(0, 20).replace(/\W/g, '');
 };
 
 const generateUid = (prefix = 'UID') => {
@@ -272,7 +272,7 @@ exports.logout = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
+      const [, token] = authHeader.split(' ');
       const { blacklistAccessToken } = require('../utils/jwt');
       await blacklistAccessToken(token);
     }

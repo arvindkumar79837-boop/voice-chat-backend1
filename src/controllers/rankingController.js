@@ -16,15 +16,15 @@ exports.getTopWealth = async (req, res) => {
         .limit(limit)
         .select('uid name avatar diamonds level vipLevel country');
 
-      for (const user of users) {
-        await redisRankingService.addWealthScore(
+      await Promise.all(users.map((user) =>
+        redisRankingService.addWealthScore(
           user.uid,
           user.diamonds,
           user.country || 'global',
           user.name || user.username,
           user.avatar || ''
-        );
-      }
+        )
+      ));
 
       rankings.length = 0;
       const freshUsers = await redisRankingService.getWealthRanking(period, country, limit);

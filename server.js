@@ -97,16 +97,20 @@ cron.schedule('0 0 1 * *', async () => {
     const Agency = require('./src/models/Agency');
     const SalaryRecord = require('./src/models/SalaryRecord');
     const agencies = await Agency.find({ isActive: true });
-    for (const agency of agencies) {
-      const now = new Date();
-      const lastMonth = now.getMonth();
-      const year = now.getFullYear();
+    const now = new Date();
+    const lastMonth = now.getMonth();
+    const year = now.getFullYear();
+    
+    // Process all agencies in parallel for better performance
+    const salaryPromises = agencies.map(async (agency) => {
       const existing = await SalaryRecord.findOne({ agencyId: agency._id, month: lastMonth, year });
       if (!existing) {
         const salaryController = require('./src/controllers/salaryController');
         await salaryController.calculateMonthlySalary({ params: { agencyId: agency._id.toString() } }, { status: () => ({ json: () => {} }) });
       }
-    }
+    });
+    
+    await Promise.all(salaryPromises);
     console.log('✅ Monthly salary cron executed for all agencies');
   } catch (error) {
     console.error('Monthly salary cron error:', error);
@@ -373,7 +377,9 @@ const gracefulShutdown = async (signal) => {
         resolve();
       });
     });
-  } catch (_) {}
+  } catch (_) {
+    // Socket.IO close error is non-critical during shutdown
+  }
 
   // Disconnect Redis
   try {

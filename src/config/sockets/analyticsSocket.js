@@ -54,8 +54,10 @@ const setupAnalyticsSocket = (io) => {
         chartData,
         timestamp: new Date().toISOString()
       });
+      return true;
     }).catch((error) => {
       Logger.error('Error sending initial analytics data:', error.message);
+      return false;
     });
 
     // Client requests revenue summary refresh

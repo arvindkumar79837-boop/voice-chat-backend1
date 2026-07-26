@@ -200,19 +200,20 @@ exports.completeChampionship = async (req, res) => {
 async function distributeChampionshipRewards(championship) {
   const rewards = championship.rewards;
 
-  for (const participant of championship.participants) {
+  // Process all participants in parallel for better performance
+  await Promise.all(championship.participants.map(async (participant) => {
     const user = await User.findById(participant.userId);
-    if (!user) continue;
+    if (!user) return;
 
     let rewardKey;
     if (participant.final_rank === 1) rewardKey = 'winner';
     else if (participant.final_rank === 2) rewardKey = 'runner_up';
     else if (participant.final_rank === 3) rewardKey = 'third_place';
     else if (participant.final_rank <= 100) rewardKey = 'top100';
-    else continue;
+    else return;
 
     const reward = rewards[rewardKey];
-    if (!reward) continue;
+    if (!reward) return;
 
     user.coins = (user.coins || 0) + (reward.coins || 0);
     user.diamonds = (user.diamonds || 0) + (reward.diamonds || 0);
@@ -234,7 +235,7 @@ async function distributeChampionshipRewards(championship) {
 
     participant.rewards_claimed = true;
     await user.save();
-  }
+  }));
 
   await championship.save();
 }

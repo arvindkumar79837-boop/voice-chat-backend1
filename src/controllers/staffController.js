@@ -455,7 +455,8 @@ exports.searchUser = async (req, res) => {
     const query = req.body?.query || req.query?.query;
     if (!query) return res.status(400).json({ success: false, message: 'Search query required' });
 
-    const users = await require('../models/User').find({
+    const User = require('../models/User');
+    const users = await User.find({
       $or: [
         { uid: { $regex: query, $options: 'i' } },
         { name: { $regex: query, $options: 'i' } },

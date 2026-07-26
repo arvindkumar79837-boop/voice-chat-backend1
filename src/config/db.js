@@ -67,7 +67,7 @@ const setupConnectionHandlers = () => {
 // RECONNECT WITH EXPONENTIAL BACKOFF
 // ─────────────────────────────────────────────────────────────────────────
 const reconnectWithBackoff = async (retries = 5, delay = 1000) => {
-  for (let i = 0; i < retries; i++) {
+  for (let i = 0; i < retries; i += 1) {
     try {
       const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/arvind_party', {
         serverSelectionTimeoutMS: 5000,
@@ -79,7 +79,7 @@ const reconnectWithBackoff = async (retries = 5, delay = 1000) => {
       Logger.info(`✅ MongoDB Reconnected: ${conn.connection.host}`);
       return true;
     } catch (error) {
-      const waitTime = delay * Math.pow(2, i);
+      const waitTime = delay * (2 ** i);
       Logger.warn(`⚠️ Reconnect attempt ${i + 1} failed. Retrying in ${waitTime}ms...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
