@@ -4,6 +4,7 @@ const router = express.Router();
 const asyncHandler = require('../utils/asyncHandler');
 const { generateLiveKitToken } = require('../services/livekitService');
 const { authMiddleware } = require('../middlewares/auth.middleware');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 // LiveKit token routes require authentication to prevent identity spoofing
 router.use(authMiddleware);

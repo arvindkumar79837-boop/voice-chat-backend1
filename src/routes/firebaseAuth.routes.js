@@ -8,6 +8,7 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const firebaseAuthController = require('../controllers/firebaseAuth.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

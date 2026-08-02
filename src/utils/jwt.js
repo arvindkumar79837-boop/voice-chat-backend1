@@ -83,14 +83,15 @@ const blacklistAccessToken = async (token) => {
  * Check if an access token is blacklisted.
  */
 const isTokenBlacklisted = async (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded || !decoded.jti) return false;
   try {
-    const decoded = jwt.decode(token);
-    if (!decoded || !decoded.jti) return false;
     const client = await _getRedisClient();
     const exists = await client.exists(`${TOKEN_BLACKLIST_PREFIX}${decoded.jti}`);
     return exists === 1;
-  } catch {
-    return false;
+  } catch (err) {
+    Logger.error('Redis blacklist check error:', err);
+    throw err;
   }
 };
 

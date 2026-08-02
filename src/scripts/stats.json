@@ -1,0 +1,20 @@
+{
+  "totalRouteFiles": 78,
+  "totalPOST": 321,
+  "totalPUT": 71,
+  "totalPATCH": 1,
+  "withValidation": {
+    "post": 154,
+    "put": 55,
+    "patch": 1
+  },
+  "totalRoutes": 393,
+  "filesWithValidation": 54,
+  "totalObjectId": 145,
+  "totalValidatorUses": 556,
+  "coverage": {
+    "post": "48.0%",
+    "put": "77.5%",
+    "patch": "100.0%"
+  }
+}

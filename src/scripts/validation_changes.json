@@ -1,0 +1,482 @@
+{
+  "modifiedFiles": [
+    "adminAuth.js",
+    "adminRoutes.js",
+    "agencyInvitationRoutes.js",
+    "agencyRoutes.js",
+    "agencyTargetRoutes.js",
+    "agentRoutes.js",
+    "analytics.routes.js",
+    "antiBanRoutes.js",
+    "appUserRoutes.js",
+    "attendanceRoutes.js",
+    "authSecure.routes.js",
+    "blindDateRoutes.js",
+    "bonusRoutes.js",
+    "chatRoutes.js",
+    "coinDistributionRoutes.js",
+    "coinOrderRoutes.js",
+    "cpRoutes.js",
+    "creator.routes.js",
+    "dailyTaskRoutes.js",
+    "dealer.routes.js",
+    "diamondEconomyRoutes.js",
+    "diamondWithdrawalRoutes.js",
+    "eventRoutes.js",
+    "firebaseAuth.routes.js",
+    "gift.routes.js",
+    "googleAuthRoutes.js",
+    "healthRoutes.js",
+    "infrastructureRoutes.js",
+    "inventory.routes.js",
+    "inviteRoutes.js",
+    "legalRoutes.js",
+    "level.routes.js",
+    "livekit.routes.js",
+    "localizationRoutes.js",
+    "loginStreakRoutes.js",
+    "luckyDrawMobileRoutes.js",
+    "luckyDrawRoutes.js",
+    "matchmakingRoutes.js",
+    "missionRoutes.js",
+    "moderation.routes.js",
+    "moduleManagerRoutes.js",
+    "notificationRoutes.js",
+    "penaltyRoutes.js",
+    "pkBattleRoutes.js",
+    "premiumSubscriptionRoutes.js",
+    "profileRoutes.js",
+    "rankingRoutes.js",
+    "rechargePlanRoutes.js",
+    "referral.routes.js",
+    "reportsRoutes.js",
+    "rewardsRoutes.js",
+    "room.routes.js",
+    "roomFeaturesRoutes.js",
+    "roomLuxuryRoutes.js",
+    "salaryRoutes.js",
+    "securityRoutes.js",
+    "shopRoutes.js",
+    "singingRoutes.js",
+    "socialAuthRoutes.js",
+    "socialRoutes.js",
+    "staffRoutes.js",
+    "support.routes.js",
+    "targetRoutes.js",
+    "tournamentRoutes.js",
+    "treasureHuntRoutes.js",
+    "treasuryRoutes.js",
+    "user.routes.js",
+    "vipRoutes.js",
+    "vipSystemRoutes.js",
+    "wallet.routes.js",
+    "webViewGameRoutes.js",
+    "withdrawalRoutes.js",
+    "youtube.routes.js"
+  ],
+  "changesByFile": {
+    "adminAuth.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /login - Added: validateEmail(), validateString('password', { required: true, minLength: 6, maxLength: 128 })",
+      "POST/PUT/PATCH /verify-2fa - Added: validateOTP()"
+    ],
+    "adminRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /users/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /users/block/:userId - Added: validateObjectId('userId'), validateEnum('isBanned', [true, false], { required: true })",
+      "POST/PUT/PATCH /users/unblock/:userId - Added: validateObjectId('userId'), validateEnum('isBanned', [true, false], { required: true })",
+      "POST/PUT/PATCH /users/verify/:userId - Added: validateObjectId('userId')",
+      "POST/PUT/PATCH /users/adjust-coins/:userId - Added: validateObjectId('userId'), validateNumber('coins', { required: false, min: 0 }), validateNumber('diamonds', { required: false, min: 0 })",
+      "POST/PUT/PATCH /users/balance/:userId - Added: validateObjectId('userId'), validateNumber('coins', { required: false, min: 0 }), validateNumber('diamonds', { required: false, min: 0 })",
+      "POST/PUT/PATCH /wallets/adjust/:userId - Added: validateObjectId('userId'), validateNumber('coins', { required: false, min: 0 }), validateNumber('diamonds', { required: false, min: 0 })",
+      "POST/PUT/PATCH /withdrawals/approve/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /withdrawals/reject/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /announcement - Added: validateString('title', { required: true, maxLength: 200 }), validateString('message', { required: true, maxLength: 1000 })",
+      "POST/PUT/PATCH /staff/update/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /roles/update/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /coins/generate - Added: validateNumber('coins', { required: true, min: 0 })",
+      "POST/PUT/PATCH /coins/deduct - Added: validateNumber('coins', { required: true, min: 0 })",
+      "POST/PUT/PATCH /rewards/send - Added: validateBodyObjectId('userId'), validateNumber('coins', { required: false, min: 0 }), validateNumber('diamonds', { required: false, min: 0 })",
+      "POST/PUT/PATCH /vip/plans/update/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /agencies/approve/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /agencies/revoke/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /events/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /reports/resolve/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /bans - Added: validateBodyObjectId('userId')",
+      "POST/PUT/PATCH /notifications/send - Added: validateString('title', { required: true, maxLength: 200 }), validateString('message', { required: true, maxLength: 1000 })",
+      "POST/PUT/PATCH /support/tickets/reply/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /gifts/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /security/block-ip - Added: validateString('ipAddress', { required: true })",
+      "POST/PUT/PATCH /rewards/inject - Added: validateBodyObjectId('userId'), validateNumber('coins', { required: false, min: 0 }), validateNumber('diamonds', { required: false, min: 0 })",
+      "POST/PUT/PATCH /rewards/revoke/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /reward-configs/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /reward-configs/:id/deploy - Added: validateObjectId('id')"
+    ],
+    "agencyInvitationRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /invitations/accept/:invitationId - Added: validateObjectId('invitationId')",
+      "POST/PUT/PATCH /invitations/reject/:invitationId - Added: validateObjectId('invitationId')",
+      "POST/PUT/PATCH /notifications/read/:notificationId - Added: validateObjectId('notificationId')"
+    ],
+    "agencyRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /apply - Added: validateString('agencyId', { required: true })",
+      "POST/PUT/PATCH /commission-tiers/:tierId - Added: validateObjectId('tierId')",
+      "POST/PUT/PATCH /commission/calculate - Added: validateBodyObjectId('userId'), validateNumber('amount', { required: true, min: 0 })"
+    ],
+    "agencyTargetRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /:id - Added: validateObjectId('id')"
+    ],
+    "agentRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /agents/:agentId - Added: validateObjectId('agentId')"
+    ],
+    "analytics.routes.js": [
+      "Added validation.middleware import"
+    ],
+    "antiBanRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "appUserRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "attendanceRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /attendance/start - Added: validateBodyObjectId('roomId')",
+      "POST/PUT/PATCH /attendance/end - Added: validateBodyObjectId('roomId')"
+    ],
+    "authSecure.routes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /logout - Added: validateRefreshToken()",
+      "POST/PUT/PATCH /revoke-all-sessions - Added: validateRefreshToken()",
+      "POST/PUT/PATCH /admin/revoke-user-sessions - Added: validateRefreshToken()"
+    ],
+    "blindDateRoutes.js": [
+      "POST/PUT/PATCH /profile - Added: validateString('bio', { required: false, maxLength: 500 })",
+      "POST/PUT/PATCH /:sessionId/decide - Added: validateObjectId('sessionId'), validateEnum('decision', ['yes', 'no'], { required: true })",
+      "POST/PUT/PATCH /:sessionId/report - Added: validateObjectId('sessionId'), validateString('reason', { required: true, maxLength: 500 })"
+    ],
+    "bonusRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /bonus/award - Added: validateBodyObjectId('userId'), validateNumber('coins', { required: false, min: 0 }), validateNumber('diamonds', { required: false, min: 0 })"
+    ],
+    "chatRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "coinDistributionRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /generate-for-user - Added: validateBodyObjectId('userId'), validateNumber('coins', { required: false, min: 0 }), validateNumber('diamonds', { required: false, min: 0 })",
+      "POST/PUT/PATCH /distribute - Added: validateNumber('coins', { required: false, min: 0 }), validateNumber('diamonds', { required: false, min: 0 })"
+    ],
+    "coinOrderRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "cpRoutes.js": [
+      "POST/PUT/PATCH /bind - Added: validateEnum('status', ['single', 'couple'], { required: true })"
+    ],
+    "creator.routes.js": [
+      "Added validation.middleware import"
+    ],
+    "dailyTaskRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /:taskId/progress - Added: validateObjectId('taskId')",
+      "POST/PUT/PATCH /:taskId/claim - Added: validateObjectId('taskId')",
+      "POST/PUT/PATCH /admin/create - Added: validateString('title', { required: true, maxLength: 200 }), validateNumber('reward', { required: false, min: 0 })",
+      "POST/PUT/PATCH /admin/:id - Added: validateObjectId('id')"
+    ],
+    "dealer.routes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /wallet/credit - Added: validateNumber('coins', { required: true, min: 0 }), validateNumber('diamonds', { required: false, min: 0 })",
+      "POST/PUT/PATCH /transfer - Added: validateBodyObjectId('userId'), validateNumber('coins', { required: false, min: 0 }), validateNumber('diamonds', { required: false, min: 0 })",
+      "POST/PUT/PATCH /refund/request - Added: validateNumber('coins', { required: true, min: 0 })",
+      "POST/PUT/PATCH /refund/:refundId/process - Added: validateObjectId('refundId')"
+    ],
+    "diamondEconomyRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "diamondWithdrawalRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /:requestId/clear-notification - Added: validateObjectId('requestId')",
+      "POST/PUT/PATCH /:requestId/approve - Added: validateObjectId('requestId')",
+      "POST/PUT/PATCH /:requestId/mark-paid - Added: validateObjectId('requestId')",
+      "POST/PUT/PATCH /:requestId/reject - Added: validateObjectId('requestId')"
+    ],
+    "eventRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /:eventId/join - Added: validateObjectId('eventId')",
+      "POST/PUT/PATCH /:eventId/leave - Added: validateObjectId('eventId')",
+      "POST/PUT/PATCH /:eventId/claim - Added: validateObjectId('eventId')",
+      "POST/PUT/PATCH /:eventId/progress - Added: validateObjectId('eventId')",
+      "POST/PUT/PATCH /admin/:eventId - Added: validateObjectId('eventId')",
+      "POST/PUT/PATCH /admin/:eventId/prize-pool - Added: validateObjectId('eventId')",
+      "POST/PUT/PATCH /admin/welcome-week/tasks/:taskId - Added: validateObjectId('taskId')",
+      "POST/PUT/PATCH /admin/:eventId/inject-gifts - Added: validateObjectId('eventId')"
+    ],
+    "firebaseAuth.routes.js": [
+      "Added validation.middleware import"
+    ],
+    "gift.routes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /send - Added: validateBodyObjectId('targetUserId'), validateNumber('quantity', { required: true, min: 1 })",
+      "POST/PUT/PATCH /combo - Added: validateBodyObjectId('targetUserId'), validateNumber('quantity', { required: true, min: 1 })",
+      "POST/PUT/PATCH /goals - Added: validateString('title', { required: true, maxLength: 200 }), validateNumber('target', { required: true, min: 1 }), validateEnum('type', ['coins', 'diamonds'], { required: true })",
+      "POST/PUT/PATCH /:giftId/toggle - Added: validateObjectId('giftId')",
+      "POST/PUT/PATCH /admin/:giftId - Added: validateObjectId('giftId')"
+    ],
+    "googleAuthRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /google - Added: validateString('idToken', { required: true, maxLength: 4096 })",
+      "POST/PUT/PATCH /apple - Added: validateString('identityToken', { required: true, maxLength: 4096 })"
+    ],
+    "healthRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "infrastructureRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "inventory.routes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /use/:itemId - Added: validateObjectId('itemId'), validateNumber('quantity', { required: false, min: 1 })"
+    ],
+    "inviteRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /register - Added: validateString('inviteCode', { required: true })",
+      "POST/PUT/PATCH /commission - Added: validateNumber('amount', { required: false, min: 0 })"
+    ],
+    "legalRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /document - Added: validateEnum('documentType', ['privacy', 'terms', 'refund', 'eula'], { required: true })",
+      "POST/PUT/PATCH /accept - Added: validateEnum('documentType', ['privacy', 'terms', 'refund', 'eula'], { required: true })"
+    ],
+    "level.routes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /xp/add - Added: validateNumber('xp', { required: true, min: 0 })"
+    ],
+    "livekit.routes.js": [
+      "Added validation.middleware import"
+    ],
+    "localizationRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /strings/:id - Added: validateObjectId('id')"
+    ],
+    "loginStreakRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /admin/reset/:userId - Added: validateObjectId('userId')"
+    ],
+    "luckyDrawMobileRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "luckyDrawRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /:drawId/spin - Added: validateObjectId('drawId')",
+      "POST/PUT/PATCH /admin/create - Added: validateString('name', { required: true, maxLength: 200 }), validateNumber('tickets', { required: true, min: 1 })",
+      "POST/PUT/PATCH /admin/:id - Added: validateObjectId('id')"
+    ],
+    "matchmakingRoutes.js": [
+      "POST/PUT/PATCH /search - Added: validateEnum('mode', ['solo', 'duo', 'squad'], { required: true }), validateString('gender', { required: false, isIn: ['male', 'female', 'any'] })"
+    ],
+    "missionRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "moderation.routes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /report - Added: validateEnum('type', ['user', 'moment', 'gift', 'room', 'message'], { required: true }), validateBodyObjectId('targetId'), validateString('reason', { required: false, maxLength: 500 })",
+      "POST/PUT/PATCH /block - Added: validateBodyObjectId('targetUserId')",
+      "POST/PUT/PATCH /resolve/:reportId - Added: validateObjectId('reportId')",
+      "POST/PUT/PATCH /dismiss/:reportId - Added: validateObjectId('reportId')"
+    ],
+    "moduleManagerRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /users/:id/ban - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /users/:id/verify - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /agencies/:id/approve - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /agencies/:id/revoke - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /finance/withdrawals/:id/approve - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /finance/withdrawals/:id/reject - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /events/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /banners/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /ads/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /gifts/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /vip/plans/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /cms/pages/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /reports/:id/assign - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /reports/:id/resolve - Added: validateObjectId('id')"
+    ],
+    "notificationRoutes.js": [
+      "POST/PUT/PATCH /:notificationId/read - Added: validateObjectId('notificationId')"
+    ],
+    "penaltyRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /penalty/apply - Added: validateBodyObjectId('userId'), validateNumber('amount', { required: false, min: 0 }), validateEnum('type', ['coins', 'diamonds', 'ban', 'mute'], { required: true })"
+    ],
+    "pkBattleRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /request - Added: validateBodyObjectId('opponentId')",
+      "POST/PUT/PATCH /accept - Added: validateString('challengeToken', { required: true })"
+    ],
+    "premiumSubscriptionRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /tiers - Added: validateString('name', { required: true, maxLength: 100 }), validateNumber('price', { required: true, min: 0 }), validateNumber('duration', { required: true, min: 1 })",
+      "POST/PUT/PATCH /tiers/:tierId - Added: validateObjectId('tierId'), validateString('name', { required: true, maxLength: 100 }), validateNumber('price', { required: true, min: 0 }), validateNumber('duration', { required: true, min: 1 })",
+      "POST/PUT/PATCH /verify-play-subscription - Added: validateString('purchaseToken', { required: true })"
+    ],
+    "profileRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /:userId - Added: validateObjectId('userId'), validateString('name', { required: false, minLength: 2, maxLength: 50 }), validateString('bio', { required: false, maxLength: 500 })",
+      "POST/PUT/PATCH /:userId/avatar - Added: validateObjectId('userId'), validateString('name', { required: false, minLength: 2, maxLength: 50 }), validateString('bio', { required: false, maxLength: 500 })"
+    ],
+    "rankingRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "rechargePlanRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /admin/:id - Added: validateObjectId('id')"
+    ],
+    "referral.routes.js": [
+      "Added validation.middleware import"
+    ],
+    "reportsRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "rewardsRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "room.routes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /:roomId/join - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/verify-password - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/seats/:seatIndex/lock - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/seats/:seatIndex/mute - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/seats/:seatIndex/claim - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/seats/:seatIndex/release - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/seats/:seatIndex/kick - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/cosmetics - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/cosmetics/purchase-background - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/gift - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/pk/challenge - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/tasks/:taskId/progress - Added: validateObjectId('roomId'), validateObjectId('taskId')",
+      "POST/PUT/PATCH /:roomId/tasks/:taskId/claim - Added: validateObjectId('roomId'), validateObjectId('taskId')",
+      "POST/PUT/PATCH /:roomId/settings - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /:roomId/toggle-live - Added: validateObjectId('roomId')"
+    ],
+    "roomFeaturesRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /create - Added: validateEnum('roomType', ['public', 'private', 'password'], { required: true })",
+      "POST/PUT/PATCH /:roomId/follow - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /promote-admin - Added: validateBodyObjectId('targetUserId')",
+      "POST/PUT/PATCH /demote-admin - Added: validateBodyObjectId('targetUserId')",
+      "POST/PUT/PATCH /award-xp - Added: validateNumber('xp', { required: true, min: 0 })",
+      "POST/PUT/PATCH /:roomId/privacy - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /verify-password - Added: validateString('password', { required: true, minLength: 1 })",
+      "POST/PUT/PATCH /:roomId/notices - Added: validateObjectId('roomId')"
+    ],
+    "roomLuxuryRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /rooms/:roomId/lock - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /rooms/:roomId/unlock-attempt - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /rooms/:roomId/unlock - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /rooms/:roomId/music/play - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /rooms/:roomId/music/pause - Added: validateObjectId('roomId')",
+      "POST/PUT/PATCH /rooms/:roomId/music/stop - Added: validateObjectId('roomId')"
+    ],
+    "salaryRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /salary/calculate-monthly/:agencyId - Added: validateObjectId('agencyId')"
+    ],
+    "securityRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /2fa/enable - Added: validateEnum('method', ['totp', 'sms', 'email'], { required: true })",
+      "POST/PUT/PATCH /2fa/verify-enable - Added: validateString('code', { required: true, minLength: 4, maxLength: 10 })",
+      "POST/PUT/PATCH /2fa/disable - Added: validateString('code', { required: true, minLength: 4, maxLength: 10 })",
+      "POST/PUT/PATCH /devices/sessions/:sessionId/logout - Added: validateObjectId('sessionId')",
+      "POST/PUT/PATCH /devices/sessions/:sessionId/trust - Added: validateObjectId('sessionId')",
+      "POST/PUT/PATCH /forgot-password - Added: validateEmail()",
+      "POST/PUT/PATCH /reset-password - Added: validateString('token', { required: true }), validatePassword('newPassword', { required: true, minLength: 6, maxLength: 128 })",
+      "POST/PUT/PATCH /change-password - Added: validatePassword('currentPassword', { required: true, minLength: 6, maxLength: 128 }), validatePassword('newPassword', { required: true, minLength: 6, maxLength: 128 })",
+      "POST/PUT/PATCH /recovery/setup - Added: validateEmail(), validatePhone()",
+      "POST/PUT/PATCH /fraud-alerts/:id - Added: validateObjectId('id')"
+    ],
+    "shopRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /purchase - Added: validateBodyObjectId('itemId'), validateNumber('quantity', { required: true, min: 1 })"
+    ],
+    "singingRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "socialAuthRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /login - Added: validateEnum('provider', ['google', 'apple', 'facebook', 'snapchat', 'instagram', 'phone'], { required: true })",
+      "POST/PUT/PATCH /link - Added: validateEnum('provider', ['google', 'apple', 'facebook', 'snapchat', 'instagram', 'phone'], { required: true })",
+      "POST/PUT/PATCH /unlink - Added: validateEnum('provider', ['google', 'apple', 'facebook', 'snapchat', 'instagram'], { required: true })"
+    ],
+    "socialRoutes.js": [
+      "POST/PUT/PATCH /follow/:userId - Added: validateObjectId('userId')",
+      "POST/PUT/PATCH /unfollow/:userId - Added: validateObjectId('userId')",
+      "POST/PUT/PATCH /visit/:userId - Added: validateObjectId('userId')",
+      "POST/PUT/PATCH /block/:userId - Added: validateObjectId('userId')",
+      "POST/PUT/PATCH /unblock/:userId - Added: validateObjectId('userId')"
+    ],
+    "staffRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /create - Added: validateString('name', { required: true, minLength: 2, maxLength: 50 }), validateEmail(), validatePhone(), validateEnum('role', ['admin', 'owner', 'staff', 'moderator'], { required: true })",
+      "POST/PUT/PATCH /update/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /change-password/:id - Added: validateObjectId('id')"
+    ],
+    "support.routes.js": [
+      "Added validation.middleware import"
+    ],
+    "targetRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /progress/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /exchange/:id - Added: validateObjectId('id')"
+    ],
+    "tournamentRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /create - Added: validateString('name', { required: true, maxLength: 200 }), validateDate('startDate', { required: true }), validateDate('endDate', { required: true })",
+      "POST/PUT/PATCH /:tournamentId/register - Added: validateObjectId('tournamentId')",
+      "POST/PUT/PATCH /:tournamentId/score - Added: validateObjectId('tournamentId'), validateBodyObjectId('participantId'), validateNumber('score', { required: true, min: 0 })",
+      "POST/PUT/PATCH /:tournamentId/complete - Added: validateObjectId('tournamentId')",
+      "POST/PUT/PATCH /championship/create - Added: validateString('name', { required: true, maxLength: 200 })",
+      "POST/PUT/PATCH /championship/:championshipId/qualify - Added: validateObjectId('championshipId')",
+      "POST/PUT/PATCH /championship/:championshipId/complete - Added: validateObjectId('championshipId')",
+      "POST/PUT/PATCH /championship/:championshipId/claim - Added: validateObjectId('championshipId')"
+    ],
+    "treasureHuntRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "treasuryRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /generate - Added: validateNumber('coins', { required: true, min: 0 })"
+    ],
+    "user.routes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /complete-profile - Added: validateString('name', { required: false, minLength: 2, maxLength: 50 })"
+    ],
+    "vipRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "vipSystemRoutes.js": [
+      "Added validation.middleware import"
+    ],
+    "wallet.routes.js": [
+      "POST/PUT/PATCH /admin/withdrawals/:id/approve - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /admin/withdrawals/:id/reject - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /admin/withdrawals/:id/process - Added: validateObjectId('id')"
+    ],
+    "webViewGameRoutes.js": [
+      "POST/PUT/PATCH /games/:gameId - Added: validateObjectId('gameId')"
+    ],
+    "withdrawalRoutes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /withdrawal/approve/:id - Added: validateObjectId('id')",
+      "POST/PUT/PATCH /withdrawal/reject/:id - Added: validateObjectId('id')"
+    ],
+    "youtube.routes.js": [
+      "Added validation.middleware import",
+      "POST/PUT/PATCH /playlist/add - Added: validateString('videoId', { required: true }), validateString('title', { required: true, maxLength: 200 })",
+      "POST/PUT/PATCH /playback/update - Added: validateEnum('action', ['play', 'pause', 'stop', 'skip', 'seek'], { required: true })"
+    ]
+  },
+  "timestamp": "2026-07-31T16:18:32.398Z"
+}

@@ -2104,10 +2104,6 @@ async function updateLeaderboardForMember(familyId, user) {
       .sort({ totalContribution: -1 })
       .lean();
 
-    const allEntries = await FamilyLeaderboard.find({ familyId: familyId, period: 'all_time' })
-      .sort({ totalContribution: -1 })
-      .lean();
-
     // Update all ranks in parallel
     const rankPromises = allEntries.map((entry, index) => 
       FamilyLeaderboard.findOneAndUpdate(

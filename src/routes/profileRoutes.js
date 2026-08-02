@@ -10,6 +10,8 @@ const path = require('path');
 const profileController = require('../controllers/profileController');
 const { authMiddleware, requireRole } = require('../middlewares/auth.middleware');
 const { checkBannedDevice } = require('../middlewares/deviceFingerprint');
+const { validateFileUpload } = require('../middlewares/security.middleware');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -40,9 +42,9 @@ const upload = multer({
 
 router.get('/:userId', authMiddleware, checkBannedDevice, profileController.getProfile);
 
-router.put('/:userId', authMiddleware, checkBannedDevice, profileController.updateProfile);
+router.put('/:userId', validateObjectId('userId'), validateString('name', { required: false, minLength: 2, maxLength: 50 }), validateString('bio', { required: false, maxLength: 500 }), authMiddleware, checkBannedDevice, requireRole('user', 'admin', 'owner'), profileController.updateProfile);
 
-router.post('/:userId/avatar', authMiddleware, checkBannedDevice, upload.single('avatar'), profileController.uploadAvatar);
+router.post('/:userId/avatar', validateObjectId('userId'), authMiddleware, checkBannedDevice, upload.single('avatar'), validateFileUpload({ allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], maxSize: 5 * 1024 * 1024, allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'] }), profileController.uploadAvatar);
 
 router.get('/:userId/xp', authMiddleware, checkBannedDevice, profileController.getXpProgress);
 

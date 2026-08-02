@@ -90,6 +90,26 @@ const app = express();
 
 app.set('trust proxy', 1);
 
+// ─── RESPONSE COMPRESSION ─────────────────────────────────────────────────
+const compression = require('compression');
+app.use(compression({
+  threshold: 1024, // Compress responses > 1KB
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
+
+// ─── SWAGGER API DOCUMENTATION ────────────────────────────────────────────
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swagger');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
+  customSiteTitle: 'Arvind Party API Documentation',
+  customCss: '.swagger-ui .topbar { display: none }'
+}));
+
 // ─── REQUEST ID FOR TRACING ────────────────────────────────────────────────
 const crypto = require('crypto');
 app.use((req, res, next) => {
@@ -99,9 +119,21 @@ app.use((req, res, next) => {
 });
 
 // ─── SECURITY MIDDLEWARES ────────────────────────────────────────────────
+const securityMiddleware = require('./middlewares/security.middleware');
+
 app.use(helmet()); // Protects against XSS, clickjacking, etc.
 app.use(requestLoggerMiddleware); // Log all incoming requests
 app.use(corsConfig); // Enable CORS for Web Panel & App
+
+// ─── CENTRALIZED SECURITY MIDDLEWARE ─────────────────────────────────────
+// Apply security middleware in correct order
+app.use(securityMiddleware.preventNoSQLInjection); // Block MongoDB operators
+app.use(securityMiddleware.preventPrototypePollution); // Block prototype pollution
+app.use(securityMiddleware.preventHTTPParameterPollution); // Prevent HPP
+app.use(securityMiddleware.sanitizeInput); // Sanitize all inputs (XSS prevention)
+app.use(securityMiddleware.preventSQLInjection); // Basic SQL injection check
+app.use(securityMiddleware.validateContentType()); // Validate Content-Type headers
+app.use(securityMiddleware.bodyLimit('100kb')); // Enforce body size limits
 
 // Increase JSON body size for Base64 image uploads if necessary
 app.use(express.json({ limit: '10mb' }));
@@ -244,8 +276,8 @@ app.use('/api/admin/agency-targets', agencyTargetRoutes);
 // ─── COIN DISTRIBUTION HIERARCHY (Owner direct-to-user + distribute) ──────
 app.use('/api/admin/wallet', coinDistributionRoutes);
 
-// ─── WEBVIEW GAMES (was imported but unmounted) ────────────────────────────
-app.use('/api/games', webViewGameRoutes);
+// NOTE: webViewGameRoutes mounted under /api/webview-games to avoid collision with /api/games
+app.use('/api/webview-games', webViewGameRoutes);
 
 // ─── DIAMOND WITHDRAWAL (staff requests + admin approval) ──────────────────
 app.use('/api/admin/diamond-withdrawals', diamondWithdrawalRoutes);

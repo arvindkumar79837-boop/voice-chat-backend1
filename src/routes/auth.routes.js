@@ -14,7 +14,7 @@ const {
   register,
   refreshToken 
 } = require('../controllers/auth.controller');
-const { validatePhone } = require('../middlewares/validation.middleware');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -40,28 +40,28 @@ const authLimiter = rateLimit({
  * Body: { phone: "..." }
  * Sends a one-time password to the user's phone.
  */
-router.post('/send-otp', authLimiter, validatePhone(), sendOtp);
+router.post('/send-otp', authLimiter, validatePhone(), validateAllowedFields(['phone']), sendOtp);
 
 /**
  * POST /api/auth/otp-verify
  * Body: { phone: "...", otp: "..." }
  * Verifies the OTP. If user exists, logs them in. If not, creates a new user.
  */
-router.post('/otp-verify', authLimiter, validatePhone(), verifyOtp);
+router.post('/otp-verify', authLimiter, validatePhone(), validateOTP(), validateAllowedFields(['phone', 'otp']), verifyOtp);
 
 /**
  * POST /api/auth/resend-otp
  * Body: { phone: "..." }
  * Resends a new OTP to the user's phone.
  */
-router.post('/resend-otp', authLimiter, validatePhone(), resendOtp);
+router.post('/resend-otp', authLimiter, validatePhone(), validateAllowedFields(['phone']), resendOtp);
 
 /**
  * POST /api/auth/refresh-token
  * Body: { refreshToken: "..." }
  * Issues a new access token without re-login.
  */
-router.post('/refresh-token', authLimiter, refreshToken);
+router.post('/refresh-token', authLimiter, validateRefreshToken(), refreshToken);
 
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -74,7 +74,8 @@ router.post('/refresh-token', authLimiter, refreshToken);
  * Body: { name, gender, dob }
  * Completes profile after OTP verification. This route is now protected.
  */
-router.post('/register', authMiddleware, register);
+const { preventMassAssignment, getAllowedFields } = require('../middlewares/massAssignment.middleware');
+router.post('/register', authMiddleware, validateName(), preventMassAssignment(getAllowedFields('userProfile')), register);
 
 /**
  * POST /api/auth/logout

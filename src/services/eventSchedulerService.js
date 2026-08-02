@@ -473,8 +473,6 @@ class EventSchedulerService {
       Logger.error(`${this.LOG_PREFIX} Process login streaks error:`, error.message);
     }
   }
-
-  _lastDailyTaskResetDate = null; // Track last reset to ensure daily reset
 }
 
 module.exports = new EventSchedulerService();

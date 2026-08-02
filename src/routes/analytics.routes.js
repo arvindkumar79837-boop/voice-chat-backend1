@@ -2,6 +2,7 @@ const express = require('express');
 const analyticsController = require('../controllers/analytics.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { verifyStaff } = require('../middlewares/adminMiddleware');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 const router = express.Router();
 
@@ -23,13 +24,13 @@ router.use(verifyStaff);
 // ═══════════════════════════════════════════════════════════════════
 
 // GET /api/analytics/revenue/summary - Main revenue dashboard data
-router.get('/revenue/summary', analyticsController.getRevenueSummary);
+router.get('/revenue/summary', validatePagination(), analyticsController.getRevenueSummary);
 
 // GET /api/analytics/revenue/recharges - Recharge analytics with pagination/filtering
-router.get('/revenue/recharges', analyticsController.getRechargeAnalytics);
+router.get('/revenue/recharges', validatePagination(), analyticsController.getRechargeAnalytics);
 
 // GET /api/analytics/revenue/withdrawals - Withdrawal analytics with pagination/filtering
-router.get('/revenue/withdrawals', analyticsController.getWithdrawalAnalytics);
+router.get('/revenue/withdrawals', validatePagination(), analyticsController.getWithdrawalAnalytics);
 
 // POST /api/analytics/revenue/update-summary - Manually trigger summary recalculation
 router.post('/revenue/update-summary', analyticsController.triggerRevenueSummaryUpdate);
@@ -39,33 +40,33 @@ router.post('/revenue/update-summary', analyticsController.triggerRevenueSummary
 // ═══════════════════════════════════════════════════════════════════
 
 // GET /api/analytics/engagement/users - DAU, MAU, new registrations, avg time spent
-router.get('/engagement/users', analyticsController.getUserAnalytics);
+router.get('/engagement/users', validatePagination(), analyticsController.getUserAnalytics);
 
 // GET /api/analytics/engagement/live - Live rooms, seats filled, online users
-router.get('/engagement/live', analyticsController.getLiveAnalytics);
+router.get('/engagement/live', validatePagination(), analyticsController.getLiveAnalytics);
 
 // GET /api/analytics/engagement/gifts - Top gifts, rooms with most gifts, progressive blasts
-router.get('/engagement/gifts', analyticsController.getGiftAnalytics);
+router.get('/engagement/gifts', validatePagination(), analyticsController.getGiftAnalytics);
 
 // ═══════════════════════════════════════════════════════════════════
 // [FEATURE 30] DEPARTMENTAL PERFORMANCE
 // ═══════════════════════════════════════════════════════════════════
 
 // GET /api/analytics/performance/agencies - Agency rankings, top hosts, trends
-router.get('/performance/agencies', analyticsController.getAgencyAnalytics);
+router.get('/performance/agencies', validatePagination(), analyticsController.getAgencyAnalytics);
 
 // GET /api/analytics/performance/families - Family rankings, top contributors, trends
-router.get('/performance/families', analyticsController.getFamilyAnalytics);
+router.get('/performance/families', validatePagination(), analyticsController.getFamilyAnalytics);
 
 // ═══════════════════════════════════════════════════════════════════
 // [FEATURE 31] ADVANCED DATA VISUALIZATION
 // ═══════════════════════════════════════════════════════════════════
 
 // GET /api/analytics/charts/live - Hourly revenue & diamonds chart data
-router.get('/charts/live', analyticsController.getLiveChartData);
+router.get('/charts/live', validatePagination(), analyticsController.getLiveChartData);
 
 // GET /api/analytics/charts/heatmap - Geographic activity heat map data
-router.get('/charts/heatmap', analyticsController.getHeatMapData);
+router.get('/charts/heatmap', validatePagination(), analyticsController.getHeatMapData);
 
 // ═══════════════════════════════════════════════════════════════════
 // ADMIN AGGREGATION

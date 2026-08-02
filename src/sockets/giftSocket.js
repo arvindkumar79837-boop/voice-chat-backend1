@@ -6,21 +6,8 @@ const Room = require('../models/Room');
 const GiftTransaction = require('../models/GiftTransaction');
 const WalletTransaction = require('../models/WalletTransaction');
 const { isUserInRoom } = require('../utils/socketHelpers');
+const { checkRateLimit, trackPresence } = require('../middlewares/socketSecurity.middleware');
 const { getRedisClient } = require('../config/redis');
-
-const RATE_LIMIT_COOLDOWN = 2; // 2 seconds between gifts
-const getRedis = () => { try { return getRedisClient(); } catch { return null; } };
-
-const checkRateLimit = async (userId, action) => {
-  const redis = getRedis();
-  if (!redis) return true;
-  const key = `rate_limit:${action}:${userId}`;
-  const isLimited = await redis.get(key);
-  if (isLimited) return false;
-  await redis.set(key, '1', { EX: RATE_LIMIT_COOLDOWN });
-  return true;
-};
-
 
 module.exports = (io, socket) => {
     const authedUserId = socket.data.userId;
@@ -40,8 +27,8 @@ module.exports = (io, socket) => {
           return socket.emit('gift_error', { message: 'You cannot send a gift to yourself.' });
         }
 
-        // Rate limit check (P2-14)
-        const allowed = await checkRateLimit(senderId, 'send_gift');
+        // Rate limit check using centralized middleware
+        const allowed = await checkRateLimit(senderId, 'gift');
         if (!allowed) {
           return socket.emit('gift_error', { message: 'Please wait a moment before sending another gift.' });
         }
@@ -52,6 +39,9 @@ module.exports = (io, socket) => {
           return socket.emit('gift_error', { message: 'You must be in the room to send a gift.' });
         }
 
+        // Track presence
+        await trackPresence(senderId, roomId);
+
         const gift = await Gift.findById(giftId);
         if (!gift || !gift.isAvailable) {
           return socket.emit('gift_error', { message: 'Gift not available.' });
@@ -61,7 +51,12 @@ module.exports = (io, socket) => {
           return socket.emit('gift_error', { message: 'Invalid gift price.' });
         }
 
-        const cost = gift.coinPrice * (parseInt(quantity, 10) || 1);
+        const quantityNum = parseInt(quantity, 10) || 1;
+        if (quantityNum < 1 || quantityNum > 100) {
+          return socket.emit('gift_error', { message: 'Invalid quantity.' });
+        }
+
+        const cost = gift.coinPrice * quantityNum;
 
         // Atomic coin deduction — prevents double-spend race condition
         const updatedSender = await User.findOneAndUpdate(
@@ -78,7 +73,7 @@ module.exports = (io, socket) => {
           const lootBoxIncrement = Math.floor(cost * 0.1);
           const rankIncrement = Math.floor(cost * 0.5);
           // Atomic room points update — prevents race condition on concurrent gifts
-          await Room.findOneAndUpdate(
+          const updatedRoom = await Room.findOneAndUpdate(
             { roomId },
             {
               $inc: {
@@ -89,11 +84,15 @@ module.exports = (io, socket) => {
             }
           );
           // Check loot box level-up (read after atomic increment)
-          const updatedRoom = await Room.findOne({ roomId });
-          if (updatedRoom?.lootBoxPoints >= updatedRoom?.lootBoxLevel * 100) {
-            updatedRoom.lootBoxLevel += 1;
-            updatedRoom.lootBoxPoints = 0;
-            await updatedRoom.save();
+          const roomAfterUpdate = await Room.findOne({ roomId });
+          if (roomAfterUpdate?.lootBoxPoints >= roomAfterUpdate?.lootBoxLevel * 100) {
+            await Room.findOneAndUpdate(
+              { roomId },
+              {
+                $inc: { lootBoxLevel: 1 },
+                $set: { lootBoxPoints: 0 }
+              }
+            );
           }
         }
 
@@ -108,7 +107,7 @@ module.exports = (io, socket) => {
           senderName: senderName || updatedSender.name || 'User',
           senderAvatar: updatedSender.avatar || '',
           receiverId,
-          quantity: parseInt(quantity, 10) || 1,
+          quantity: quantityNum,
           comboMultiplier: 1,
           previewImageUrl: gift.previewImageUrl,
           animationUrl: gift.animationUrl,
@@ -140,7 +139,7 @@ module.exports = (io, socket) => {
           senderId,
           senderName: senderName || updatedSender.name || 'User',
           receiverId,
-          quantity: parseInt(quantity, 10) || 1,
+          quantity: quantityNum,
           coinCost: cost,
           timestamp: Date.now()
         });
@@ -239,12 +238,12 @@ module.exports = (io, socket) => {
         }
 
         // Combo counter for multi-quantity gifts
-        if (parseInt(quantity, 10) > 1) {
+        if (quantityNum > 1) {
           io.to(roomId).emit('combo_counter_update', {
             senderId,
             senderName: senderName || updatedSender.name || 'User',
-            comboMultiplier: parseInt(quantity, 10),
-            totalQuantity: parseInt(quantity, 10),
+            comboMultiplier: quantityNum,
+            totalQuantity: quantityNum,
             giftName: gift.giftName || giftName,
             totalCost: cost
           });
@@ -284,7 +283,7 @@ module.exports = (io, socket) => {
             senderId,
             receiverId,
             giftId,
-            quantity: parseInt(quantity, 10) || 1,
+            quantity: quantityNum,
             totalCoins: cost,
             diamondsEarned
           });
@@ -298,7 +297,7 @@ module.exports = (io, socket) => {
             recipientId: receiverId,
             giftId: gift._id.toString(),
             giftName: gift.giftName,
-            quantity: parseInt(quantity, 10) || 1,
+            quantity: quantityNum,
             balanceAfter: updatedSender.coins,
             status: 'completed'
           });
@@ -320,7 +319,7 @@ module.exports = (io, socket) => {
               senderId,
               giftId: gift._id.toString(),
               giftName: gift.giftName,
-              quantity: parseInt(quantity, 10) || 1,
+              quantity: quantityNum,
               balanceAfter: receiver.diamonds,
               status: 'completed'
             });
@@ -334,6 +333,10 @@ module.exports = (io, socket) => {
         socket.emit('gift_error', { message: 'Failed to send gift.' });
       }
     };
+
+    // Prevent duplicate handlers
+    socket.removeAllListeners('send_gift');
+    socket.removeAllListeners('gift:send');
     socket.on('send_gift', handleSendGift);
     socket.on('gift:send', handleSendGift);
 
@@ -352,8 +355,8 @@ module.exports = (io, socket) => {
           return socket.emit('gift_error', { message: 'You cannot send a gift to yourself.' });
         }
 
-        // Rate limit check (P2-14)
-        const allowed = await checkRateLimit(senderId, 'send_combo_gift');
+        // Rate limit check using centralized middleware
+        const allowed = await checkRateLimit(senderId, 'combo_gift');
         if (!allowed) {
           return socket.emit('gift_error', { message: 'Please wait a moment before sending another combo gift.' });
         }
@@ -363,6 +366,9 @@ module.exports = (io, socket) => {
         if (!isInRoom) {
           return socket.emit('gift_error', { message: 'You must be in the room to send a gift.' });
         }
+
+        // Track presence
+        await trackPresence(senderId, roomId);
 
         if (![5, 10, 99, 999].includes(multiplier)) {
           return socket.emit('gift_error', { message: 'Combo must be 5, 10, 99, or 999.' });
@@ -506,7 +512,7 @@ module.exports = (io, socket) => {
       try {
         // ── Redis Distributed Lock (P0-2) ─────────────────────────────────
         // Prevents concurrent duplicate claims from same user
-        const rc = getRedis();
+        const rc = getRedisClient();
         if (rc) {
           const lockKey = `lock:treasure:${userId}:${roomId}:${giftEventId || 'open'}`;
           const locked = await rc.set(lockKey, '1', { EX: 30, NX: true });

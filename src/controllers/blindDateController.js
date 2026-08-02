@@ -59,7 +59,7 @@ exports.joinQueue = async (req, res) => {
     const redis = getRedisClient();
     if (redis) {
       const entry = JSON.stringify({ userId, name: user.name, avatar: user.avatar, birthDate: user.birthDate, country: user.lastLoginLocation?.country || '', genderPreference: profile.genderPreference, ageRangeMin: profile.ageRangeMin, ageRangeMax: profile.ageRangeMax, countryPreference: profile.countryPreference, joinedAt: Date.now() });
-      await redis.zadd(QUEUE_KEY, Date.now(), entry);
+      await redis.zAdd(QUEUE_KEY, Date.now(), entry);
     }
     profile.dailyQueueCount += 1;
     profile.lastQueuedAt = now;
@@ -73,11 +73,11 @@ exports.leaveQueue = async (req, res) => {
     const userId = req.user?.id || req.user?.userId;
     const redis = getRedisClient();
     if (redis) {
-      const entries = await redis.zrange(QUEUE_KEY, 0, -1);
+      const entries = await redis.zRange(QUEUE_KEY, 0, -1);
       const removePromises = [];
       for (const e of entries) {
         if (JSON.parse(e).userId === userId) {
-          removePromises.push(redis.zrem(QUEUE_KEY, e));
+          removePromises.push(redis.zRem(QUEUE_KEY, e));
         }
       }
       if (removePromises.length > 0) {
@@ -95,7 +95,7 @@ exports.processQueue = async () => {
     const locked = await redis.set(QUEUE_LOCK_KEY, '1', 'NX', 'EX', 5);
     if (!locked) return;
     try {
-      const entries = await redis.zrange(QUEUE_KEY, 0, -1);
+      const entries = await redis.zRange(QUEUE_KEY, 0, -1);
       if (entries.length < 2) return;
       const users = entries.map(e => JSON.parse(e));
       const matched = new Set();
@@ -136,12 +136,12 @@ function isCompatible(a, b) {
 }
 
 async function createMatch(userA, userB, redis) {
-  const entries = await redis.zrange(QUEUE_KEY, 0, -1);
+  const entries = await redis.zRange(QUEUE_KEY, 0, -1);
   const removePromises = [];
   for (const e of entries) {
     const p = JSON.parse(e);
     if ([userA.userId, userB.userId].includes(p.userId)) {
-      removePromises.push(redis.zrem(QUEUE_KEY, e));
+      removePromises.push(redis.zRem(QUEUE_KEY, e));
     }
   }
   if (removePromises.length > 0) {

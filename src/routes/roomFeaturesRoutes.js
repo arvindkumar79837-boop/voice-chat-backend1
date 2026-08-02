@@ -2,25 +2,26 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const roomFeaturesController = require('../controllers/roomFeaturesController');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
-router.post('/create', authMiddleware, roomFeaturesController.createRoomWithDefaults);
+router.post('/create', validateEnum('roomType', ['public', 'private', 'password'], { required: true }), authMiddleware, roomFeaturesController.createRoomWithDefaults);
 
-router.post('/:roomId/follow', authMiddleware, roomFeaturesController.followRoom);
+router.post('/:roomId/follow', validateObjectId('roomId'), authMiddleware, roomFeaturesController.followRoom);
 router.delete('/:roomId/unfollow', authMiddleware, roomFeaturesController.unfollowRoom);
 router.get('/:roomId/followers', authMiddleware, roomFeaturesController.getRoomFollowers);
 router.get('/my/followed', authMiddleware, roomFeaturesController.getMyFollowedRooms);
 
-router.post('/promote-admin', authMiddleware, roomFeaturesController.promoteToAdmin);
-router.post('/demote-admin', authMiddleware, roomFeaturesController.demoteAdmin);
+router.post('/promote-admin', validateBodyObjectId('targetUserId'), authMiddleware, roomFeaturesController.promoteToAdmin);
+router.post('/demote-admin', validateBodyObjectId('targetUserId'), authMiddleware, roomFeaturesController.demoteAdmin);
 router.get('/:roomId/admins', authMiddleware, roomFeaturesController.getRoomAdminList);
 
 router.get('/:roomId/level', authMiddleware, roomFeaturesController.getRoomLevel);
-router.post('/award-xp', authMiddleware, roomFeaturesController.awardXp);
+router.post('/award-xp', validateNumber('xp', { required: true, min: 0 }), authMiddleware, roomFeaturesController.awardXp);
 
-router.put('/:roomId/privacy', authMiddleware, roomFeaturesController.updatePrivacy);
-router.post('/verify-password', authMiddleware, roomFeaturesController.verifyRoomPassword);
+router.put('/:roomId/privacy', validateObjectId('roomId'), authMiddleware, roomFeaturesController.updatePrivacy);
+router.post('/verify-password', validateString('password', { required: true, minLength: 1 }), authMiddleware, roomFeaturesController.verifyRoomPassword);
 
-router.put('/:roomId/notices', authMiddleware, roomFeaturesController.setNotice);
+router.put('/:roomId/notices', validateObjectId('roomId'), authMiddleware, roomFeaturesController.setNotice);
 router.get('/:roomId/notices', roomFeaturesController.getNotices);
 
 router.get('/:roomId/online-count', roomFeaturesController.getOnlineCount);

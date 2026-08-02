@@ -1,4 +1,5 @@
 const Logger = require('../utils/logger');
+const { checkRateLimit, trackPresence } = require('../middlewares/socketSecurity.middleware');
 // ═══════════════════════════════════════════════════════════════════════════
 // FILE: arvind-party-backend/src/sockets/youtubeSocket.js
 // ARVIND PARTY - YOUTUBE SOCKET HANDLER
@@ -15,6 +16,9 @@ function youtubeSocket(io, socket) {
       const userId = socket.data.userId;
       if (!userId) return;
       socket.join(roomId);
+      
+      // Track presence
+      await trackPresence(userId, roomId);
       const playlist = await YouTubePlaylist.findOne({ roomId });
       if (playlist) {
         if (!playlist.participants.includes(userId)) {
@@ -52,8 +56,16 @@ function youtubeSocket(io, socket) {
   });
 
   // Host toggles play/pause
-  socket.on('youtube:toggle_play', ({ roomId, isPlaying }) => {
+  socket.on('youtube:toggle_play', async ({ roomId, isPlaying }) => {
     try {
+      const userId = socket.data.userId;
+      
+      // Rate limit check
+      const allowed = await checkRateLimit(userId, 'youtube_toggle');
+      if (!allowed) {
+        return socket.emit('error', { message: 'Please wait before toggling playback.' });
+      }
+      
       socket.to(roomId).emit('youtube:sync_update', {
         isPlaying,
         position: 0,
@@ -67,8 +79,16 @@ function youtubeSocket(io, socket) {
   });
 
   // Host seeks
-  socket.on('youtube:seek', ({ roomId, position }) => {
+  socket.on('youtube:seek', async ({ roomId, position }) => {
     try {
+      const userId = socket.data.userId;
+      
+      // Rate limit check
+      const allowed = await checkRateLimit(userId, 'youtube_seek');
+      if (!allowed) {
+        return socket.emit('error', { message: 'Please wait before seeking.' });
+      }
+      
       socket.to(roomId).emit('youtube:sync_update', {
         isPlaying: true,
         position,
@@ -84,6 +104,14 @@ function youtubeSocket(io, socket) {
   // Host changes video
   socket.on('youtube:change_video', async ({ roomId, videoId }) => {
     try {
+      const userId = socket.data.userId;
+      
+      // Rate limit check
+      const allowed = await checkRateLimit(userId, 'youtube_change');
+      if (!allowed) {
+        return socket.emit('error', { message: 'Please wait before changing video.' });
+      }
+      
       const playlist = await YouTubePlaylist.findOne({ roomId });
       if (playlist) {
         const video = playlist.videos.find(v => v.id === videoId);

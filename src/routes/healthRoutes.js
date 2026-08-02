@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const HealthController = require('../controllers/healthController');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 /**
  * Health Check Routes

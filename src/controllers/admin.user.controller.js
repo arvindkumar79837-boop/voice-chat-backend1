@@ -216,7 +216,15 @@ exports.addGift = async (req, res) => {
 exports.updateGift = async (req, res) => {
   try {
     const Gift = require('../models/Gift');
-    const item = await Gift.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    // Whitelist allowed fields to prevent mass assignment
+    const allowedFields = ['name', 'description', 'price', 'image', 'isActive', 'category', 'emoji'];
+    const updateData = {};
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+    const item = await Gift.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!item) return res.status(404).json({ success: false, message: 'Gift not found' });
     return res.status(200).json({ success: true, data: item });
   } catch (error) {

@@ -1,4 +1,4 @@
-const { validationResult, body, param, query } = require('express-validator');
+const { validationResult, body, param, query, header } = require('express-validator');
 
 // Middleware to handle validation errors
 const handleValidationErrors = (req, res, next) => {
@@ -127,6 +127,37 @@ const validateBody = (fields) => {
           .withMessage(rules.message || `${field} must be one of: ${rules.isIn.join(', ')}`)
       );
     }
+    if (rules.isEmail) {
+      validators.push(
+        body(field)
+          .trim()
+          .isEmail()
+          .withMessage(rules.message || `${field} must be a valid email`)
+          .normalizeEmail()
+      );
+    }
+    if (rules.isPhone) {
+      validators.push(
+        body(field)
+          .trim()
+          .matches(/^\d{10}$/)
+          .withMessage(rules.message || `${field} must be a valid 10-digit phone number`)
+      );
+    }
+    if (rules.isObjectId) {
+      validators.push(
+        body(field)
+          .matches(/^[0-9a-fA-F]{24}$/)
+          .withMessage(rules.message || `${field} must be a valid ObjectId`)
+      );
+    }
+    if (rules.isDate) {
+      validators.push(
+        body(field)
+          .isISO8601()
+          .withMessage(rules.message || `${field} must be a valid date`)
+      );
+    }
     if (rules.trim) {
       validators.push(
         body(field)
@@ -138,11 +169,22 @@ const validateBody = (fields) => {
   return validators;
 };
 
-// ObjectId validation
+// ObjectId validation for params
 const validateObjectId = (paramName = 'id') => [
   param(paramName)
     .matches(/^[0-9a-fA-F]{24}$/)
     .withMessage(`Invalid ${paramName} format`),
+  handleValidationErrors
+];
+
+// ObjectId validation for body fields
+const validateBodyObjectId = (fieldName) => [
+  body(fieldName)
+    .trim()
+    .notEmpty()
+    .withMessage(`${fieldName} is required`)
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage(`Invalid ${fieldName} format`),
   handleValidationErrors
 ];
 
@@ -166,6 +208,155 @@ const validateMomentContent = () => [
   handleValidationErrors
 ];
 
+// Number validation with min/max
+const validateNumber = (field, options = {}) => {
+  const validators = [];
+  const { required = false, min, max, message } = options;
+  let chain = body(field);
+  if (required) {
+    chain = chain.notEmpty().withMessage(`${field} is required`);
+  } else {
+    chain = chain.optional();
+  }
+  chain = chain.isNumeric().withMessage(message || `${field} must be a number`);
+  if (min !== undefined) {
+    chain = chain.isFloat({ min }).withMessage(message || `${field} must be at least ${min}`);
+  }
+  if (max !== undefined) {
+    chain = chain.isFloat({ max }).withMessage(message || `${field} must be at most ${max}`);
+  }
+  validators.push(chain);
+  validators.push(handleValidationErrors);
+  return validators;
+};
+
+// Date validation
+const validateDate = (field, options = {}) => {
+  const validators = [];
+  const { required = false } = options;
+  let chain = body(field);
+  if (required) {
+    chain = chain.notEmpty().withMessage(`${field} is required`);
+  } else {
+    chain = chain.optional();
+  }
+  chain = chain.isISO8601().withMessage(`${field} must be a valid ISO 8601 date`);
+  validators.push(chain);
+  validators.push(handleValidationErrors);
+  return validators;
+};
+
+// Enum validation
+const validateEnum = (field, allowedValues, options = {}) => {
+  const validators = [];
+  const { required = false, caseInsensitive = false } = options;
+  let chain = body(field);
+  if (required) {
+    chain = chain.notEmpty().withMessage(`${field} is required`);
+  } else {
+    chain = chain.optional();
+  }
+  if (caseInsensitive) {
+    chain = chain.trim().toLowerCase();
+  }
+  chain = chain.isIn(allowedValues.map(v => caseInsensitive ? v.toLowerCase() : v))
+    .withMessage(`${field} must be one of: ${allowedValues.join(', ')}`);
+  validators.push(chain);
+  validators.push(handleValidationErrors);
+  return validators;
+};
+
+// Boolean validation
+const validateBoolean = (field, options = {}) => {
+  const validators = [];
+  const { required = false } = options;
+  let chain = body(field);
+  if (required) {
+    chain = chain.notEmpty().withMessage(`${field} is required`);
+  } else {
+    chain = chain.optional();
+  }
+  chain = chain.isBoolean().withMessage(`${field} must be true or false`);
+  validators.push(chain);
+  validators.push(handleValidationErrors);
+  return validators;
+};
+
+// String validation with length constraints
+const validateString = (field, options = {}) => {
+  const validators = [];
+  const { required = false, minLength, maxLength, trim = true, isIn, message } = options;
+  let chain = body(field);
+  if (required) {
+    chain = chain.notEmpty().withMessage(`${field} is required`);
+  } else {
+    chain = chain.optional();
+  }
+  if (trim) {
+    chain = chain.trim();
+  }
+  if (minLength !== undefined) {
+    chain = chain.isLength({ min: minLength }).withMessage(message || `${field} must be at least ${minLength} characters`);
+  }
+  if (maxLength !== undefined) {
+    chain = chain.isLength({ max: maxLength }).withMessage(message || `${field} must be at most ${maxLength} characters`);
+  }
+  if (isIn) {
+    chain = chain.isIn(isIn).withMessage(message || `${field} must be one of: ${isIn.join(', ')}`);
+  }
+  validators.push(chain);
+  validators.push(handleValidationErrors);
+  return validators;
+};
+
+// Validate that request body contains only allowed fields
+const validateAllowedFields = (allowedFields) => {
+  return (req, res, next) => {
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return next();
+    }
+    const unknownFields = Object.keys(req.body).filter(field => !allowedFields.includes(field));
+    if (unknownFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: unknownFields.map(field => ({
+          field,
+          message: `Unknown field: ${field}`
+        }))
+      });
+    }
+    next();
+  };
+};
+
+// Validate refresh token
+const validateRefreshToken = () => [
+  body('refreshToken')
+    .trim()
+    .notEmpty()
+    .withMessage('Refresh token is required'),
+  handleValidationErrors
+];
+
+// Validate password
+const validatePassword = (field = 'password', options = {}) => {
+  const validators = [];
+  const { required = true, minLength = 6, maxLength = 128 } = options;
+  let chain = body(field);
+  if (required) {
+    chain = chain.notEmpty().withMessage(`${field} is required`);
+  } else {
+    chain = chain.optional();
+  }
+  chain = chain
+    .isLength({ min: minLength, max: maxLength })
+    .withMessage(`${field} must be between ${minLength} and ${maxLength} characters`);
+  validators.push(chain);
+  validators.push(handleValidationErrors);
+  return validators;
+};
+
 module.exports = {
   validatePhone,
   validateOTP,
@@ -175,7 +366,16 @@ module.exports = {
   validatePagination,
   validateBody,
   validateObjectId,
+  validateBodyObjectId,
   validateName,
   validateMomentContent,
+  validateNumber,
+  validateDate,
+  validateEnum,
+  validateBoolean,
+  validateString,
+  validateAllowedFields,
+  validateRefreshToken,
+  validatePassword,
   handleValidationErrors
 };

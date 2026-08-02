@@ -9,6 +9,7 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const securityController = require('../controllers/authSecure.controller');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -22,14 +23,14 @@ const authLimiter = rateLimit({
 // SOCIAL LOGIN
 // ═══════════════════════════════════════════════════════════════════════════
 
-router.post('/login', authLimiter, securityController.socialLogin);
+router.post('/login', validateEnum('provider', ['google', 'apple', 'facebook', 'snapchat', 'instagram', 'phone'], { required: true }), validateString('idToken', { required: true, maxLength: 4096 }), validateAllowedFields(['provider', 'idToken', 'deviceInfo']), authLimiter, securityController.socialLogin);
 router.post('/guest-login', authLimiter, securityController.guestLogin);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LINK / UNLINK SOCIAL ACCOUNTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-router.post('/link', authMiddleware, securityController.linkSocialAccount);
-router.post('/unlink', authMiddleware, securityController.unlinkSocialAccount);
+router.post('/link', validateEnum('provider', ['google', 'apple', 'facebook', 'snapchat', 'instagram', 'phone'], { required: true }), validateString('idToken', { required: true, maxLength: 4096 }), validateAllowedFields(['provider', 'idToken']), authMiddleware, securityController.linkSocialAccount);
+router.post('/unlink', validateEnum('provider', ['google', 'apple', 'facebook', 'snapchat', 'instagram'], { required: true }), validateAllowedFields(['provider']), authMiddleware, securityController.unlinkSocialAccount);
 
 module.exports = router;

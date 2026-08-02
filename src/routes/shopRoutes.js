@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const asyncHandler = require('../utils/asyncHandler');
 const shopController = require('../controllers/shop.controller');
 const { authMiddleware: auth } = require('../middlewares/auth.middleware');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 const shopRateLimit = rateLimit({
   windowMs: 60 * 1000,
@@ -13,7 +14,7 @@ const shopRateLimit = rateLimit({
   legacyHeaders: false,
 });
 
-router.get('/items', auth, asyncHandler(shopController.getItems));
-router.post('/purchase', auth, shopRateLimit, asyncHandler(shopController.purchaseItem));
+router.get('/items', validatePagination(), auth, asyncHandler(shopController.getItems));
+router.post('/purchase', validateBodyObjectId('itemId'), validateNumber('quantity', { required: true, min: 1 }), validateAllowedFields(['itemId', 'quantity']), auth, shopRateLimit, asyncHandler(shopController.purchaseItem));
 
 module.exports = router;

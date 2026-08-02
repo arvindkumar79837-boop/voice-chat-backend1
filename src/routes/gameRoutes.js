@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middlewares/auth.middleware');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 // Import both game controllers
 const gameController = require('../controllers/game.controller');
@@ -26,13 +27,13 @@ router.get('/ledger', async (req, res) => {
 router.use(authMiddleware); // Strictly secured for logged-in users only
 
 // ─── Lucky Wheel ──────────────────────────────────────────────────────────
-router.get('/lucky-wheel/rewards', gameController.getLuckyWheelRewards);
+router.get('/lucky-wheel/rewards', validatePagination(), gameController.getLuckyWheelRewards);
 router.post('/lucky-wheel/spin', gameController.spinLuckyWheel);
 
 // ─── Scratch Card ─────────────────────────────────────────────────────────
 router.post('/scratch-card/play', gameCtrl.playScratchCard);
 
 // ─── Leaderboard ──────────────────────────────────────────────────────────
-router.get('/leaderboard', gameCtrl.getLeaderboard);
+router.get('/leaderboard', validatePagination(), gameCtrl.getLeaderboard);
 
 module.exports = router;

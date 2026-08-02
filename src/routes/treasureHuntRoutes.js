@@ -3,6 +3,7 @@ const router = express.Router();
 const treasureHuntController = require('../controllers/treasureHuntController');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const adminAuth = require('../middlewares/isAdmin');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 // ─── TREASURE HUNT ROUTES ──────────────────────────────────────────────
 router.post('/create', authMiddleware, adminAuth, treasureHuntController.createTreasureHunt);

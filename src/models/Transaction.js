@@ -6,13 +6,15 @@ const transactionSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  razorpayOrderId: {
+  googlePlayPurchaseToken: { // For Google Play Billing verification
     type: String,
-    required: false
+    required: false,
+    index: true,
   },
-  razorpayPaymentId: {
+  orderId: { // Internal or Google-provided order ID
     type: String,
-    required: false
+    required: false,
+    index: true,
   },
   amount: {
     type: Number, // In subunits (e.g., paise)
@@ -20,12 +22,12 @@ const transactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    default: 'VIP_UPGRADE'
+    default: 'COIN_PURCHASE'
   },
   status: {
     type: String,
-    enum: ['pending', 'completed', 'failed', 'refunded', 'SUCCESS', 'FAILED', 'PENDING'],
-    default: 'SUCCESS'
+    enum: ['pending', 'completed', 'failed', 'refunded'],
+    default: 'pending'
   }
 }, { timestamps: true });
 
@@ -33,6 +35,5 @@ const transactionSchema = new mongoose.Schema({
 // ─── Compound Indexes (P1-2) ─────────────────────────────────────────────
 transactionSchema.index({ user: 1, createdAt: -1 });
 transactionSchema.index({ status: 1, createdAt: -1 });
-transactionSchema.index({ razorpayPaymentId: 1 }, { sparse: true });
 
 module.exports = mongoose.model('Transaction', transactionSchema);

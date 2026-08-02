@@ -18,6 +18,7 @@ const youtubeSocket = require('./youtubeSocket');
 
 // Shared JWT auth middleware for socket namespaces
 const User = require('../models/User');
+const Room = require('../models/Room');
 const socketAuthMiddleware = async (socket, next) => {
   const token = socket.handshake.auth?.token || socket.handshake.query?.token || socket.handshake.headers.authorization?.split(' ')[1];
   if (!token) {
@@ -82,31 +83,58 @@ const initializeSockets = (io) => {
       powerMatrixSocket(io, socket);
       matchmakingSocket(io, socket);
 
-      socket.on('disconnect', (reason) => {
+      // ─── Enhanced Disconnect Cleanup ──────────────────────────────
+      // Prevent memory leaks and ensure proper cleanup of:
+      // - Room subscriptions
+      // - Redis presence data
+      // - Active user counters
+      socket.on('disconnect', async (reason) => {
         Logger.info(`User disconnected: ${socket.data.userId || 'unknown'} (reason: ${reason})`);
 
-        const roomsToLeave = [];
-        // Safely collect rooms before leaving, as the socket.rooms set might change.
-        if (socket.rooms) {
+        try {
+          const userId = socket.data.userId;
+          const roomsToLeave = [];
+
+          // Safely collect rooms before leaving
+          if (socket.rooms) {
             socket.rooms.forEach(room => {
-                if (room !== socket.id) {
-                    roomsToLeave.push(room);
-                }
+              if (room !== socket.id) {
+                roomsToLeave.push(room);
+              }
             });
-        }
+          }
 
-        // Emitter for user departure.
-        if (socket.data.userId && roomsToLeave.length > 0) {
-          const payload = { userId: socket.data.userId, reason };
-          roomsToLeave.forEach(roomId => {
-            io.to(roomId).emit('room:user_left', payload);
-          });
-        }
+          // Notify rooms and decrement counters
+          if (userId && roomsToLeave.length > 0) {
+            for (const roomId of roomsToLeave) {
+              // Emit user left event
+              io.to(roomId).emit('room:user_left', {
+                userId,
+                reason,
+                timestamp: new Date()
+              });
 
-        // Clean up by leaving all rooms.
-        roomsToLeave.forEach(room => {
-          socket.leave(room);
-        });
+              // Decrement room active users counter (prevent negative)
+              await Room.findOneAndUpdate(
+                { roomId, activeUsers: { $gt: 0 } },
+                { $inc: { activeUsers: -1 } }
+              ).catch(err => Logger.error('Error decrementing activeUsers:', err));
+
+              // Leave the room
+              socket.leave(roomId);
+            }
+
+            // Clear Redis presence
+            const { getRedisClient } = require('../config/redis');
+            const redis = getRedisClient();
+            if (redis) {
+              await redis.del(`presence:${userId}`).catch(() => {});
+              await redis.srem('online_users', userId).catch(() => {});
+            }
+          }
+        } catch (error) {
+          Logger.error('Disconnect cleanup error:', error);
+        }
       });
     });
   } catch (err) {

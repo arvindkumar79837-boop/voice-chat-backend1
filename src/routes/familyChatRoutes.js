@@ -6,9 +6,10 @@ const FamilyChat = require('../models/FamilyChat');
 const Family = require('../models/Family');
 const User = require('../models/User');
 const { successResponse, errorResponse } = require('../utils/responseFormatter');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 // Get family chat messages
-router.get('/:familyId/messages', authMiddleware, async (req, res) => {
+router.get('/:familyId/messages', authMiddleware, validateObjectId('familyId'), validatePagination(), async (req, res) => {
   try {
     const { familyId } = req.params;
     const { page = 1, limit = 50, before } = req.query;
@@ -40,7 +41,7 @@ router.get('/:familyId/messages', authMiddleware, async (req, res) => {
 });
 
 // Send family message
-router.post('/:familyId/messages', authMiddleware, async (req, res) => {
+router.post('/:familyId/messages', authMiddleware, validateObjectId('familyId'), validateString('content', { required: true, minLength: 1, maxLength: 1000 }), validateEnum('messageType', ['text', 'image', 'system'], { required: false }), validateAllowedFields(['content', 'messageType', 'replyTo', 'mentions', 'attachments']), async (req, res) => {
   try {
     const { familyId } = req.params;
     const { content, messageType = 'text', replyTo, mentions, attachments } = req.body;
@@ -83,7 +84,7 @@ router.post('/:familyId/messages', authMiddleware, async (req, res) => {
 });
 
 // Delete family message
-router.delete('/:familyId/messages/:messageId', authMiddleware, async (req, res) => {
+router.delete('/:familyId/messages/:messageId', authMiddleware, validateObjectId('familyId'), validateObjectId('messageId'), async (req, res) => {
   try {
     const { familyId, messageId } = req.params;
     const userId = req.user.id;
@@ -121,7 +122,7 @@ router.delete('/:familyId/messages/:messageId', authMiddleware, async (req, res)
 });
 
 // Pin family message
-router.post('/:familyId/messages/:messageId/pin', authMiddleware, async (req, res) => {
+router.post('/:familyId/messages/:messageId/pin', authMiddleware, validateObjectId('familyId'), validateObjectId('messageId'), async (req, res) => {
   try {
     const { familyId, messageId } = req.params;
     const userId = req.user.id;
@@ -152,7 +153,7 @@ router.post('/:familyId/messages/:messageId/pin', authMiddleware, async (req, re
 });
 
 // Add reaction to message
-router.post('/:familyId/messages/:messageId/react', authMiddleware, async (req, res) => {
+router.post('/:familyId/messages/:messageId/react', authMiddleware, validateObjectId('familyId'), validateObjectId('messageId'), validateString('emoji', { required: true, maxLength: 50 }), validateAllowedFields(['emoji']), async (req, res) => {
   try {
     const { familyId, messageId } = req.params;
     const { emoji } = req.body;
@@ -198,7 +199,7 @@ router.post('/:familyId/messages/:messageId/react', authMiddleware, async (req, 
 });
 
 // Get pinned messages
-router.get('/:familyId/pinned', authMiddleware, async (req, res) => {
+router.get('/:familyId/pinned', authMiddleware, validateObjectId('familyId'), validatePagination(), async (req, res) => {
   try {
     const { familyId } = req.params;
     const userId = req.user.id;

@@ -231,8 +231,7 @@ exports.getWallet = async (req, res, next) => {
 };
 
 // ===================== RECHARGE (Coin Wallet) =====================
-// NOTE: Razorpay coin-purchase path has been removed.
-// Coins are now purchased exclusively via Google Play Billing
+// Coins are purchased exclusively via Google Play Billing
 // (see diamondEconomyController.js → POST /api/economy/verify-google-play)
 
 // ===================== TRANSACTION HISTORY =====================

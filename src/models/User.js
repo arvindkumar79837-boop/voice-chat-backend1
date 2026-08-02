@@ -170,7 +170,8 @@ userSchema.index({ familyContribution: -1 });
 
 
 // ─── Compound Indexes (P1-2) ─────────────────────────────────────────────
-userSchema.index({ isOnline: 1, lastSeen: -1 });
+// NOTE: isOnline and lastSeen fields removed from schema - indexes preserved for future use
+// userSchema.index({ isOnline: 1, lastSeen: -1 });
 userSchema.index({ coins: -1 });
 userSchema.index({ diamonds: -1 });
 userSchema.index({ createdAt: -1 });

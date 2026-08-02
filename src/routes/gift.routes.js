@@ -6,6 +6,7 @@ const giftProductionController = require('../controllers/gift.production.control
 const { authMiddleware, verifyStaff } = require('../middlewares/adminMiddleware');
 const Gift = require('../models/Gift');
 const GiftEvent = require('../models/GiftEvent');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 const giftRateLimit = rateLimit({
   windowMs: 60 * 1000,
@@ -16,12 +17,12 @@ const giftRateLimit = rateLimit({
 });
 
 // ─── Gift Store & Discovery ────────────────────────────────────
-router.get('/store', asyncHandler(giftProductionController.getStoreGifts));
-router.get('/type/:giftType', asyncHandler(giftProductionController.getGiftsByType));
-router.get('/list', authMiddleware, asyncHandler(giftProductionController.getStoreGifts));
-router.get('/history', authMiddleware, asyncHandler(giftProductionController.getGiftHistory));
-router.get('/leaderboard', asyncHandler(giftProductionController.getGiftLeaderboard));
-router.get('/statistics', authMiddleware, asyncHandler(giftProductionController.getGiftStatistics));
+router.get('/store', validatePagination(), asyncHandler(giftProductionController.getStoreGifts));
+router.get('/type/:giftType', validatePagination(), asyncHandler(giftProductionController.getGiftsByType));
+router.get('/list', validatePagination(), authMiddleware, asyncHandler(giftProductionController.getStoreGifts));
+router.get('/history', validatePagination(), authMiddleware, asyncHandler(giftProductionController.getGiftHistory));
+router.get('/leaderboard', validatePagination(), asyncHandler(giftProductionController.getGiftLeaderboard));
+router.get('/statistics', validatePagination(), authMiddleware, asyncHandler(giftProductionController.getGiftStatistics));
 
 // ─── Flutter-compatible catalog, goal, events ──────────────────
 router.get('/catalog', authMiddleware, asyncHandler(async (req, res) => {
@@ -46,24 +47,24 @@ router.get('/events', authMiddleware, asyncHandler(async (req, res) => {
 }));
 
 // ─── Send Gifts (All Types) ────────────────────────────────────
-router.post('/send', authMiddleware, giftRateLimit, asyncHandler(giftProductionController.sendGift));
-router.post('/combo', authMiddleware, asyncHandler(giftProductionController.sendComboGift));
+router.post('/send', validateBodyObjectId('receiverId'), validateNumber('quantity', { required: true, min: 1 }), authMiddleware, giftRateLimit, asyncHandler(giftProductionController.sendGift));
+router.post('/combo', validateBodyObjectId('targetUserId'), validateNumber('quantity', { required: true, min: 1 }), authMiddleware, asyncHandler(giftProductionController.sendComboGift));
 router.post('/treasure/claim', authMiddleware, asyncHandler(giftProductionController.claimTreasure));
 
 // ─── User Inventory & Collection ──────────────────────────────
-router.get('/inventory', authMiddleware, asyncHandler(giftProductionController.getGiftInventory));
-router.get('/collection', authMiddleware, asyncHandler(giftProductionController.getGiftCollection));
+router.get('/inventory', validatePagination(), authMiddleware, asyncHandler(giftProductionController.getGiftInventory));
+router.get('/collection', validatePagination(), authMiddleware, asyncHandler(giftProductionController.getGiftCollection));
 
 // ─── Room Gift Goals ──────────────────────────────────────────
-router.post('/goals', authMiddleware, asyncHandler(giftProductionController.setGiftGoal));
+router.post('/goals', validateString('title', { required: true, maxLength: 200 }), validateNumber('target', { required: true, min: 1 }), validateEnum('type', ['coins', 'diamonds'], { required: true }), authMiddleware, asyncHandler(giftProductionController.setGiftGoal));
 
 // ─── Festival Gifts ────────────────────────────────────────────
 router.post('/festival', authMiddleware, asyncHandler(giftProductionController.createFestivalGift));
 
 // ─── Admin Gift Management ─────────────────────────────────────
-router.put('/:giftId/toggle', authMiddleware, verifyStaff, asyncHandler(giftProductionController.toggleGiftAvailability));
+router.put('/:giftId/toggle', validateObjectId('giftId'), authMiddleware, verifyStaff, asyncHandler(giftProductionController.toggleGiftAvailability));
 router.post('/admin/create', authMiddleware, verifyStaff, asyncHandler(giftProductionController.adminCreateGift));
-router.put('/admin/:giftId', authMiddleware, verifyStaff, asyncHandler(giftProductionController.adminUpdateGift));
+router.put('/admin/:giftId', validateObjectId('giftId'), authMiddleware, verifyStaff, asyncHandler(giftProductionController.adminUpdateGift));
 router.delete('/admin/:giftId', authMiddleware, verifyStaff, asyncHandler(giftProductionController.adminDeleteGift));
 
 module.exports = router;

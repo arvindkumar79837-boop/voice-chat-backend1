@@ -1,5 +1,6 @@
 const Logger = require('../utils/logger');
 const RoomMessage = require('../models/RoomMessage');
+const { checkRateLimit, trackPresence } = require('../middlewares/socketSecurity.middleware');
 
 module.exports = (io, socket) => {
   // Send a text message in the room
@@ -8,6 +9,17 @@ module.exports = (io, socket) => {
       const senderId = socket.data.userId;
       if (!senderId) {
         return socket.emit('error', { message: 'Authentication required.' });
+      }
+
+      // Rate limit check
+      const allowed = await checkRateLimit(senderId, 'chat');
+      if (!allowed) {
+        return socket.emit('error', { message: 'Please wait before sending another message.' });
+      }
+
+      // Track presence
+      if (data.roomId) {
+        await trackPresence(senderId, data.roomId);
       }
 
       // Save message to MongoDB for history/admin review
@@ -29,16 +41,29 @@ module.exports = (io, socket) => {
   });
 
   // Send an animated emoji or quick reaction
-  socket.on('send_reaction', (data) => {
+  socket.on('send_reaction', async (data) => {
     try {
       const senderId = socket.data.userId;
       if (!senderId) {
         return socket.emit('error', { message: 'Authentication required.' });
       }
       const { roomId, emoji } = data;
+      
+      // Rate limit check
+      const allowed = await checkRateLimit(senderId, 'reaction');
+      if (!allowed) {
+        return socket.emit('error', { message: 'Please wait before sending another reaction.' });
+      }
+
       if (!roomId || !emoji || typeof emoji !== 'string' || emoji.length > 10) {
         return socket.emit('error', { message: 'Invalid reaction data.' });
       }
+      
+      // Track presence
+      if (roomId) {
+        await trackPresence(senderId, roomId);
+      }
+      
       io.to(roomId).emit('receive_reaction', { roomId, emoji, senderId });
     } catch (error) {
       Logger.error('[send_reaction] error:', error.message);
@@ -47,10 +72,21 @@ module.exports = (io, socket) => {
   });
 
   // Typing indicator for Flutter client
-  socket.on('chat:typing', (data) => {
+  socket.on('chat:typing', async (data) => {
     try {
+      const senderId = socket.data.userId;
       const { roomId } = data;
-      if (roomId) {
+      
+      // Rate limit check
+      if (senderId) {
+        const allowed = await checkRateLimit(senderId, 'typing');
+        if (!allowed) {
+          return socket.emit('error', { message: 'Please wait before sending typing indicator.' });
+        }
+      }
+      
+      if (roomId && senderId) {
+        await trackPresence(senderId, roomId);
         socket.to(roomId).emit('chat:typing', data);
       }
     } catch (error) {

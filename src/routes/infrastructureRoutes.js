@@ -10,6 +10,7 @@ const DeploymentService = require('../services/deploymentService');
 const FeatureFlagService = require('../services/featureFlagService');
 const MonitoringService = require('../services/monitoringService');
 const isAdmin = require('../middlewares/isAdmin');
+const { validateObjectId, validatePagination, validateEmail, validateOTP, validatePhone, validateNumber, validateEnum, validateDate, validateBoolean, validateString, validateBodyObjectId, validateAllowedFields, validateRefreshToken, validatePassword, validateName, handleValidationErrors } = require('../middlewares/validation.middleware');
 
 router.use(isAdmin);
 

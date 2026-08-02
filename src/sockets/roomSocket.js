@@ -143,9 +143,9 @@ module.exports = (io, socket) => {
       const userId = authedUserId;
       socket.leave(roomId);
 
-      // Atomic update for activeUsers and seat removal
+      // Atomic update for activeUsers and seat removal - prevent negative counter
       const updatedRoom = await Room.findOneAndUpdate(
-        { roomId },
+        { roomId, activeUsers: { $gt: 0 } }, // Only decrement if counter is positive
         { 
           $inc: { activeUsers: -1 },
           $set: {
@@ -163,30 +163,22 @@ module.exports = (io, socket) => {
         }
       );
 
-      if (updatedRoom) {
-        // Find which seat was vacated for notification
-        const seatIdx = updatedRoom.seats.findIndex(s => s.userId === null && s.joinedAt === null); // This is not perfect but we can emit a general update or check which one changed
-        // Better: we know the userId, but it's now null. 
-        // For simplicity, we can emit to all that someone left and seats might have changed
-        io.to(roomId).emit('user_left', {
-          userId,
-          userProfile,
-          message: `${userProfile?.name || 'A user'} left the room`,
-          activeUsers: updatedRoom.activeUsers,
-        });
-      }
+      // Get final active users count (fallback to 0 if room not found)
+      const finalActiveUsers = updatedRoom?.activeUsers || 0;
 
-      socket.to(roomId).emit('user_left', {
+      // Emit user left event
+      io.to(roomId).emit('user_left', {
         userId,
         userProfile,
         message: `${userProfile?.name || 'A user'} left the room`,
-        activeUsers: updatedRoom?.activeUsers || 0,
+        activeUsers: finalActiveUsers,
       });
+      
       socket.to(roomId).emit('room:user_left', {
         userId,
         userProfile,
         message: `${userProfile?.name || 'A user'} left the room`,
-        activeUsers: updatedRoom?.activeUsers || 0,
+        activeUsers: finalActiveUsers,
       });
     } catch (error) {
       Logger.error('[leave_room] error:', error.message);

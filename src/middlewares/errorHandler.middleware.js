@@ -25,8 +25,8 @@ module.exports = (err, req, res, next) => {
   if (err.code === 11000) {
     statusCode = 400;
     errorCode = 'DUPLICATE_ERROR';
-    const field = Object.keys(err.keyValue)[0];
-    message = `${field} already exists`;
+    const field = err.keyValue ? Object.keys(err.keyValue)[0] : 'Field';
+    message = field ? `${field} already exists` : 'Duplicate entry found';
   }
 
   // JWT Errors

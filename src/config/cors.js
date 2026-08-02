@@ -65,7 +65,7 @@ const corsConfig = cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-Request-ID'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-Request-ID', 'x-staff-role', 'x-staff-id', 'x-access-token'],
   exposedHeaders: ['Content-Range', 'X-Content-Range', 'X-Total-Count'],
   maxAge: 86400, // 24 hours
   optionsSuccessStatus: 200
